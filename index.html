@@ -199,25 +199,42 @@
       .side{ flex: 1 1 320px; }
     }
   </style>
-  .logo{
-  margin: 0;
-}
 
-.logo img{
-  height: 68px;              /* Taille desktop parfaite */
-  max-width: 100%;
-  display: block;
-  object-fit: contain;
-  filter: drop-shadow(0 6px 20px rgba(0,0,0,.35));
-}
-
-/* Mobile */
-@media (max-width: 600px){
-  .logo img{
-    height: 52px;
+  
+<style>
+  .punch{
+    margin-top: 10px;
+    font-weight: 800;
+    color: rgba(210,235,255,.95);
+    letter-spacing: .2px;
   }
-}
 
+  /* Mobile */
+  @media (max-width: 820px){
+    .card{ grid-column: span 12; }
+    .side{ flex: 1 1 320px; }
+  }
+
+  /* LOGO */
+  .logo{
+    margin: 0;
+  }
+
+  .logo img{
+    height: 68px; /* Taille desktop parfaite */
+    max-width: 100%;
+    display: block;
+    object-fit: contain;
+    filter: drop-shadow(0 6px 20px rgba(0,0,0,.35));
+  }
+
+  /* Mobile logo */
+  @media (max-width: 600px){
+    .logo img{
+      height: 52px;
+    }
+  }
+</style>
 </head>
 
 <body>
