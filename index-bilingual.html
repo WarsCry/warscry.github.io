@@ -1,1 +1,610 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <link rel="icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/96x96 favicon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/96x96 favicon.png">
+  <link rel="apple-touch-icon" href="/96x96 favicon.png">
 
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Daniel Support Informatique</title>
+
+  <style>
+    :root{
+      --bg:#070b14;
+      --card: rgba(10, 20, 40, 0.68);
+      --border: rgba(180, 210, 255, 0.18);
+      --text: rgba(240, 248, 255, 0.92);
+      --muted: rgba(240, 248, 255, 0.75);
+      --accent: rgba(120, 190, 255, 0.95);
+      --shadow: 0 18px 50px rgba(0,0,0,.45);
+      --radius: 18px;
+      --max: 1050px;
+      --gap: 16px;
+    }
+
+    /* ===== POPUP (MODAL) ===== */
+    .modal{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .modal-box{
+      background: rgba(10, 20, 40, 0.95);
+      border: 1px solid rgba(180,210,255,.25);
+      color: rgba(255,255,255,.95);
+      padding: 22px;
+      border-radius: 16px;
+      max-width: 360px;
+      width: calc(100% - 32px);
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,.5);
+      backdrop-filter: blur(10px);
+    }
+    .modal-actions{
+      margin-top: 16px;
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+    .modal-actions button{
+      background: transparent;
+      border: 1px solid rgba(180,210,255,.35);
+      color: rgba(255,255,255,.92);
+      padding: 10px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 650;
+    }
+    .modal-actions .confirm{
+      background: linear-gradient(90deg, rgba(60,150,255,.85), rgba(0,220,255,.55));
+      border: 1px solid rgba(140,210,255,.35);
+      color: rgba(5,10,22,.92);
+      padding: 10px 16px;
+      border-radius: 999px;
+      text-decoration: none;
+      font-weight: 800;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      min-height: 100vh;
+      line-height: 1.35;
+    }
+
+    /* Fond techno en filigrane */
+    body::before{
+      content:"";
+      position: fixed;
+      inset: 0;
+      background-image: url("BckGSC.jpg");
+      background-size: cover;
+      background-position: center;
+      filter: saturate(1.1) contrast(1.05);
+      opacity: 0.30;
+      z-index: -2;
+    }
+
+    /* Petite couche dark pour garder le texte lisible */
+    body::after{
+      content:"";
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 20% 0%, rgba(40,120,255,.18), transparent 45%),
+                  radial-gradient(circle at 90% 20%, rgba(0,255,200,.10), transparent 45%),
+                  linear-gradient(to bottom, rgba(0,0,0,.55), rgba(0,0,0,.75));
+      z-index: -1;
+    }
+
+    .wrap{
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 28px 16px 40px;
+    }
+
+    .top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: var(--gap);
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .brand{
+      position: relative;
+      padding: 18px 18px 16px;
+      border: 1px solid var(--border);
+      background: rgba(5, 10, 22, 0.35);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+      flex: 1 1 520px;
+    }
+
+    /* ===== Lang switch ===== */
+    .lang-switch{
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      padding: 6px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(10, 20, 40, 0.45);
+      box-shadow: 0 10px 25px rgba(0,0,0,.15);
+    }
+    .lang-btn{
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 800;
+      padding: 6px 10px;
+      border-radius: 999px;
+      letter-spacing: .2px;
+    }
+    .lang-btn.active{
+      background: rgba(120,190,255,.22);
+      border-color: rgba(120,190,255,.35);
+    }
+
+    h1{
+      margin:0;
+      font-size: clamp(28px, 4vw, 44px);
+      letter-spacing: .2px;
+    }
+
+    .tag{
+      margin-top: 8px;
+      font-size: 15px;
+      color: var(--muted);
+    }
+
+    .cta{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(10, 20, 40, 0.55);
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 650;
+      box-shadow: 0 10px 25px rgba(0,0,0,.25);
+    }
+    .btn:hover{ border-color: rgba(120,190,255,.45); transform: translateY(-1px); }
+    .btn.primary{
+      background: linear-gradient(90deg, rgba(60,150,255,.85), rgba(0,220,255,.55));
+      border-color: rgba(140,210,255,.35);
+      color: rgba(5,10,22,.92);
+    }
+
+    .side{
+      color: rgba(255,255,255,.92);
+      font-size: 18px;
+      font-weight: 500;
+      flex: 0 1 320px;
+      padding: 18px;
+      border: 1px solid var(--border);
+      background-image: url("backgorundMap.jpg");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(6px);
+      position: relative;
+    }
+
+    .side strong,
+    .side .line{
+      margin-top: 10px;
+      color: rgba(255,255,255,.95);
+      font-size: 18px;
+      font-weight: 500;
+    }
+
+    @media (min-width: 821px){
+      .side::before{
+        content:"";
+        position:absolute;
+        inset:0;
+        background: rgba(0,0,0,.35);
+        border-radius: var(--radius);
+      }
+      .side > *{
+        position: relative;
+        z-index: 1;
+      }
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: var(--gap);
+      margin-top: 16px;
+    }
+
+    .card{
+      grid-column: span 6;
+      padding: 18px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .card h2{
+      margin:0 0 10px;
+      font-size: 18px;
+      letter-spacing: .2px;
+    }
+
+    .card p{ margin: 0 0 10px; color: var(--muted); }
+
+    ul{
+      margin: 0;
+      padding-left: 18px;
+      color: rgba(240,248,255,.88);
+    }
+    li{ margin: 6px 0; }
+
+    .about{
+      margin-top: 16px;
+      padding: 18px;
+      border: 1px solid var(--border);
+      background: rgba(10, 20, 40, 0.50);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+    .about h2{ margin:0 0 10px; font-size: 18px; }
+    .about p{ margin:0; color: var(--muted); }
+
+    .footer{
+      margin-top: 18px;
+      text-align:center;
+      color: rgba(240,248,255,.65);
+      font-size: 13px;
+    }
+
+    .punch{
+      margin-top: 10px;
+      font-weight: 800;
+      color: rgba(210,235,255,.95);
+      letter-spacing: .2px;
+    }
+
+    /* Mobile */
+    @media (max-width: 820px){
+      .card{ grid-column: span 12; }
+      .side{ flex: 1 1 320px; }
+      .lang-switch{ position: static; margin: 10px 0 0; }
+    }
+
+    /* LOGO */
+    .logo{ margin: 0; }
+    .logo img{
+      height: 180px;
+      max-width: 100%;
+      display: block;
+      object-fit: contain;
+      filter: drop-shadow(0 6px 20px rgba(0,0,0,.35));
+    }
+    @media (max-width: 600px){
+      .logo img{ height: 68px; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Popup Courriel -->
+  <div id="confirmMail" class="modal">
+    <div class="modal-box">
+      <p data-i18n="mailConfirm">Es-tu sûr de vouloir parler au plus beau des Daniel? 😏</p>
+      <div class="modal-actions">
+        <button onclick="closeModal()" data-i18n="cancel">Annuler</button>
+        <a href="mailto:coolspider1983@gmail.com" class="confirm" data-i18n="continue">Continuer</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">
+
+        <!-- FR | EN -->
+        <div class="lang-switch" aria-label="Language switch">
+          <button class="lang-btn" id="btnFR" type="button">FR</button>
+          <button class="lang-btn" id="btnEN" type="button">EN</button>
+        </div>
+
+        <h1 class="logo">
+          <img src="/Danpclogoresized1.png" alt="DanPC – Support Informatique">
+        </h1>
+
+        <div class="tag" data-i18n="tagline">
+          Support, dépannage, PC sur mesure — clair, honnête, efficace.
+        </div>
+
+        <div class="cta">
+          <a class="btn primary" href="tel:+15146913666" data-i18n="callBtn">📞 Appeler</a>
+          <a class="btn" href="#" onclick="openModal(); return false;" data-i18n="mailBtn">✉️ Courriel</a>
+          <a class="btn" href="https://www.messenger.com/t/warscryigyt" target="_blank" rel="noreferrer" data-i18n="msgBtn">💬 Messenger</a>
+          <a class="btn" href="sms:+15146913666?body=Bonjour%20Daniel%20🙂%0A%0AJ’ai%20besoin%20d’aide%20informatique.%0AVoici%20mon%20problème%20:" data-i18n="smsBtn">📩 SMS</a>
+        </div>
+
+        <div class="punch" data-i18n="punch">
+          Pas de jargon. Pas de vente forcée. Juste des solutions qui marchent.
+        </div>
+      </div>
+
+      <div class="side">
+        <div>
+          <strong data-i18n="serviceAreaTitle">Zone desservie :</strong>
+          <span data-i18n="serviceAreaList">
+            Rivière-du-Loup, Rivière-Bleue, Saint-Marc-du-Lac-Long, Notre-Dame-du-Lac,
+            Témiscouata-sur-le-Lac, Cacouna, Pohénégamook, Kamouraska, Lac Baker
+            et les environs.
+          </span>
+        </div>
+        <div class="line">
+          <strong data-i18n="onSiteTitle">Sur place</strong>
+          <span data-i18n="onSiteText">ou</span>
+          <strong data-i18n="remoteTitle">à distance</strong>
+          <span data-i18n="remoteText">(TeamViewer / Zoom).</span>
+        </div>
+        <div class="line">
+          <strong data-i18n="hoursTitle">Soir & fin de semaine</strong>
+          <span data-i18n="hoursText">au besoin.</span>
+        </div>
+        <div class="line">
+          <strong data-i18n="invoiceTitle">Facture / reçu :</strong>
+          <span data-i18n="invoiceText">oui (si tu le veux).</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <h2 data-i18n="c1Title">🖥️ Dépannage PC / portable</h2>
+        <p data-i18n="c1Desc">Quand ça gèle, ça rame ou ça crash — on remet ça stable.</p>
+        <ul>
+          <li data-i18n="c1Li1">Ordinateur lent ou instable</li>
+          <li data-i18n="c1Li2">Réinstallation / réparation Windows</li>
+          <li data-i18n="c1Li3">Virus, malwares, pubs</li>
+          <li data-i18n="c1Li4">Boot, BIOS, écrans noirs</li>
+          <li data-i18n="c1Li5">Sauvegarde & récupération de données</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2 data-i18n="c2Title">🎮 PC sur mesure (gaming & travail)</h2>
+        <p data-i18n="c2Desc">Un PC adapté à ton usage réel et ton budget, pas à la mode.</p>
+        <ul>
+          <li data-i18n="c2Li1">Gaming (FPS, MMO, AAA, VR)</li>
+          <li data-i18n="c2Li2">Travail / création (photo, vidéo, musique)</li>
+          <li data-i18n="c2Li3">Assemblage + tests + optimisation</li>
+          <li data-i18n="c2Li4">Machine stable, performante, évolutive</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2 data-i18n="c3Title">🌐 Réseau & Wi-Fi</h2>
+        <p data-i18n="c3Desc">Portée, stabilité et sécurité à la maison.</p>
+        <ul>
+          <li data-i18n="c3Li1">Wi-Fi lent / instable / zones mortes</li>
+          <li data-i18n="c3Li2">Routeur / mesh Wi-Fi</li>
+          <li data-i18n="c3Li3">Connexion imprimantes & appareils intelligents</li>
+          <li data-i18n="c3Li4">Sécurisation du réseau domestique</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2 data-i18n="c4Title">🧑‍🏫 Aide & formation</h2>
+        <p data-i18n="c4Desc">Explications simples, sans juger, à ton rythme.</p>
+        <ul>
+          <li data-i18n="c4Li1">Aide aux personnes âgées</li>
+          <li data-i18n="c4Li2">Organisation fichiers / photos / courriels</li>
+          <li data-i18n="c4Li3">Bonnes pratiques sécurité (arnaques, mots de passe)</li>
+        </ul>
+      </section>
+    </div>
+
+    <section class="about">
+      <h2 data-i18n="aboutTitle">👨‍💻 À propos</h2>
+      <p data-i18n="aboutText">
+        Diplômé du <strong>Collège Lionel-Groulx</strong> en <strong>administration réseaux & cybersécurité</strong>.
+        Passionné depuis jeune âge, j’assemble, optimise et répare des PC depuis des années.
+        Parle-moi de ton problème et je te propose une solution claire.
+      </p>
+    </section>
+
+    <div class="footer">
+      © <span id="y"></span> <span data-i18n="footerName">Daniel Support Informatique</span>
+    </div>
+  </div>
+
+  <script>
+    // Année
+    document.getElementById("y").textContent = new Date().getFullYear();
+
+    // Modal
+    function openModal(){
+      document.getElementById("confirmMail").style.display = "flex";
+    }
+    function closeModal(){
+      document.getElementById("confirmMail").style.display = "none";
+    }
+    document.getElementById("confirmMail").style.display = "none";
+
+    // ===== i18n (FR/EN) =====
+    const dict = {
+      fr: {
+        mailConfirm: "Es-tu sûr de vouloir parler au plus beau des Daniel? 😏",
+        cancel: "Annuler",
+        continue: "Continuer",
+        tagline: "Support, dépannage, PC sur mesure — clair, honnête, efficace.",
+        callBtn: "📞 Appeler",
+        mailBtn: "✉️ Courriel",
+        msgBtn: "💬 Messenger",
+        smsBtn: "📩 SMS",
+        punch: "Pas de jargon. Pas de vente forcée. Juste des solutions qui marchent.",
+
+        serviceAreaTitle: "Zone desservie :",
+        serviceAreaList: "Rivière-du-Loup, Rivière-Bleue, Saint-Marc-du-Lac-Long, Notre-Dame-du-Lac, Témiscouata-sur-le-Lac, Cacouna, Pohénégamook, Kamouraska, Lac Baker et les environs.",
+        onSiteTitle: "Sur place",
+        onSiteText: " ou ",
+        remoteTitle: "à distance",
+        remoteText: " (TeamViewer / Zoom).",
+        hoursTitle: "Soir & fin de semaine",
+        hoursText: " au besoin.",
+        invoiceTitle: "Facture / reçu :",
+        invoiceText: " oui (si tu le veux).",
+
+        c1Title: "🖥️ Dépannage PC / portable",
+        c1Desc: "Quand ça gèle, ça rame ou ça crash — on remet ça stable.",
+        c1Li1: "Ordinateur lent ou instable",
+        c1Li2: "Réinstallation / réparation Windows",
+        c1Li3: "Virus, malwares, pubs",
+        c1Li4: "Boot, BIOS, écrans noirs",
+        c1Li5: "Sauvegarde & récupération de données",
+
+        c2Title: "🎮 PC sur mesure (gaming & travail)",
+        c2Desc: "Un PC adapté à ton usage réel et ton budget, pas à la mode.",
+        c2Li1: "Gaming (FPS, MMO, AAA, VR)",
+        c2Li2: "Travail / création (photo, vidéo, musique)",
+        c2Li3: "Assemblage + tests + optimisation",
+        c2Li4: "Machine stable, performante, évolutive",
+
+        c3Title: "🌐 Réseau & Wi-Fi",
+        c3Desc: "Portée, stabilité et sécurité à la maison.",
+        c3Li1: "Wi-Fi lent / instable / zones mortes",
+        c3Li2: "Routeur / mesh Wi-Fi",
+        c3Li3: "Connexion imprimantes & appareils intelligents",
+        c3Li4: "Sécurisation du réseau domestique",
+
+        c4Title: "🧑‍🏫 Aide & formation",
+        c4Desc: "Explications simples, sans juger, à ton rythme.",
+        c4Li1: "Aide aux personnes âgées",
+        c4Li2: "Organisation fichiers / photos / courriels",
+        c4Li3: "Bonnes pratiques sécurité (arnaques, mots de passe)",
+
+        aboutTitle: "👨‍💻 À propos",
+        aboutText: "Diplômé du <strong>Collège Lionel-Groulx</strong> en <strong>administration réseaux & cybersécurité</strong>. Passionné depuis jeune âge, j’assemble, optimise et répare des PC depuis des années. Parle-moi de ton problème et je te propose une solution claire.",
+        footerName: "Daniel Support Informatique"
+      },
+
+      en: {
+        mailConfirm: "Are you sure you want to talk to the most handsome Daniel? 😏",
+        cancel: "Cancel",
+        continue: "Continue",
+        tagline: "IT support, troubleshooting, custom PCs — clear, honest, effective.",
+        callBtn: "📞 Call",
+        mailBtn: "✉️ Email",
+        msgBtn: "💬 Messenger",
+        smsBtn: "📩 Text",
+        punch: "No jargon. No pressure sales. Just fixes that work.",
+
+        serviceAreaTitle: "Service area:",
+        serviceAreaList: "Rivière-du-Loup, Rivière-Bleue, Saint-Marc-du-Lac-Long, Notre-Dame-du-Lac, Témiscouata-sur-le-Lac, Cacouna, Pohénégamook, Kamouraska, Lac Baker, and nearby areas.",
+        onSiteTitle: "On-site",
+        onSiteText: " or ",
+        remoteTitle: "remote",
+        remoteText: " (TeamViewer / Zoom).",
+        hoursTitle: "Evenings & weekends",
+        hoursText: " when needed.",
+        invoiceTitle: "Invoice / receipt:",
+        invoiceText: " yes (if you want).",
+
+        c1Title: "🖥️ PC / Laptop repair",
+        c1Desc: "If it freezes, lags, or crashes — we’ll get it stable again.",
+        c1Li1: "Slow or unstable computer",
+        c1Li2: "Windows reinstall / repair",
+        c1Li3: "Viruses, malware, pop-ups",
+        c1Li4: "Boot, BIOS, black screens",
+        c1Li5: "Backup & data recovery",
+
+        c2Title: "🎮 Custom PCs (gaming & work)",
+        c2Desc: "A PC that fits your real needs and budget — not the latest hype.",
+        c2Li1: "Gaming (FPS, MMO, AAA, VR)",
+        c2Li2: "Work / creation (photo, video, music)",
+        c2Li3: "Build + testing + optimization",
+        c2Li4: "Stable, fast, upgrade-friendly",
+
+        c3Title: "🌐 Network & Wi-Fi",
+        c3Desc: "Better coverage, stability, and security at home.",
+        c3Li1: "Slow / unstable Wi-Fi / dead zones",
+        c3Li2: "Router / mesh Wi-Fi",
+        c3Li3: "Printers & smart devices setup",
+        c3Li4: "Home network security",
+
+        c4Title: "🧑‍🏫 Help & training",
+        c4Desc: "Simple explanations, no judgment — at your pace.",
+        c4Li1: "Help for seniors",
+        c4Li2: "Organizing files / photos / email",
+        c4Li3: "Security basics (scams, passwords)",
+
+        aboutTitle: "👨‍💻 About",
+        aboutText: "Graduated from <strong>Collège Lionel-Groulx</strong> in <strong>Network Administration & Cybersecurity</strong>. I’ve been building, optimizing, and repairing PCs for years. Tell me what’s going on and I’ll give you a clear solution.",
+        footerName: "Daniel IT Support"
+      }
+    };
+
+    function applyLang(lang){
+      const d = dict[lang] || dict.fr;
+
+      // Set html lang attribute
+      document.documentElement.lang = lang;
+
+      // Update all i18n nodes
+      document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.getAttribute("data-i18n");
+        const val = d[key];
+        if (typeof val === "string") {
+          // aboutText contains <strong> so we use innerHTML for that key
+          if (key === "aboutText") el.innerHTML = val;
+          else el.textContent = val;
+        }
+      });
+
+      // Active button
+      document.getElementById("btnFR").classList.toggle("active", lang === "fr");
+      document.getElementById("btnEN").classList.toggle("active", lang === "en");
+
+      // Save
+      localStorage.setItem("siteLang", lang);
+    }
+
+    // Click handlers
+    document.getElementById("btnFR").addEventListener("click", () => applyLang("fr"));
+    document.getElementById("btnEN").addEventListener("click", () => applyLang("en"));
+
+    // Init
+    const saved = localStorage.getItem("siteLang") || "fr";
+    applyLang(saved);
+  </script>
+</body>
+</html>
