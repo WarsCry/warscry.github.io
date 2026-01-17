@@ -262,26 +262,32 @@
     }
   }
 </style>
+    
 </head>
-
 <body>
+  <div id="confirmMail" class="modal">
+  <div class="modal-box">
+    <p>Es-tu sûr de vouloir parler au plus beau des Daniel? 😏</p>
+    <div class="modal-actions">
+      <button onclick="closeModal()">Annuler</button>
+      <a href="mailto:coolspider1983@gmail.com" class="confirm">Continuer</a>
+    </div>
+  </div>
+</div>
   <div class="wrap">
     <div class="top">
       <div class="brand">
         <h1 class="logo">
   <img src="/Danpclogoresized1.png" alt="DanPC – Support Informatique">
 </h1>
-
         <div class="tag">Support, dépannage, PC sur mesure — clair, honnête, efficace.</div>
-
         <div class="cta">
           <!-- Remplace les liens -->
           <a class="btn primary" href="tel:+15146913666">📞 Appeler</a>
-          <a class="btn" href="mailto:coolspider1983@gmail.com">✉️ Courriel</a>
+          <a class="btn" href="#" onclick="openModal(); return false;">✉️ Courriel</a>
           <a class="btn" href="https://www.messenger.com/t/warscryigyt" target="_blank" rel="noreferrer"> 💬 Messenger</a>
           <a class="btn" href="sms:+15146913666?body=Bonjour%20Daniel%20🙂%0A%0AJ’ai%20besoin%20d’aide%20informatique.%0AVoici%20mon%20problème%20:">📩 SMS</a>
         </div>
-
         <div class="punch">Pas de jargon. Pas de vente forcée. Juste des solutions qui marchent.</div>
       </div>
 
@@ -358,6 +364,16 @@ et les environs.</div>
   <script>
     document.getElementById("y").textContent = new Date().getFullYear();
   </script>
+  <script>
+  function openModal(){
+    document.getElementById("confirmMail").style.display = "flex";
+  }
+
+  function closeModal(){
+    document.getElementById("confirmMail").style.display = "none";
+  }
+</script>
+
 </body>
 </html>
 
