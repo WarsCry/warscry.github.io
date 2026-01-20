@@ -249,14 +249,19 @@
     }
 
     .card{
-      grid-column: span 6;
-      padding: 18px;
-      border: 1px solid var(--border);
-      background: var(--card);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(10px);
-    }
+  grid-column: span 6;
+  padding: 18px;
+  border-radius: var(--radius);
+  color: #fff;
+  background:
+    linear-gradient(
+      rgba(0,0,0,0.55),
+      rgba(0,0,0,0.70)
+    ),
+    url("cardbackground.jpg") center / cover no-repeat;
+  box-shadow: var(--shadow);
+}
+
 
     .card h2{
       margin:0 0 10px;
