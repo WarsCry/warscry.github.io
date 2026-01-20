@@ -72,27 +72,30 @@
     }
 
     *{box-sizing:border-box}
+
+    
     body{
-      margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      color: var(--text);
-      background: var(--bg);
-      min-height: 100vh;
-      line-height: 1.35;
-    }
+  margin:0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.35;
+  /* BACKGROUND IMAGE BRUTE */
+  background: url("BckGSC.jpg") center / cover no-repeat fixed;
+}
 
     /* Background image brute */
-body::before{
+/*body::before{
   content:"";
   position: fixed;
   inset: 0;
   background: url("BckGSC.jpg") center / cover no-repeat;
   opacity: 0.45;          /* un peu plus visible */
-  z-index: -2;
-}
+ /* z-index: -2;
+} */
 
 /* Overlay neutre pour lisibilité */
-body::after{
+/* body::after{
   content:"";
   position: fixed;
   inset: 0;
@@ -102,7 +105,7 @@ body::after{
     rgba(0,0,0,.75)
   );
   z-index: -1;
-}
+} */
 
     .wrap{
       max-width: var(--max);
