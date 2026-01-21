@@ -265,6 +265,7 @@
      transform: translateY(0);
      /* animation d’entrée */
      animation: fadeUp 0.8s ease both;
+     animation-play-state: running;
      will-change: opacity, transform;
      /* hover smooth */
      transition: transform 0.25s ease, box-shadow 0.25s ease;
@@ -278,9 +279,9 @@
     .card:nth-child(6){ animation-delay: .60s; }
 
    .card:hover{
-  animation: none;
-  transform: translateY(-4px);
-  box-shadow:
+    animation-play-state: paused;
+    transform: translateY(-4px);
+    box-shadow:
     0 22px 48px rgba(0,0,0,0.65),
     0 8px 18px rgba(0,0,0,0.45);
 }
