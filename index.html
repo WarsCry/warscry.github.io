@@ -278,12 +278,13 @@
     .card:nth-child(6){ animation-delay: .60s; }
 
    .card:hover{
-     animation-play-state: paused;
-     transform: translateY(-4px);
-     box-shadow: 
-       0 22px 48px rgba(0,0,0,0.65),
-       0 8px 18px rgba(0,0,0,0.45);
-   }
+  animation: none;
+  transform: translateY(-4px);
+  box-shadow:
+    0 22px 48px rgba(0,0,0,0.65),
+    0 8px 18px rgba(0,0,0,0.45);
+}
+
 
    @keyframes fadeUp {
      from {
