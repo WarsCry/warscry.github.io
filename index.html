@@ -246,44 +246,32 @@
       margin-top: 16px;
     }
 
-    .card{
+   .card{
      pointer-events: auto;
      grid-column: span 6;
      padding: 18px;
      border-radius: var(--radius);
      color: #fff;
      background:
-       linear-gradient(
-         rgba(0,0,0,0.55),
-         rgba(0,0,0,0.70)
-       ),
+      linear-gradient(
+      rgba(0,0,0,0.55),
+      rgba(0,0,0,0.70)
+    ),
      url("cardbackground.jpg") center / cover no-repeat;
      box-shadow: var(--shadow);
-     /* état final NORMAL */
      opacity: 1;
      transform: translateY(0);
-     /* animation d’entrée */
      animation: fadeUp 0.8s ease both;
-     animation-play-state: running;
-     will-change: opacity, transform;
-     /* hover smooth */
-     transition: transform 0.25s ease, box-shadow 0.25s ease;
+     will-change: opacity, transform;     
+     transition: transform 0.35s ease, box-shadow 0.35s ease;
    }
-    /* Stagger automatique */
-    .card:nth-child(1){ animation-delay: 0s; }
-    .card:nth-child(2){ animation-delay: .12s; }
-    .card:nth-child(3){ animation-delay: .24s; }
-    .card:nth-child(4){ animation-delay: .36s; }
-    .card:nth-child(5){ animation-delay: .48s; }
-    .card:nth-child(6){ animation-delay: .60s; }
 
-   .card:hover{
-    animation: none;
-    transform: translateY(-4px);
-    box-shadow:
+.card:hover{
+  transform: translateY(-6px);
+  box-shadow:
     0 22px 48px rgba(0,0,0,0.65),
     0 8px 18px rgba(0,0,0,0.45);
-   }
+}
 
    @keyframes fadeUp {
      from {
