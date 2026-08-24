@@ -38,13 +38,16 @@
         <button id="soundButton" class="round-button" aria-label="Activer ou désactiver les sons">🔊</button>
       </div>
       <div id="instruction" class="instruction"></div>
+      <div id="encouragement" class="encouragement" aria-live="polite"></div>
       <div id="gameArea" class="game-area"></div>
       <button id="newRound" class="new-round hidden">Encore! 🔄</button>
     </section>
   </main>
 
   <div id="celebration" class="celebration" aria-hidden="true">
-    <div class="confetti"></div><div class="reward"><span>🌟</span><b>Bravo!</b><small>Une étoile pour toi!</small></div>
+    <div class="confetti"></div>
+    <div class="celebration-orbit" aria-hidden="true"><i>⭐</i><i>🚀</i><i>🌈</i><i>🪐</i></div>
+    <div class="reward"><span id="rewardIcon">🌟</span><b id="rewardTitle">Bravo!</b><small id="rewardText">Une étoile pour toi!</small><em aria-hidden="true">👽</em></div>
   </div>
   <script src="cosmo-kids.js"></script>
 </body>
