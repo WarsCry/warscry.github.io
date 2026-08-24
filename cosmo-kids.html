@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="theme-color" content="#17104a">
+  <title>Cosmo Kids | Jeux sans pub</title>
+  <link rel="icon" type="image/png" href="favicondanpc.png">
+  <link rel="stylesheet" href="cosmo-kids.css">
+</head>
+<body>
+  <div class="space" aria-hidden="true"><i></i><i></i><i></i></div>
+  <header class="topbar">
+    <a class="home" href="index.html" aria-label="Retour au site">‹ <span>Accueil</span></a>
+    <div class="brand"><span class="planet">🪐</span><strong>Cosmo Kids</strong></div>
+    <div class="score" aria-label="Étoiles gagnées"><span>⭐</span><b id="starCount">0</b></div>
+  </header>
+
+  <main>
+    <section id="menu" class="screen active" aria-labelledby="welcomeTitle">
+      <div class="welcome">
+        <div class="alien" aria-hidden="true">👽</div>
+        <div><p class="eyebrow">MISSION DES PETITS EXPLORATEURS</p><h1 id="welcomeTitle">Choisis un jeu!</h1><p>Sans pub. Sans achat. Joue autant que tu veux.</p></div>
+      </div>
+      <div class="game-grid">
+        <button class="game-card shapes" data-game="shapes"><span class="game-icon">🔷</span><span><b>Les formes</b><small>Trouve les paires</small></span><em>Jouer</em></button>
+        <button class="game-card memory" data-game="memory"><span class="game-icon">🚀</span><span><b>Mémoire spatiale</b><small>Retourne les cartes</small></span><em>Jouer</em></button>
+        <button class="game-card counting" data-game="counting"><span class="game-icon">⭐</span><span><b>Compte les étoiles</b><small>Choisis le bon nombre</small></span><em>Jouer</em></button>
+        <button class="game-card pattern" data-game="pattern"><span class="game-icon">🛸</span><span><b>La suite magique</b><small>Quelle image vient après?</small></span><em>Jouer</em></button>
+      </div>
+      <p class="parent-note">💜 Conçu pour les petites mains — aucun lien caché dans les jeux.</p>
+    </section>
+
+    <section id="play" class="screen" aria-live="polite">
+      <div class="play-head">
+        <button id="backButton" class="round-button" aria-label="Retour aux jeux">‹</button>
+        <div><p id="gameKicker" class="eyebrow"></p><h2 id="gameTitle"></h2></div>
+        <button id="soundButton" class="round-button" aria-label="Activer ou désactiver les sons">🔊</button>
+      </div>
+      <div id="instruction" class="instruction"></div>
+      <div id="gameArea" class="game-area"></div>
+      <button id="newRound" class="new-round hidden">Encore! 🔄</button>
+    </section>
+  </main>
+
+  <div id="celebration" class="celebration" aria-hidden="true">
+    <div class="confetti"></div><div class="reward"><span>🌟</span><b>Bravo!</b><small>Une étoile pour toi!</small></div>
+  </div>
+  <script src="cosmo-kids.js"></script>
+</body>
+</html>
