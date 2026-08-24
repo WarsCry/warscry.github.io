@@ -1,0 +1,118 @@
+(()=>{
+const canvas=document.querySelector('#game'),menu=document.querySelector('#menu'),msg=document.querySelector('#msg');
+const healthText=document.querySelector('#health'),healthBar=document.querySelector('#healthBar'),ammoText=document.querySelector('#ammo'),leftText=document.querySelector('#left');
+const hitMarker=document.querySelector('#hitMarker'),damage=document.querySelector('#damage'),muzzle=document.querySelector('#muzzle'),weapon=document.querySelector('#weapon');
+if(!window.BABYLON){menu.querySelector('p').textContent='The 3D engine could not load. Check your connection and reload the mission.';return}
+
+const engine=new BABYLON.Engine(canvas,true,{preserveDrawingBuffer:false,stencil:true,adaptToDeviceRatio:true});
+if(matchMedia('(pointer:coarse)').matches)engine.setHardwareScalingLevel(Math.max(1,devicePixelRatio*.85));
+let scene,camera,core,enemies=[],projectiles=[],started=false,health=100,ammo=40,kills=0,lastShot=0,aiming=false,moveVector={x:0,y:0},turnDirection=0;
+const V=BABYLON.Vector3,C=BABYLON.Color3;
+
+function material(name,diffuse,emissive=null,alpha=1){const m=new BABYLON.StandardMaterial(name,scene);m.diffuseColor=C.FromHexString(diffuse);m.specularColor=new C(.65,.75,.82);m.specularPower=96;m.alpha=alpha;if(emissive)m.emissiveColor=C.FromHexString(emissive);return m}
+function box(name,size,pos,mat,collision=false){const mesh=BABYLON.MeshBuilder.CreateBox(name,size,scene);mesh.position.copyFrom(pos);mesh.material=mat;mesh.checkCollisions=collision;return mesh}
+
+function buildScene(){
+  scene=new BABYLON.Scene(engine);scene.clearColor=new BABYLON.Color4(.006,.012,.025,1);scene.collisionsEnabled=true;
+  scene.fogMode=BABYLON.Scene.FOGMODE_EXP2;scene.fogDensity=.012;scene.fogColor=new C(.018,.055,.07);
+  camera=new BABYLON.UniversalCamera('sentinel',new V(0,2,18),scene);camera.minZ=.08;camera.maxZ=90;camera.fov=.92;camera.speed=.38;camera.angularSensibility=2900;camera.inertia=.55;camera.ellipsoid=new V(.55,1,.55);camera.checkCollisions=true;
+  camera.keysUp=[87];camera.keysDown=[83];camera.keysLeft=[65];camera.keysRight=[68];camera.attachControl(canvas,true);
+  const hemi=new BABYLON.HemisphericLight('ship ambience',new V(0,1,0),scene);hemi.intensity=.28;hemi.diffuse=new C(.3,.5,.62);hemi.groundColor=new C(.04,.08,.13);
+  const coreLight=new BABYLON.PointLight('core light',new V(0,4,0),scene);coreLight.diffuse=new C(.3,1,.78);coreLight.intensity=1.35;coreLight.range=24;
+  const glow=new BABYLON.GlowLayer('neon bloom',scene,{blurKernelSize:48});glow.intensity=.72;
+
+  const hull=material('curved hull','#182735'),metal=material('floor metal','#17222e'),metal2=material('floor inset','#0c141d');
+  const trim=material('alien trim','#123f3a','#0c806c'),purple=material('veyran alloy','#2d1750','#35106f');
+  const dangerMat=material('warning light','#481824','#b4193f'),glass=material('observation glass','#07182b','#073e58',.72);
+
+  const wall=BABYLON.MeshBuilder.CreateCylinder('rounded outer hull',{height:10,diameter:52,tessellation:64,cap:BABYLON.Mesh.NO_CAP},scene);wall.position.y=5;wall.material=hull;wall.material.backFaceCulling=false;wall.checkCollisions=true;
+  const ceiling=BABYLON.MeshBuilder.CreateCylinder('armoured ceiling',{height:.35,diameter:52,tessellation:64},scene);ceiling.position.y=10;ceiling.material=metal2;
+  const base=BABYLON.MeshBuilder.CreateCylinder('lower hull',{height:.38,diameter:52,tessellation:64},scene);base.position.y=-.22;base.material=metal2;base.checkCollisions=true;
+
+  for(let x=-21;x<=21;x+=6)for(let z=-21;z<=21;z+=6)if(Math.hypot(x,z)<22.5){
+    const panel=box('fixed deck panel',{width:5.72,height:.16,depth:5.72},new V(x,.02,z),((x+z)/6)%2?metal:metal2,true);panel.receiveShadows=true;
+    const slit=box('deck energy seam',{width:5.1,height:.025,depth:.055},new V(x,.115,z+2.55),trim);slit.isPickable=false;
+  }
+  for(let i=0;i<24;i++){
+    const a=i*Math.PI*2/24,r=25.25,rib=box('curved bulkhead rib',{width:.48,height:8.9,depth:1.05},new V(Math.sin(a)*r,4.7,Math.cos(a)*r),i%6===0?purple:trim,true);rib.rotation.y=a;rib.isPickable=false;
+    const lamp=box('rib lamp',{width:.13,height:3.4,depth:1.12},new V(Math.sin(a)*24.68,5.15,Math.cos(a)*24.68),i%3===0?dangerMat:trim);lamp.rotation.y=a;lamp.isPickable=false;
+  }
+  for(const y of [.18,8.85]){const ring=BABYLON.MeshBuilder.CreateTorus('hull light ring',{diameter:49.2,thickness:.1,tessellation:72},scene);ring.position.y=y;ring.material=trim;ring.isPickable=false}
+
+  for(const z of [-13,13])for(const x of [-13,13]){
+    const pod=BABYLON.MeshBuilder.CreateCylinder('curved machinery pod',{height:3.2,diameter:3.8,tessellation:20},scene);pod.position=new V(x,1.6,z);pod.material=purple;pod.checkCollisions=true;
+    const cap=BABYLON.MeshBuilder.CreateSphere('pod glow',{diameter:1.15,segments:16},scene);cap.position=new V(x,3.05,z);cap.material=trim;cap.isPickable=false;
+    for(let j=-1;j<=1;j++){const pipe=BABYLON.MeshBuilder.CreateTube('bio conduit',{path:[new V(x+j*.5,3.2,z),new V(x+j*.5,6.8,z),new V(x+j*.8,8.5,z*.86)],radius:.09,tessellation:8},scene);pipe.material=trim;pipe.isPickable=false}
+  }
+  for(const z of [-24.55,24.55]){
+    const door=box('rounded blast door',{width:7.5,height:6.6,depth:.35},new V(0,3.3,z),metal2,true);door.material=metal2;
+    const top=BABYLON.MeshBuilder.CreateTorus('door arch',{diameter:7.5,thickness:.38,tessellation:32,arc:.5},scene);top.position=new V(0,5.9,z+(z>0?-.22:.22));top.rotation.x=Math.PI/2;top.material=trim;top.isPickable=false;
+    for(const x of [-3.5,3.5])box('door light',{width:.18,height:5.4,depth:.48},new V(x,3,z+(z>0?-.25:.25)),dangerMat);
+  }
+  for(const a of [Math.PI/2,-Math.PI/2]){
+    const pane=box('space window',{width:9,height:4.8,depth:.18},new V(Math.sin(a)*25.35,5,Math.cos(a)*25.35),glass);pane.rotation.y=a;pane.isPickable=false;
+    for(let i=0;i<18;i++){const star=BABYLON.MeshBuilder.CreateSphere('distant star',{diameter:.04+Math.random()*.08,segments:4},scene);star.position=new V(Math.sin(a)*26.1+(Math.random()-.5)*.4,3+Math.random()*4,(Math.random()-.5)*8);star.material=material(`star${a}${i}`,'#ffffff','#bcecff');star.isPickable=false}
+  }
+
+  const dais=BABYLON.MeshBuilder.CreateCylinder('core dais',{height:.7,diameter:7,tessellation:32},scene);dais.position.y=.35;dais.material=purple;dais.checkCollisions=true;
+  const coreRing=BABYLON.MeshBuilder.CreateTorus('core containment',{diameter:4.8,thickness:.32,tessellation:32},scene);coreRing.position.y=2.25;coreRing.material=trim;
+  core=BABYLON.MeshBuilder.CreateSphere('living bio core',{diameter:3,segments:32},scene);core.position.y=2.4;core.material=material('living core','#4fffd9','#21c6a6');core.isPickable=false;
+  const coreHalo=BABYLON.MeshBuilder.CreateTorus('core halo',{diameter:5.8,thickness:.08,tessellation:48},scene);coreHalo.position.y=2.4;coreHalo.rotation.x=Math.PI/2;coreHalo.material=trim;coreHalo.isPickable=false;
+
+  scene.onBeforeRenderObservable.add(()=>{const t=performance.now()*.001;if(core){core.scaling.setAll(1+Math.sin(t*2.4)*.045);core.rotation.y=t*.25;coreHalo.rotation.z=t*.3}if(started)update(scene.getEngine().getDeltaTime()/1000,t)});
+  return scene;
+}
+
+function enemyMaterial(){return material(`dominion${Math.random()}`,'#243b77','#07183f')}
+function createEnemy(x,z,index){
+  const root=new BABYLON.TransformNode(`Solar trooper ${index}`,scene);root.position=new V(x,0,z);root.metadata={enemyRoot:true,hp:index>4?85:55,alive:true,cool:.5+Math.random(),speed:.72+Math.random()*.2};
+  const armour=enemyMaterial(),gold=material(`gold${index}`,'#c89735','#4d3204'),skin=material(`skin${index}`,'#d7ad7a'),visor=material(`visor${index}`,'#6ecaff','#1665d3'),gunMat=material(`gun${index}`,'#202a38','#351209');
+  const body=box('armoured torso',{width:1.05,height:1.55,depth:.58},new V(0,2.05,0),armour);body.parent=root;
+  const head=BABYLON.MeshBuilder.CreateSphere('helmet',{diameter:.78,segments:12},scene);head.position=new V(0,3.15,0);head.scaling.y=.88;head.material=skin;head.parent=root;
+  const helmet=BABYLON.MeshBuilder.CreateCylinder('dominion crown',{height:.55,diameterTop:.18,diameterBottom:.9,tessellation:6},scene);helmet.position=new V(0,3.38,0);helmet.material=armour;helmet.parent=root;
+  const eye=box('blue visor',{width:.55,height:.12,depth:.42},new V(0,3.18,-.32),visor);eye.parent=root;
+  for(const side of [-1,1]){const arm=box('gold shoulder',{width:.25,height:1.25,depth:.3},new V(side*.68,2.18,0),gold);arm.parent=root;const leg=box('armoured leg',{width:.3,height:1.1,depth:.36},new V(side*.28,.72,0),gold);leg.parent=root}
+  const gun=box('solar rifle',{width:.25,height:.22,depth:1.25},new V(.62,2,-.5),gunMat);gun.parent=root;
+  for(const mesh of root.getChildMeshes()){mesh.metadata={enemy:root};mesh.isPickable=true}
+  return root;
+}
+function resetEnemies(){enemies.forEach(e=>e.dispose(false,true));enemies=[];const positions=[[-18,-16],[-9,-21],[9,-20],[18,-13],[-20,7],[20,10],[3,-22]];positions.forEach((p,i)=>enemies.push(createEnemy(p[0],p[1],i)))}
+
+function show(text){msg.textContent=text;msg.classList.add('show');clearTimeout(show.timer);show.timer=setTimeout(()=>msg.classList.remove('show'),900)}
+function animateClass(el,name){el.classList.remove(name);void el.offsetWidth;el.classList.add(name)}
+function plasmaSound(hit=false){try{const ac=plasmaSound.ac||=new(window.AudioContext||window.webkitAudioContext)(),o=ac.createOscillator(),g=ac.createGain(),n=ac.currentTime;o.type=hit?'square':'sawtooth';o.frequency.setValueAtTime(hit?250:720,n);o.frequency.exponentialRampToValueAtTime(hit?90:180,n+.13);g.gain.setValueAtTime(.08,n);g.gain.exponentialRampToValueAtTime(.001,n+.14);o.connect(g);g.connect(ac.destination);o.start(n);o.stop(n+.15)}catch{}}
+function impact(point,color='#ff315f'){
+  for(let i=0;i<12;i++){const p=BABYLON.MeshBuilder.CreateSphere('impact particle',{diameter:.08+Math.random()*.09,segments:4},scene);p.position.copyFrom(point);p.material=material(`impact${Math.random()}`,color,color);p.isPickable=false;const v=new V((Math.random()-.5)*4,Math.random()*3,(Math.random()-.5)*4);let life=0;scene.onBeforeRenderObservable.add(function move(){const dt=engine.getDeltaTime()/1000;life+=dt;p.position.addInPlace(v.scale(dt));v.y-=5*dt;p.scaling.setAll(Math.max(0,1-life*2.2));if(life>.48){scene.onBeforeRenderObservable.removeCallback(move);p.dispose()}})}
+}
+function shoot(){
+  if(!started||!ammo||performance.now()-lastShot<180)return;lastShot=performance.now();ammo--;ammoText.textContent=ammo;animateClass(muzzle,'show');weapon.animate([{transform:`translateX(-50%) translateY(${aiming?'5':'0'}vh) scale(${aiming?'.82':'1'})`},{transform:`translateX(-50%) translateY(${aiming?'7':'2'}vh) scale(${aiming?'.82':'1'})`},{transform:`translateX(-50%) translateY(${aiming?'5':'0'}vh) scale(${aiming?'.82':'1'})`}],{duration:150});plasmaSound();
+  const pick=scene.pick(engine.getRenderWidth()/2,engine.getRenderHeight()/2,m=>m.metadata?.enemy?.metadata?.alive);
+  if(pick?.hit){const enemy=pick.pickedMesh.metadata.enemy;enemy.metadata.hp-=aiming?38:30;impact(pick.pickedPoint);animateClass(hitMarker,'show');plasmaSound(true);show('✕ PLASMA IMPACT');if(enemy.metadata.hp<=0)killEnemy(enemy)}else show('SHOT MISSED');
+}
+function killEnemy(enemy){enemy.metadata.alive=false;kills++;leftText.textContent=`HOSTILES: ${enemies.length-kills}`;show('DOMINION TROOPER NEUTRALIZED');enemy.getChildMeshes().forEach((m,i)=>{m.isPickable=false;m.animations=[];BABYLON.Animation.CreateAndStartAnimation(`fall${i}`,m,'position.y',60,24,m.position.y,m.position.y-2,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT)});BABYLON.Animation.CreateAndStartAnimation('collapse',enemy,'scaling',60,30,new V(1,1,1),new V(.05,.05,.05),BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,null,()=>enemy.setEnabled(false));if(kills===enemies.length)setTimeout(()=>end(true),700)}
+function enemyBolt(enemy){
+  const origin=enemy.position.add(new V(.6,2.1,0)),target=camera.position.clone(),bolt=BABYLON.MeshBuilder.CreateSphere('solar bolt',{diameter:.22,segments:8},scene);bolt.position.copyFrom(origin);bolt.material=material(`bolt${Math.random()}`,'#ffb02e','#ff6a00');bolt.isPickable=false;const start=performance.now(),duration=520;
+  projectiles.push(bolt);scene.onBeforeRenderObservable.add(function fly(){const k=Math.min(1,(performance.now()-start)/duration);bolt.position=BABYLON.Vector3.Lerp(origin,target,k);bolt.scaling.setAll(1+k*1.4);if(k>=1){scene.onBeforeRenderObservable.removeCallback(fly);bolt.dispose();projectiles=projectiles.filter(x=>x!==bolt);takeDamage(5+Math.floor(Math.random()*4))}});
+}
+function takeDamage(amount){if(!started)return;health=Math.max(0,health-amount);healthText.textContent=health;healthBar.style.width=`${health}%`;animateClass(damage,'show');show('SOLAR BOLT IMPACT');if(!health)end(false)}
+function update(dt,t){
+  if(turnDirection)camera.rotation.y+=turnDirection*dt*1.7;
+  if(moveVector.x||moveVector.y){const forward=new V(Math.sin(camera.rotation.y),0,Math.cos(camera.rotation.y)),right=new V(forward.z,0,-forward.x),movement=forward.scale(moveVector.y*dt*5).add(right.scale(moveVector.x*dt*5));camera.cameraDirection.addInPlace(movement)}
+  for(const enemy of enemies){if(!enemy.metadata.alive||!enemy.isEnabled())continue;const toCore=core.position.subtract(enemy.position),distance=Math.hypot(toCore.x,toCore.z),toPlayer=camera.position.subtract(enemy.position),playerDistance=Math.hypot(toPlayer.x,toPlayer.z);enemy.rotation.y=Math.atan2(toPlayer.x,toPlayer.z);enemy.metadata.cool-=dt;
+    const bob=Math.sin(t*6+enemy.uniqueId)*.035;enemy.getChildMeshes().forEach(m=>{if(m.name==='armoured torso')m.position.y=2.05+bob});
+    if(distance>4.1){const step=new V(toCore.x,0,toCore.z).normalize().scale(enemy.metadata.speed*dt);enemy.position.addInPlace(step)}else{enemy.metadata.cool-=dt*1.4;if(enemy.metadata.cool<0){enemy.metadata.cool=1.05;takeDamage(9);show('BIO-CORE UNDER ATTACK')}}
+    if(playerDistance<17&&enemy.metadata.cool<0){enemy.metadata.cool=.85+Math.random()*.75;enemyBolt(enemy)}
+  }
+}
+function setAim(value){aiming=value;document.body.classList.toggle('aiming',value);if(camera)camera.fov=value?.58:.92}
+function end(win){started=false;document.exitPointerLock?.();menu.classList.remove('hidden');menu.querySelector('h1').innerHTML=win?'DECK SECURED<br><span>VICTORY</span>':'BIO-CORE LOST<br><span>DEFEAT</span>';menu.querySelectorAll('p')[0].textContent=win?'The living ship is free. The Solar Dominion boarding force has fallen.':'The Dominion destroyed the living core. Reinitialize the defence protocol and fight again.';document.querySelector('#start').textContent='RESTART MISSION'}
+function reset(){health=100;ammo=40;kills=0;camera.position.copyFromFloats(0,2,18);camera.rotation.copyFromFloats(0,Math.PI,0);resetEnemies();healthText.textContent=health;ammoText.textContent=ammo;leftText.textContent=`HOSTILES: ${enemies.length}`;healthBar.style.width='100%';setAim(false)}
+
+buildScene();reset();engine.runRenderLoop(()=>scene.render());addEventListener('resize',()=>engine.resize());
+document.querySelector('#start').onclick=()=>{reset();started=true;menu.classList.add('hidden');canvas.requestPointerLock?.()};
+canvas.addEventListener('contextmenu',e=>e.preventDefault());canvas.addEventListener('mousedown',e=>{if(e.button===2)setAim(true);else if(e.button===0)shoot()});addEventListener('mouseup',e=>{if(e.button===2)setAim(false)});
+document.querySelector('#fire').onpointerdown=e=>{e.preventDefault();shoot()};document.querySelector('#touchAim').onpointerdown=e=>{e.preventDefault();setAim(!aiming)};
+document.querySelectorAll('[data-turn]').forEach(b=>{b.onpointerdown=e=>{e.preventDefault();turnDirection=Number(b.dataset.turn)};b.onpointerup=b.onpointercancel=()=>turnDirection=0});
+const stick=document.querySelector('#stick'),knob=stick.querySelector('i');let stickId=null;function moveStick(e){const r=stick.getBoundingClientRect(),x=e.clientX-(r.left+r.width/2),y=e.clientY-(r.top+r.height/2),len=Math.max(1,Math.hypot(x,y)),max=42,k=Math.min(1,max/len),dx=x*k,dy=y*k;knob.style.transform=`translate(${dx}px,${dy}px)`;moveVector={x:dx/max,y:-dy/max}}
+stick.onpointerdown=e=>{stickId=e.pointerId;stick.setPointerCapture(e.pointerId);moveStick(e)};stick.onpointermove=e=>{if(e.pointerId===stickId)moveStick(e)};stick.onpointerup=stick.onpointercancel=e=>{if(e.pointerId===stickId){stickId=null;moveVector={x:0,y:0};knob.style.transform=''}};
+})();
