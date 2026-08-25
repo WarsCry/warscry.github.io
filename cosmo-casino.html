@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#09051b">
+  <title>Cosmo Casino | DanPC Arcade</title>
+  <meta name="description" content="Play Blackjack and five-card draw Poker with fictional Cosmo Credits inside an alien spaceship lounge.">
+  <link rel="icon" type="image/png" href="favicondanpc.png">
+  <link rel="stylesheet" href="cosmo-casino.css">
+</head>
+<body>
+  <canvas id="spaceScene" aria-hidden="true"></canvas>
+  <div class="nebula" aria-hidden="true"></div>
+
+  <main class="casino-shell">
+    <header class="topbar">
+      <a class="back-link" href="arcade.html">← DANPC ARCADE</a>
+      <div class="brand-block">
+        <span class="eyebrow">ORBITAL LOUNGE · DECK 21</span>
+        <h1>COSMO <span>CASINO</span></h1>
+      </div>
+      <div class="wallet" aria-live="polite">
+        <span class="credit-orb" aria-hidden="true"></span>
+        <span><small>COSMO WALLET</small><strong id="creditBalance">1,000 CC</strong></span>
+      </div>
+    </header>
+
+    <section class="game-stage" aria-label="Cosmo Casino game table">
+      <div class="dealer-sign" id="dealerSign">
+        <span class="signal-dot"></span>
+        <span id="dealerName">ZYL-7 · YOUR DEALER</span>
+      </div>
+
+      <div class="table-console">
+        <nav class="game-tabs" aria-label="Choose a card game">
+          <button class="tab active" id="blackjackTab" type="button" data-game="blackjack">BLACKJACK</button>
+          <button class="tab" id="pokerTab" type="button" data-game="poker">5-CARD POKER</button>
+        </nav>
+
+        <div class="table-readout">
+          <span id="roundLabel">BLACKJACK TABLE</span>
+          <strong id="statusMessage">Choose a wager to enter the orbit.</strong>
+          <span id="handInfo">Dealer stands on 17 · Blackjack pays 3:2</span>
+        </div>
+
+        <div class="hand dealer-hand" id="dealerHand" aria-label="Dealer cards">
+          <div class="card ghost-card"><span>☄</span></div>
+          <div class="card ghost-card"><span>☄</span></div>
+        </div>
+
+        <div class="pot-display" id="potDisplay"><span>POT</span><strong>0 CC</strong></div>
+
+        <div class="hand player-hand" id="playerHand" aria-label="Your cards">
+          <div class="card ghost-card"><span>?</span></div>
+          <div class="card ghost-card"><span>?</span></div>
+        </div>
+
+        <div class="bet-console" id="betConsole">
+          <span class="console-label">WAGER</span>
+          <div class="chip-row" role="group" aria-label="Choose wager">
+            <button class="chip chip-10" type="button" data-bet="10"><span>10</span><small>CC</small></button>
+            <button class="chip chip-25 active" type="button" data-bet="25"><span>25</span><small>CC</small></button>
+            <button class="chip chip-50" type="button" data-bet="50"><span>50</span><small>CC</small></button>
+            <button class="chip chip-100" type="button" data-bet="100"><span>100</span><small>CC</small></button>
+          </div>
+        </div>
+
+        <div class="actions" id="actions">
+          <button class="action primary" id="dealButton" type="button">DEAL · 25 CC</button>
+          <button class="action" id="hitButton" type="button" hidden>HIT</button>
+          <button class="action" id="standButton" type="button" hidden>STAND</button>
+          <button class="action" id="doubleButton" type="button" hidden>DOUBLE</button>
+          <button class="action primary" id="drawButton" type="button" hidden>DRAW CARDS</button>
+        </div>
+      </div>
+    </section>
+
+    <aside class="side-panel rules-panel">
+      <button class="panel-toggle" id="rulesToggle" type="button" aria-expanded="false">?</button>
+      <div class="panel-content" id="rulesContent">
+        <small>TRANSMISSION</small>
+        <h2 id="rulesTitle">BLACKJACK</h2>
+        <p id="rulesText">Reach 21 without going over. Number cards use their value, face cards are 10, and an Ace is 1 or 11.</p>
+      </div>
+    </aside>
+
+    <aside class="audio-panel">
+      <button id="musicToggle" type="button" aria-label="Toggle lounge music">♫ <span>MUSIC</span></button>
+      <button id="soundToggle" type="button" aria-label="Toggle game sounds">◖)) <span>SOUND</span></button>
+    </aside>
+
+    <footer>
+      <p>Fictional play credits only · No purchase, cash-out, prizes, or real money</p>
+      <button id="rechargeButton" type="button" hidden>REQUEST 500 EMERGENCY CC</button>
+    </footer>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="effects" id="effects" aria-hidden="true"></div>
+
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="cosmo-casino.js"></script>
+</body>
+</html>
