@@ -6,7 +6,7 @@ if(!window.BABYLON){menu.querySelector('p').textContent='The 3D engine could not
 
 const engine=new BABYLON.Engine(canvas,true,{preserveDrawingBuffer:false,stencil:true,adaptToDeviceRatio:true});
 if(matchMedia('(pointer:coarse)').matches)engine.setHardwareScalingLevel(Math.max(1,devicePixelRatio*.85));
-let scene,camera,core,coreLight,ambientLight,shadowGenerator,enemies=[],projectiles=[],started=false,health=100,ammo=40,kills=0,lastShot=0,aiming=false,sprinting=false,moveVector={x:0,y:0},turnDirection=0,currentLevel=1,pendingLevel=1,levelStartedAt=0;
+let scene,camera,core,coreLight,ambientLight,shadowGenerator,enemies=[],projectiles=[],specimens=[],started=false,health=100,ammo=40,kills=0,lastShot=0,aiming=false,sprinting=false,moveVector={x:0,y:0},turnDirection=0,currentLevel=1,pendingLevel=1,levelStartedAt=0;
 const V=BABYLON.Vector3,C=BABYLON.Color3;
 const WALK_SPEED=.42,BOOST_SPEED=WALK_SPEED*1.25,BASE_FOV=.92,AIM_FOV=.58,BOOST_FOV=1.03,HULL_LIMIT=34;
 const DIFFICULTIES={beginner:{label:'BEGINNER',description:'More plasma, lighter enemy armour and slower, gentler attacks.',enemyHealth:.72,enemySpeed:.84,damage:.62,fireDelay:1.38,projectileTime:1.2,ammo:1.28},novice:{label:'NOVICE',description:'Balanced armour, enemy speed and fire pressure.',enemyHealth:1,enemySpeed:1,damage:1,fireDelay:1,projectileTime:1,ammo:1},pro:{label:'PRO',description:'Tougher armour, quicker soldiers and much heavier fire pressure.',enemyHealth:1.34,enemySpeed:1.16,damage:1.3,fireDelay:.78,projectileTime:.82,ammo:.9}};
@@ -40,6 +40,17 @@ function proceduralFloorMaterial(name,variant=0){
 function box(name,size,pos,mat,collision=false){const mesh=BABYLON.MeshBuilder.CreateBox(name,size,scene);mesh.position.copyFrom(pos);mesh.material=mat;mesh.checkCollisions=collision;return mesh}
 function onDeck(level,node){deckNodes[level].push(node);return node}
 function angleDistance(a,b){return Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)))}
+function createBabyAlienSpecimen(x,z,index,angle,skin,belly,eyes,cordMaterial){
+  const root=onDeck(3,new BABYLON.TransformNode(`sleeping baby alien specimen ${index}`,scene));root.position=new V(x,2.05,z);root.rotation.y=angle+Math.PI;
+  const parts=[];function babyPart(mesh,mat){mesh.parent=root;mesh.material=mat;mesh.isPickable=false;parts.push(mesh);return mesh}
+  const body=babyPart(BABYLON.MeshBuilder.CreateCapsule('tiny curled alien body',{height:.82,radius:.22,tessellation:10,subdivisions:3},scene),belly);body.position.y=-.2;body.rotation.x=-.28;
+  const head=babyPart(BABYLON.MeshBuilder.CreateSphere('oversized baby alien head',{diameter:.72,segments:16},scene),skin);head.position.y=.38;head.scaling=new V(1.18,.9,.92);
+  for(const side of [-1,1]){const eye=babyPart(BABYLON.MeshBuilder.CreateSphere('sleeping luminous eye',{diameter:.15,segments:10},scene),eyes);eye.position=new V(side*.16,.39,.3);eye.scaling=new V(1.25,.34,.25);const horn=babyPart(BABYLON.MeshBuilder.CreateCylinder('soft infant antenna',{height:.28,diameterTop:.02,diameterBottom:.1,tessellation:8},scene),skin);horn.position=new V(side*.21,.78,0);horn.rotation.z=side*.28}
+  for(const side of [-1,1]){const arm=babyPart(BABYLON.MeshBuilder.CreateCapsule('curled infant arm',{height:.4,radius:.065,tessellation:8},scene),skin);arm.position=new V(side*.25,-.05,.05);arm.rotation.z=side*.92;arm.rotation.x=.35;const leg=babyPart(BABYLON.MeshBuilder.CreateCapsule('curled infant leg',{height:.47,radius:.08,tessellation:8},scene),skin);leg.position=new V(side*.15,-.52,.04);leg.rotation.z=side*.55;leg.rotation.x=-.6}
+  const cord=babyPart(BABYLON.MeshBuilder.CreateTube('gentle nutrient cord',{path:[new V(0,-.5,-.08),new V(.27,-.78,-.18),new V(.16,-1.16,-.24),new V(0,-1.42,-.2)],radius:.025,tessellation:8},scene),cordMaterial);
+  const bubbles=[];for(let bubbleIndex=0;bubbleIndex<5;bubbleIndex++){const bubble=babyPart(BABYLON.MeshBuilder.CreateSphere('nutrient bubble',{diameter:.055+bubbleIndex*.012,segments:6},scene),eyes);bubble.position=new V((bubbleIndex%2?-.36:.34)+index%3*.025,-1.25+bubbleIndex*.53,(bubbleIndex%3-.8)*.25);bubble.visibility=.56;bubbles.push(bubble)}
+  specimens.push({root,baseY:2.05,baseRotation:angle+Math.PI,phase:index*.82,bubbles});
+}
 
 function buildScene(){
   scene=new BABYLON.Scene(engine);scene.clearColor=new BABYLON.Color4(.006,.012,.025,1);scene.collisionsEnabled=true;
@@ -143,12 +154,13 @@ function buildScene(){
 
   // Deck 09: a living hydroponics ring with rounded growth tanks, luminous
   // planters and overhead conduits. The gaps between clusters form broad lanes.
-  const bioAlloy=pbr('hydroponics alloy','#103d39',.62,.4),bioDark=pbr('hydroponics machinery','#071814',.72,.34),bioGlow=material('growth energy','#56ffc2','#19a86f'),bioGlass=material('nutrient glass','#173c42','#0a6170',.58);
+  const bioAlloy=pbr('hydroponics alloy','#103d39',.62,.4),bioDark=pbr('hydroponics machinery','#071814',.72,.34),bioGlow=material('growth energy','#56ffc2','#19a86f'),bioGlass=material('nutrient glass','#173c42','#0a6170',.34),babySkin=material('infant mint skin','#7fe4c1','#143d35'),babyBelly=material('infant soft belly','#b7ffe1','#17483c'),babyEyes=material('infant sleeping eyes','#a9fff0','#5affdf'),babyCord=material('nutrient cord','#73c8c4','#287e76');bioGlass.backFaceCulling=false;bioGlass.needDepthPrePass=true;
   for(let i=0;i<12;i++){
     const a=i*Math.PI*2/12,r=i%2?22:16,x=Math.sin(a)*r,z=Math.cos(a)*r;
     const tank=onDeck(3,BABYLON.MeshBuilder.CreateCylinder('rounded growth tank',{height:4.6,diameter:2.8,tessellation:24},scene));tank.position=new V(x,2.3,z);tank.material=i%2?bioGlass:bioAlloy;tank.checkCollisions=true;
     const crown=onDeck(3,BABYLON.MeshBuilder.CreateSphere('growth chamber crown',{diameter:2.25,segments:18},scene));crown.position=new V(x,4.25,z);crown.scaling.y=.55;crown.material=bioGlow;crown.isPickable=false;
     const root=onDeck(3,BABYLON.MeshBuilder.CreateTorus('growth tank base',{diameter:3.1,thickness:.22,tessellation:28},scene));root.position=new V(x,.28,z);root.material=bioGlow;root.isPickable=false;
+    if(i%2){createBabyAlienSpecimen(x,z,i,a,babySkin,babyBelly,babyEyes,babyCord);for(const y of [.48,4.14]){const band=onDeck(3,BABYLON.MeshBuilder.CreateTorus('specimen tank seal',{diameter:2.76,thickness:.075,tessellation:28},scene));band.position=new V(x,y,z);band.material=bioGlow;band.isPickable=false}}
     for(const side of [-1,1]){const vine=onDeck(3,BABYLON.MeshBuilder.CreateTube('bio conduit vine',{path:[new V(x+side*.6,4.4,z),new V(x+side*.8,6.7,z),new V(x+side*1.7,8.6,z*.92)],radius:.075,tessellation:8},scene));vine.material=bioGlow;vine.isPickable=false}
   }
   for(const [x,z,rot] of [[-10,-7,.3],[10,-7,-.3],[-10,8,-.25],[10,8,.25]]){
@@ -190,7 +202,7 @@ function buildScene(){
   const coreHalo=BABYLON.MeshBuilder.CreateTorus('core halo',{diameter:5.8,thickness:.08,tessellation:48},scene);coreHalo.position.y=2.4;coreHalo.rotation.x=Math.PI/2;coreHalo.material=trim;coreHalo.isPickable=false;
 
   for(const level of [2,3,4,5])deckNodes[level].forEach(node=>node.setEnabled(false));
-  scene.onBeforeRenderObservable.add(()=>{const t=performance.now()*.001;if(core){core.scaling.setAll(1+Math.sin(t*2.4)*.045);core.rotation.y=t*.25;coreHalo.rotation.z=t*.3}if(started)update(scene.getEngine().getDeltaTime()/1000,t)});
+  scene.onBeforeRenderObservable.add(()=>{const t=performance.now()*.001;if(core){core.scaling.setAll(1+Math.sin(t*2.4)*.045);core.rotation.y=t*.25;coreHalo.rotation.z=t*.3}for(const specimen of specimens){specimen.root.position.y=specimen.baseY+Math.sin(t*1.25+specimen.phase)*.075;specimen.root.rotation.y=specimen.baseRotation+Math.sin(t*.7+specimen.phase)*.12;specimen.root.rotation.z=Math.sin(t*.9+specimen.phase)*.035;specimen.bubbles.forEach((bubble,index)=>bubble.position.y=-1.28+((t*.24+specimen.phase*.15+index*.42)%2.4))}if(started)update(scene.getEngine().getDeltaTime()/1000,t)});
   return scene;
 }
 
