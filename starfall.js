@@ -8,7 +8,7 @@ const engine=new BABYLON.Engine(canvas,true,{preserveDrawingBuffer:false,stencil
 if(matchMedia('(pointer:coarse)').matches)engine.setHardwareScalingLevel(Math.max(1,devicePixelRatio*.85));
 let scene,camera,core,coreLight,ambientLight,shadowGenerator,enemies=[],projectiles=[],started=false,health=100,ammo=40,kills=0,lastShot=0,aiming=false,sprinting=false,moveVector={x:0,y:0},turnDirection=0,currentLevel=1,pendingLevel=1,levelStartedAt=0;
 const V=BABYLON.Vector3,C=BABYLON.Color3;
-const WALK_SPEED=.42,BOOST_SPEED=WALK_SPEED*1.25,BASE_FOV=.92,AIM_FOV=.58,BOOST_FOV=1.03;
+const WALK_SPEED=.42,BOOST_SPEED=WALK_SPEED*1.25,BASE_FOV=.92,AIM_FOV=.58,BOOST_FOV=1.03,HULL_LIMIT=34;
 const DIFFICULTIES={beginner:{label:'BEGINNER',description:'More plasma, lighter enemy armour and slower, gentler attacks.',enemyHealth:.72,enemySpeed:.84,damage:.62,fireDelay:1.38,projectileTime:1.2,ammo:1.28},novice:{label:'NOVICE',description:'Balanced armour, enemy speed and fire pressure.',enemyHealth:1,enemySpeed:1,damage:1,fireDelay:1,projectileTime:1,ammo:1},pro:{label:'PRO',description:'Tougher armour, quicker soldiers and much heavier fire pressure.',enemyHealth:1.34,enemySpeed:1.16,damage:1.3,fireDelay:.78,projectileTime:.82,ammo:.9}};
 let selectedDifficulty='novice';
 const deckNodes={1:[],2:[],3:[],4:[],5:[]};
@@ -23,6 +23,20 @@ const LEVELS={
 function material(name,diffuse,emissive=null,alpha=1){const m=new BABYLON.StandardMaterial(name,scene);m.diffuseColor=C.FromHexString(diffuse);m.specularColor=new C(.65,.75,.82);m.specularPower=96;m.alpha=alpha;if(emissive)m.emissiveColor=C.FromHexString(emissive);return m}
 function pbr(name,color,metallic=.65,roughness=.42,emissive=null){const m=new BABYLON.PBRMaterial(name,scene);m.albedoColor=C.FromHexString(color);m.metallic=metallic;m.roughness=roughness;m.environmentIntensity=.7;if(emissive)m.emissiveColor=C.FromHexString(emissive);return m}
 function texturedMaterial(name,url,uScale,vScale){const m=material(name,'#b9c2c8');const texture=new BABYLON.Texture(url,scene);texture.uScale=uScale;texture.vScale=vScale;texture.anisotropicFilteringLevel=8;m.diffuseTexture=texture;const bump=new BABYLON.Texture(url,scene);bump.uScale=uScale;bump.vScale=vScale;bump.level=.18;m.bumpTexture=bump;m.specularColor=new C(.36,.43,.48);m.specularPower=128;return m}
+function proceduralFloorMaterial(name,variant=0){
+  const m=material(name,'#ffffff'),texture=new BABYLON.DynamicTexture(`${name} surface`,{width:512,height:512},scene,false),ctx=texture.getContext(),palette=variant?['#172126','#253238','#303d42']:['#1d282d','#2c393e','#37454a'];
+  ctx.fillStyle=palette[0];ctx.fillRect(0,0,512,512);
+  for(let row=0;row<3;row++)for(let col=0;col<3;col++){
+    const x=8+col*168,y=8+row*168,w=160,h=160,gradient=ctx.createLinearGradient(x,y,x+w,y+h);gradient.addColorStop(0,palette[2]);gradient.addColorStop(.42,palette[1]);gradient.addColorStop(1,palette[0]);ctx.fillStyle=gradient;ctx.fillRect(x,y,w,h);
+    ctx.strokeStyle=variant?'#526269':'#64757a';ctx.lineWidth=3;ctx.strokeRect(x+1.5,y+1.5,w-3,h-3);ctx.strokeStyle='#0a1014';ctx.lineWidth=5;ctx.strokeRect(x+8,y+8,w-16,h-16);
+    ctx.fillStyle='#839398';for(const [bx,by] of [[x+16,y+16],[x+w-16,y+16],[x+16,y+h-16],[x+w-16,y+h-16]]){ctx.beginPath();ctx.arc(bx,by,3.2,0,Math.PI*2);ctx.fill()}
+    if((row+col+variant)%3===0){ctx.fillStyle='#080d11';ctx.fillRect(x+42,y+65,76,34);ctx.fillStyle='#405157';for(let slit=0;slit<5;slit++)ctx.fillRect(x+49,y+70+slit*5.2,62,2)}
+    else{ctx.strokeStyle='#182329';ctx.lineWidth=2;for(let line=0;line<3;line++){ctx.beginPath();ctx.moveTo(x+35+line*13,y+54);ctx.lineTo(x+92+line*11,y+111);ctx.stroke()}}
+    ctx.fillStyle=(row+col+variant)%4===0?'#24766e':'#39494e';ctx.fillRect(x+20,y+h-24,32,4);
+  }
+  ctx.globalAlpha=.28;ctx.strokeStyle='#a8b7b9';ctx.lineWidth=1;for(let i=0;i<22;i++){const sx=(i*83+variant*29)%500,sy=(i*137+variant*47)%500;ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(Math.min(512,sx+18+(i%5)*7),Math.min(512,sy+3+(i%3)*4));ctx.stroke()}ctx.globalAlpha=1;
+  texture.anisotropicFilteringLevel=8;texture.update(false);m.diffuseTexture=texture;m.diffuseColor=C.FromHexString(variant?'#a0aaad':'#b1babc');m.emissiveColor=new C(.015,.02,.021);m.specularColor=new C(.45,.52,.55);m.specularPower=140;return m;
+}
 function box(name,size,pos,mat,collision=false){const mesh=BABYLON.MeshBuilder.CreateBox(name,size,scene);mesh.position.copyFrom(pos);mesh.material=mat;mesh.checkCollisions=collision;return mesh}
 function onDeck(level,node){deckNodes[level].push(node);return node}
 function angleDistance(a,b){return Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)))}
@@ -38,7 +52,7 @@ function buildScene(){
   const glow=new BABYLON.GlowLayer('neon bloom',scene,{blurKernelSize:48});glow.intensity=.46;
   const pipeline=new BABYLON.DefaultRenderingPipeline('cinematic ship pipeline',true,scene,[camera]);pipeline.fxaaEnabled=true;pipeline.samples=matchMedia('(pointer:coarse)').matches?1:4;pipeline.bloomEnabled=!matchMedia('(pointer:coarse)').matches;pipeline.bloomThreshold=.82;pipeline.bloomWeight=.13;pipeline.imageProcessing.contrast=1.14;pipeline.imageProcessing.exposure=1.08;
 
-  const hull=texturedMaterial('curved hull','assets/starfall/hull-panels-v1.png',14,2),innerHull=texturedMaterial('inner hull panels','assets/starfall/hull-panels-v1.png',.24,1.05),metal=texturedMaterial('floor metal','assets/starfall/deck-panels-v1.png',1.7,1.7),metalAlt=texturedMaterial('alternate floor metal','assets/starfall/deck-panels-v1.png',2.25,2.25),ceilingPanels=texturedMaterial('recessed ceiling armour','assets/starfall/ceiling-panels-v1.png',5.4,5.4),machinerySkin=texturedMaterial('machinery panel skin','assets/starfall/deck-circuits-v1.png',.62,.92),metal2=material('floor inset','#080d13');metal.diffuseColor=C.FromHexString('#869399');metalAlt.diffuseColor=C.FromHexString('#63747b');metal.emissiveColor=new C(.012,.018,.02);metalAlt.emissiveColor=new C(.006,.012,.014);ceilingPanels.diffuseColor=C.FromHexString('#8d989d');machinerySkin.diffuseColor=C.FromHexString('#617777');
+  const hull=texturedMaterial('curved hull','assets/starfall/hull-panels-v1.png',14,2),innerHull=texturedMaterial('inner hull panels','assets/starfall/hull-panels-v1.png',.24,1.05),metal=proceduralFloorMaterial('modular deck plating',0),metalAlt=proceduralFloorMaterial('alternate deck plating',1),ceilingPanels=texturedMaterial('recessed ceiling armour','assets/starfall/ceiling-panels-v1.png',5.4,5.4),machinerySkin=texturedMaterial('machinery panel skin','assets/starfall/deck-circuits-v1.png',.62,.92),metal2=material('floor inset','#080d13');ceilingPanels.diffuseColor=C.FromHexString('#8d989d');machinerySkin.diffuseColor=C.FromHexString('#617777');
   const trim=material('alien trim','#123f3a','#075044'),purple=material('veyran alloy','#2d1750','#16052f');
   const dangerMat=material('warning light','#481824','#b4193f'),glass=material('observation glass','#07182b','#073e58',.72);
 
@@ -48,12 +62,13 @@ function buildScene(){
 
   for(let x=-30;x<=30;x+=6)for(let z=-30;z<=30;z+=6)if(Math.hypot(x,z)<32.8){
     const alternate=Math.abs(x/6+z/6)%2===1,panel=box('fixed deck panel',{width:5.72,height:.16,depth:5.72},new V(x,.02,z),alternate?metalAlt:metal,true);panel.rotation.y=alternate?Math.PI/2:0;panel.receiveShadows=true;
-    const markerX=x+(alternate?-1.75:1.75),slit=box('short deck marker',{width:1.05,height:.025,depth:.045},new V(markerX,.115,z+2.55),trim);slit.isPickable=false;
   }
   for(let i=0;i<32;i++){
     const a=i*Math.PI*2/32,r=35.25,rib=box('curved bulkhead rib',{width:.48,height:8.9,depth:1.05},new V(Math.sin(a)*r,4.7,Math.cos(a)*r),i%8===0?purple:trim,true);rib.rotation.y=a;rib.isPickable=false;
     const lamp=box('rib lamp',{width:.13,height:3.4,depth:1.12},new V(Math.sin(a)*34.68,5.15,Math.cos(a)*34.68),i%4===0?dangerMat:trim);lamp.rotation.y=a;lamp.isPickable=false;
   }
+  const boundaryMaterial=material('invisible hull safety','#000000',null,0);boundaryMaterial.disableColorWrite=true;
+  for(let i=0;i<36;i++){const a=i*Math.PI*2/36,r=34.42,barrier=box('inner hull collision barrier',{width:6.15,height:11.5,depth:.82},new V(Math.sin(a)*r,5.25,Math.cos(a)*r),boundaryMaterial,true);barrier.rotation.y=a;barrier.visibility=0;barrier.isPickable=false}
   for(const diameter of [20,40,61]){const rail=BABYLON.MeshBuilder.CreateTorus('recessed ceiling rail',{diameter,thickness:.13,tessellation:88},scene);rail.position.y=9.57;rail.material=trim;rail.isPickable=false}
   for(let i=0;i<12;i++){
     const a=i*Math.PI*2/12,r=22,beam=box('radial ceiling armour',{width:.66,height:.32,depth:23},new V(Math.sin(a)*r,9.55,Math.cos(a)*r),ceilingPanels);beam.rotation.y=a;beam.isPickable=false;
@@ -266,6 +281,7 @@ function enemyBolt(enemy){
 function takeDamage(amount){if(!started)return;amount=Math.max(1,Math.round(amount*DIFFICULTIES[selectedDifficulty].damage));health=Math.max(0,health-amount);healthText.textContent=health;healthBar.style.width=`${health}%`;animateClass(damage,'show');show('SOLAR BOLT IMPACT');if(!health)end(false)}
 function update(dt,t){
   const config=LEVELS[currentLevel],graceActive=performance.now()-levelStartedAt<config.grace*1000;
+  const radius=Math.hypot(camera.position.x,camera.position.z);if(radius>HULL_LIMIT){const scale=HULL_LIMIT/radius;camera.position.x*=scale;camera.position.z*=scale;camera.cameraDirection.x=0;camera.cameraDirection.z=0;if(performance.now()-(update.boundaryNotice||0)>1800){update.boundaryNotice=performance.now();show('OUTER HULL SEALED · EXPANSION ZONE RESERVED')}}camera.position.y=Math.max(1.72,Math.min(2.18,camera.position.y));
   if(turnDirection)camera.rotation.y+=turnDirection*dt*1.7;
   if(moveVector.x||moveVector.y){const forward=new V(Math.sin(camera.rotation.y),0,Math.cos(camera.rotation.y)),right=new V(forward.z,0,-forward.x),movement=forward.scale(moveVector.y*dt*5).add(right.scale(moveVector.x*dt*5));camera.cameraDirection.addInPlace(movement)}
   for(const enemy of enemies){if(!enemy.metadata.alive||!enemy.isEnabled())continue;const toCore=core.position.subtract(enemy.position),distance=Math.hypot(toCore.x,toCore.z),toPlayer=camera.position.subtract(enemy.position),playerDistance=Math.hypot(toPlayer.x,toPlayer.z);enemy.rotation.y=Math.atan2(toPlayer.x,toPlayer.z)+Math.PI;enemy.metadata.cool-=dt;
