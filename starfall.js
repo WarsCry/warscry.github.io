@@ -5,7 +5,7 @@ const hitMarker=document.querySelector('#hitMarker'),damage=document.querySelect
 if(!window.BABYLON){menu.querySelector('p').textContent='The 3D engine could not load. Check your connection and reload the mission.';return}
 
 const engine=new BABYLON.Engine(canvas,true,{preserveDrawingBuffer:false,stencil:true,adaptToDeviceRatio:true});
-if(matchMedia('(pointer:coarse)').matches)engine.setHardwareScalingLevel(Math.max(1,devicePixelRatio*.85));
+if(matchMedia('(pointer:coarse)').matches)engine.setHardwareScalingLevel(Math.min(1.35,Math.max(1,devicePixelRatio*.45)));
 let scene,camera,core,coreLight,ambientLight,shadowGenerator,enemies=[],projectiles=[],specimens=[],interactiveNeons=[],brokenNeons=new Set(),started=false,health=100,ammo=40,kills=0,lastShot=0,aiming=false,sprinting=false,moveVector={x:0,y:0},turnDirection=0,currentLevel=1,pendingLevel=1,levelStartedAt=0;
 const V=BABYLON.Vector3,C=BABYLON.Color3;
 const WALK_SPEED=.42,BOOST_SPEED=WALK_SPEED*1.25,BASE_FOV=.92,AIM_FOV=.58,BOOST_FOV=1.03,HULL_LIMIT=34;
@@ -23,7 +23,7 @@ const LEVELS={
 
 function material(name,diffuse,emissive=null,alpha=1){const m=new BABYLON.StandardMaterial(name,scene);m.diffuseColor=C.FromHexString(diffuse);m.specularColor=new C(.65,.75,.82);m.specularPower=96;m.alpha=alpha;if(emissive)m.emissiveColor=C.FromHexString(emissive);return m}
 function pbr(name,color,metallic=.65,roughness=.42,emissive=null){const m=new BABYLON.PBRMaterial(name,scene);m.albedoColor=C.FromHexString(color);m.metallic=metallic;m.roughness=roughness;m.environmentIntensity=.7;if(emissive)m.emissiveColor=C.FromHexString(emissive);return m}
-function texturedMaterial(name,url,uScale,vScale){const m=material(name,'#b9c2c8');const texture=new BABYLON.Texture(url,scene);texture.uScale=uScale;texture.vScale=vScale;texture.anisotropicFilteringLevel=8;m.diffuseTexture=texture;const bump=new BABYLON.Texture(url,scene);bump.uScale=uScale;bump.vScale=vScale;bump.level=.18;m.bumpTexture=bump;m.specularColor=new C(.36,.43,.48);m.specularPower=128;return m}
+function texturedMaterial(name,url,uScale,vScale){const m=material(name,'#b9c2c8');const texture=new BABYLON.Texture(url,scene);texture.uScale=uScale;texture.vScale=vScale;texture.anisotropicFilteringLevel=16;m.diffuseTexture=texture;const bump=new BABYLON.Texture(url,scene);bump.uScale=uScale;bump.vScale=vScale;bump.anisotropicFilteringLevel=16;bump.level=.18;m.bumpTexture=bump;m.specularColor=new C(.36,.43,.48);m.specularPower=128;return m}
 function proceduralFloorMaterial(name,variant=0){
   const m=material(name,'#ffffff'),texture=new BABYLON.DynamicTexture(`${name} surface`,{width:512,height:512},scene,false),ctx=texture.getContext(),palette=variant?['#172126','#253238','#303d42']:['#1d282d','#2c393e','#37454a'];
   ctx.fillStyle=palette[0];ctx.fillRect(0,0,512,512);
@@ -36,7 +36,7 @@ function proceduralFloorMaterial(name,variant=0){
     ctx.fillStyle=(row+col+variant)%4===0?'#24766e':'#39494e';ctx.fillRect(x+20,y+h-24,32,4);
   }
   ctx.globalAlpha=.28;ctx.strokeStyle='#a8b7b9';ctx.lineWidth=1;for(let i=0;i<22;i++){const sx=(i*83+variant*29)%500,sy=(i*137+variant*47)%500;ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(Math.min(512,sx+18+(i%5)*7),Math.min(512,sy+3+(i%3)*4));ctx.stroke()}ctx.globalAlpha=1;
-  texture.anisotropicFilteringLevel=8;texture.update(false);m.diffuseTexture=texture;m.diffuseColor=C.FromHexString(variant?'#a0aaad':'#b1babc');m.emissiveColor=new C(.015,.02,.021);m.specularColor=new C(.45,.52,.55);m.specularPower=140;return m;
+  texture.anisotropicFilteringLevel=16;texture.update(false);m.diffuseTexture=texture;m.diffuseColor=C.FromHexString(variant?'#a0aaad':'#b1babc');m.emissiveColor=new C(.015,.02,.021);m.specularColor=new C(.45,.52,.55);m.specularPower=140;return m;
 }
 function box(name,size,pos,mat,collision=false){const mesh=BABYLON.MeshBuilder.CreateBox(name,size,scene);mesh.position.copyFrom(pos);mesh.material=mat;mesh.checkCollisions=collision;return mesh}
 function onDeck(level,node){deckNodes[level].push(node);return node}
@@ -55,14 +55,14 @@ function createBabyAlienSpecimen(x,z,index,angle,skin,belly,eyes,cordMaterial){
 
 function buildScene(){
   scene=new BABYLON.Scene(engine);scene.clearColor=new BABYLON.Color4(.006,.012,.025,1);scene.collisionsEnabled=true;
-  scene.fogMode=BABYLON.Scene.FOGMODE_EXP2;scene.fogDensity=.012;scene.fogColor=new C(.018,.055,.07);
+  scene.fogMode=BABYLON.Scene.FOGMODE_EXP2;scene.fogDensity=.0045;scene.fogColor=new C(.018,.055,.07);
   camera=new BABYLON.UniversalCamera('sentinel',new V(0,2,29),scene);camera.minZ=.08;camera.maxZ=125;camera.fov=BASE_FOV;camera.speed=WALK_SPEED;camera.angularSensibility=2900;camera.inertia=.55;camera.ellipsoid=new V(.55,1,.55);camera.checkCollisions=true;
   camera.keysUp=[87];camera.keysDown=[83];camera.keysLeft=[65];camera.keysRight=[68];camera.attachControl(canvas,true);
   ambientLight=new BABYLON.HemisphericLight('ship ambience',new V(0,1,0),scene);ambientLight.intensity=.54;ambientLight.diffuse=new C(.42,.58,.66);ambientLight.groundColor=new C(.08,.12,.16);
   coreLight=new BABYLON.PointLight('core light',new V(0,4,0),scene);coreLight.diffuse=new C(.3,1,.78);coreLight.intensity=1.35;coreLight.range=34;
   const combatLight=new BABYLON.DirectionalLight('combat shadows',new V(-.45,-1,.25),scene);combatLight.position=new V(12,18,-8);combatLight.intensity=.42;shadowGenerator=new BABYLON.ShadowGenerator(1024,combatLight);shadowGenerator.useBlurExponentialShadowMap=true;shadowGenerator.blurKernel=24;
-  const glow=new BABYLON.GlowLayer('neon bloom',scene,{blurKernelSize:48});glow.intensity=.46;
-  const pipeline=new BABYLON.DefaultRenderingPipeline('cinematic ship pipeline',true,scene,[camera]);pipeline.fxaaEnabled=true;pipeline.samples=matchMedia('(pointer:coarse)').matches?1:4;pipeline.bloomEnabled=!matchMedia('(pointer:coarse)').matches;pipeline.bloomThreshold=.82;pipeline.bloomWeight=.13;pipeline.imageProcessing.contrast=1.14;pipeline.imageProcessing.exposure=1.08;
+  const glow=new BABYLON.GlowLayer('neon bloom',scene,{blurKernelSize:24});glow.intensity=.27;
+  const pipeline=new BABYLON.DefaultRenderingPipeline('clear ship pipeline',true,scene,[camera]);pipeline.fxaaEnabled=true;pipeline.samples=matchMedia('(pointer:coarse)').matches?1:4;pipeline.bloomEnabled=!matchMedia('(pointer:coarse)').matches;pipeline.bloomThreshold=.94;pipeline.bloomWeight=.045;pipeline.bloomScale=.55;pipeline.sharpenEnabled=true;pipeline.sharpen.edgeAmount=.22;pipeline.sharpen.colorAmount=.85;pipeline.imageProcessing.contrast=1.1;pipeline.imageProcessing.exposure=1.04;
 
   const hull=texturedMaterial('curved hull','assets/starfall/hull-panels-v1.png',14,2),innerHull=texturedMaterial('inner hull panels','assets/starfall/hull-panels-v1.png',.24,1.05),metal=proceduralFloorMaterial('modular deck plating',0),metalAlt=proceduralFloorMaterial('alternate deck plating',1),ceilingPanels=texturedMaterial('recessed ceiling armour','assets/starfall/ceiling-panels-v1.png',5.4,5.4),machinerySkin=texturedMaterial('machinery panel skin','assets/starfall/deck-circuits-v1.png',.62,.92),metal2=material('floor inset','#080d13');ceilingPanels.diffuseColor=C.FromHexString('#8d989d');machinerySkin.diffuseColor=C.FromHexString('#617777');
   const trim=material('alien trim','#123f3a','#075044'),purple=material('veyran alloy','#2d1750','#16052f');
@@ -366,7 +366,7 @@ function setSprint(value){sprinting=value;if(camera)camera.speed=value?BOOST_SPE
 function setDeck(level){
   currentLevel=level;const config=LEVELS[level];
   for(const deck of [1,2,3,4,5])deckNodes[deck].forEach(node=>node.setEnabled(deck===level));
-  scene.fogColor=C.FromHexString(config.fog);scene.fogDensity=config.fogDensity;scene.clearColor=new BABYLON.Color4(...config.clear,1);
+  scene.fogColor=C.FromHexString(config.fog);scene.fogDensity=config.fogDensity*.52;scene.clearColor=new BABYLON.Color4(...config.clear,1);
   ambientLight.diffuse=new C(...config.light);ambientLight.groundColor=new C(...config.ground);coreLight.diffuse=new C(...config.core);
   deckText.textContent=config.name;
 }
