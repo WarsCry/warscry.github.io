@@ -1,7 +1,7 @@
 (()=>{"use strict";
 const SUITS={s:{symbol:"♠",name:"Spades",red:false},h:{symbol:"♥",name:"Hearts",red:true},d:{symbol:"♦",name:"Diamonds",red:true},c:{symbol:"♣",name:"Clubs",red:false}},RANKS=["","A","2","3","4","5","6","7","8","9","10","J","Q","K"];
-const stockEl=document.querySelector("#stock"),wasteEl=document.querySelector("#waste"),tableauEl=document.querySelector("#tableau"),statusEl=document.querySelector("#status"),movesEl=document.querySelector("#moves"),timerEl=document.querySelector("#timer"),progressEl=document.querySelector("#progress"),victoryEl=document.querySelector("#victory"),fxLayer=document.querySelector("#fxLayer");
-let game,selection=null,history=[],moves=0,startedAt=0,elapsedBefore=0,lastArrivals=new Set(),hintFx=null,hintTimer=null;
+const stockEl=document.querySelector("#stock"),wasteEl=document.querySelector("#waste"),tableauEl=document.querySelector("#tableau"),statusEl=document.querySelector("#status"),movesEl=document.querySelector("#moves"),timerEl=document.querySelector("#timer"),progressEl=document.querySelector("#progress"),victoryEl=document.querySelector("#victory"),fxLayer=document.querySelector("#fxLayer"),boardEl=document.querySelector(".ship-board"),missionHelpEl=document.querySelector(".mission-help");
+let game,selection=null,history=[],moves=0,startedAt=0,elapsedBefore=0,lastArrivals=new Set(),hintFx=null,hintTimer=null,dragState=null,suppressClickUntil=0;
 const audio={sound:true,music:true,activated:false,ac:null,master:null,effects:null,musicBus:null,running:false,timer:null,step:0,drones:[]};
 const clone=value=>JSON.parse(JSON.stringify(value)),colour=card=>SUITS[card.suit].red?"red":"black",opposite=(a,b)=>colour(a)!==colour(b);
 
@@ -36,6 +36,69 @@ function moveToFoundation(suit,targetElement){const cards=selectedCards();if(!ca
 function autoLaunch(sel=selection){const cards=selectedCards(sel);if(cards.length!==1||sel?.source==="foundation")return false;const suit=cards[0].suit;if(!canMoveToFoundation(cards,suit))return false;selection=sel;return moveToFoundation(suit,document.querySelector(`.foundation[data-suit="${suit}"]`))}
 function select(sel){selection=sel;hintFx=null;const card=selectedCards()[0];if(card){sound("select");setStatus(`${RANKS[card.rank]}${SUITS[card.suit].symbol} READY FOR TRANSFER`)}render()}
 
+function dragSourceFromEvent(event){
+  const waste=event.target.closest("#waste");
+  if(waste&&game.waste.length){const sel={source:"waste",pile:null,index:game.waste.length-1};return{sel,node:waste.querySelector(".card")||waste}}
+  const foundation=event.target.closest(".foundation");
+  if(foundation){const suit=foundation.dataset.suit,pile=game.foundations[suit];if(pile.length){const sel={source:"foundation",pile:suit,index:pile.length-1};return{sel,node:foundation.querySelector(".card")||foundation}}return null}
+  const cardNode=event.target.closest(".tableau .card");
+  if(!cardNode||!cardNode.classList.contains("face"))return null;
+  const pile=Number(cardNode.dataset.pile),index=Number(cardNode.dataset.index),cards=game.tableau[pile]?.slice(index)||[];
+  if(!validRun(cards))return null;
+  return{sel:{source:"tableau",pile,index},node:cardNode}
+}
+function dragCardsNodes(cards){return cards.map(card=>boardEl.querySelector(`[data-id="${card.id}"]`)).filter(Boolean)}
+function beginPotentialDrag(event){
+  if(dragState||(event.pointerType==="mouse"&&event.button!==0))return;
+  const source=dragSourceFromEvent(event);if(!source)return;
+  const cards=selectedCards(source.sel),nodes=dragCardsNodes(cards),rect=source.node.getBoundingClientRect();if(!cards.length||!rect.width)return;
+  const rects=nodes.map(node=>node.getBoundingClientRect()),rawStep=rects.length>1?rects[1].top-rects[0].top:rect.height*.3;
+  dragState={pointerId:event.pointerId,sel:source.sel,cards:cards.map(card=>({...card})),ids:cards.map(card=>card.id),clones:nodes.map(node=>node.cloneNode(true)),origin:{left:rect.left,top:rect.top,width:rect.width,height:rect.height},offsetX:Math.max(8,Math.min(rect.width-8,event.clientX-rect.left)),offsetY:Math.max(8,Math.min(rect.height-8,event.clientY-rect.top)),startX:event.clientX,startY:event.clientY,step:Math.max(20,Math.min(46,rawStep||28)),active:false,ghost:null,hover:null};
+}
+function hideDraggedCards(className="drag-source-hidden"){
+  if(!dragState)return;dragState.ids.forEach(id=>{const node=boardEl.querySelector(`[data-id="${id}"]`);if(node)node.classList.add(className)})
+}
+function buildDragGhost(){
+  if(!dragState)return;const ghost=document.createElement("div");ghost.className="drag-stack";ghost.style.setProperty("--drag-height",`${dragState.origin.height+(dragState.cards.length-1)*dragState.step}px`);
+  dragState.cards.forEach((card,index)=>{const clone=dragState.clones[index]||cardElement(card);clone.classList.remove("selected","selectable","arrive","hint-source","drag-source-hidden");clone.removeAttribute("tabindex");clone.setAttribute("aria-hidden","true");clone.style.setProperty("--drag-offset",`${index*dragState.step}px`);clone.style.setProperty("--drag-z",140+index);clone.style.removeProperty("--stack");ghost.appendChild(clone)});
+  document.body.appendChild(ghost);dragState.ghost=ghost
+}
+function positionDragGhost(clientX,clientY){if(!dragState?.ghost)return;dragState.x=clientX-dragState.offsetX;dragState.y=clientY-dragState.offsetY;dragState.ghost.style.setProperty("--drag-x",`${dragState.x}px`);dragState.ghost.style.setProperty("--drag-y",`${dragState.y}px`)}
+function dragTargetAt(clientX,clientY){
+  if(!dragState)return null;const hit=document.elementFromPoint(clientX,clientY);if(!hit)return null;
+  const cards=selectedCards(dragState.sel),foundation=hit.closest(".foundation");
+  if(foundation){const pile=foundation.dataset.suit;return{type:"foundation",pile,element:foundation,valid:canMoveToFoundation(cards,pile)}}
+  const column=hit.closest(".column");if(column){const pile=Number(column.dataset.column);return{type:"tableau",pile,element:column,valid:canMoveToTableau(cards,pile)}}
+  return null
+}
+function showDragTarget(target){
+  if(dragState?.hover?.element!==target?.element)dragState?.hover?.element?.classList.remove("drag-over");
+  if(target?.valid)target.element.classList.add("drag-over");
+  if(dragState)dragState.hover=target?.valid?target:null
+}
+function activateDrag(event){
+  if(!dragState||dragState.active)return;dragState.active=true;try{boardEl.setPointerCapture(event.pointerId)}catch{};selection={...dragState.sel};hintFx=null;buildDragGhost();document.body.classList.add("card-dragging");boardEl.classList.add("drag-active");missionHelpEl.classList.add("drag-help");render();hideDraggedCards();positionDragGhost(event.clientX,event.clientY);setStatus(dragState.cards.length>1?`SLIDING ${dragState.cards.length}-CARD FORMATION`:`SLIDING ${RANKS[dragState.cards[0].rank]}${SUITS[dragState.cards[0].suit].symbol}`);sound("select")
+}
+function moveDrag(event){
+  if(!dragState||event.pointerId!==dragState.pointerId)return;const distance=Math.hypot(event.clientX-dragState.startX,event.clientY-dragState.startY);if(!dragState.active&&distance>7)activateDrag(event);if(!dragState.active)return;event.preventDefault();positionDragGhost(event.clientX,event.clientY);showDragTarget(dragTargetAt(event.clientX,event.clientY))
+}
+function releaseDragCapture(){if(!dragState)return;try{boardEl.releasePointerCapture(dragState.pointerId)}catch{}}
+function removeDragVisuals(){
+  dragState?.hover?.element?.classList.remove("drag-over");dragState?.ghost?.remove();document.body.classList.remove("card-dragging");boardEl.classList.remove("drag-active");missionHelpEl.classList.remove("drag-help");boardEl.querySelectorAll(".drag-source-hidden,.drag-destination-hidden").forEach(node=>node.classList.remove("drag-source-hidden","drag-destination-hidden"))
+}
+function animateDragTo(left,top,returning=false,done=()=>{}){
+  if(!dragState?.ghost){done();return}const ghost=dragState.ghost;ghost.classList.add("settling");if(returning)ghost.classList.add("returning");requestAnimationFrame(()=>{ghost.style.setProperty("--drag-x",`${left}px`);ghost.style.setProperty("--drag-y",`${top}px`)});setTimeout(done,220)
+}
+function finishDrag(event,cancelled=false){
+  if(!dragState||event.pointerId!==dragState.pointerId)return;releaseDragCapture();if(!dragState.active){dragState=null;return}event.preventDefault();suppressClickUntil=Date.now()+420;const target=cancelled?null:dragTargetAt(event.clientX,event.clientY),state=dragState;
+  showDragTarget(null);
+  if(target?.valid){
+    selection={...state.sel};const succeeded=target.type==="foundation"?moveToFoundation(target.pile,target.element):moveToTableau(target.pile,target.element);
+    if(succeeded){hideDraggedCards("drag-destination-hidden");const finalNode=boardEl.querySelector(`[data-id="${state.ids[0]}"]`),finalRect=finalNode?.getBoundingClientRect();if(finalRect){animateDragTo(finalRect.left,finalRect.top,false,()=>{removeDragVisuals();dragState=null})}else{removeDragVisuals();dragState=null}return}
+  }
+  selection={...state.sel};sound("invalid");setStatus(cancelled?"TRANSFER CANCELLED":"THAT FLIGHT PATH IS NOT VALID");animateDragTo(state.origin.left,state.origin.top,true,()=>{removeDragVisuals();selection=null;dragState=null;render()})
+}
+
 function drawStock(){if(selection){selection=null;render();return}if(!game.stock.length&&!game.waste.length){sound("invalid");setStatus("All cards are already deployed.");return}save();beginClock();if(game.stock.length){const card=game.stock.pop();card.faceUp=true;game.waste.push(card);lastArrivals.add(card.id);setStatus("NEW SIGNAL DRAWN FROM THE DECK");sound("draw")}else{game.stock=game.waste.reverse().map(card=>({...card,faceUp:false}));game.waste=[];setStatus("WASTE STREAM RECYCLED");sound("recycle")}moves++;render();burst(stockEl,"#9d70ff",12)}
 function clickWaste(){const top=game.waste.at(-1);if(!top)return;if(selection?.source==="waste"){if(!autoLaunch())selection=null;render();return}select({source:"waste",pile:null,index:game.waste.length-1})}
 function clickFoundation(suit,element){if(selection){if(selection.source==="foundation"&&selection.pile===suit){selection=null;render();return}moveToFoundation(suit,element);return}const pile=game.foundations[suit];if(pile.length)select({source:"foundation",pile:suit,index:pile.length-1})}
@@ -62,8 +125,9 @@ function stopMusic(){audio.running=false;clearTimeout(audio.timer);audio.timer=n
 
 function burst(element,color="#70ffe1",count=15){if(!element)return;const rect=element.getBoundingClientRect(),x=rect.left+rect.width/2,y=rect.top+Math.min(rect.height,130)/2;for(let i=0;i<count;i++){const spark=document.createElement("i"),angle=Math.random()*Math.PI*2,distance=35+Math.random()*75;spark.className="spark";spark.style.left=`${x}px`;spark.style.top=`${y}px`;spark.style.background=color;spark.style.color=color;spark.style.setProperty("--x",`${Math.cos(angle)*distance}px`);spark.style.setProperty("--y",`${Math.sin(angle)*distance}px`);fxLayer.appendChild(spark);setTimeout(()=>spark.remove(),800)}}
 function celebrate(){for(let i=0;i<100;i++){const bit=document.createElement("i");bit.className="confetti";bit.style.left=`${Math.random()*100}%`;bit.style.background=["#70ffe1","#c8ff6b","#9d70ff","#ff5f9b"][i%4];bit.style.animationDelay=`${Math.random()*1.2}s`;bit.style.setProperty("--drift",`${(Math.random()-.5)*240}px`);fxLayer.appendChild(bit);setTimeout(()=>bit.remove(),4800)}for(const element of document.querySelectorAll(".foundation"))burst(element,"#c8ff6b",30)}
-function newGame(playSound=true){game=freshGame();selection=null;history=[];moves=0;startedAt=0;elapsedBefore=0;lastArrivals=new Set(game.tableau.flat().filter(card=>card.faceUp).map(card=>card.id));hintFx=null;victoryEl.hidden=true;document.querySelector("#missionCode").textContent=`MISSION ${String(Math.floor(Math.random()*10000)).padStart(4,"0")}`;setStatus("Select any glowing card to begin.");render();if(playSound)sound("recycle")}
+function newGame(playSound=true){if(dragState){releaseDragCapture();removeDragVisuals();dragState=null}game=freshGame();selection=null;history=[];moves=0;startedAt=0;elapsedBefore=0;lastArrivals=new Set(game.tableau.flat().filter(card=>card.faceUp).map(card=>card.id));hintFx=null;victoryEl.hidden=true;document.querySelector("#missionCode").textContent=`MISSION ${String(Math.floor(Math.random()*10000)).padStart(4,"0")}`;setStatus("Drag or select any glowing card to begin.");render();if(playSound)sound("recycle")}
 
+boardEl.addEventListener("pointerdown",beginPotentialDrag);document.addEventListener("pointermove",moveDrag,{passive:false});document.addEventListener("pointerup",event=>finishDrag(event));document.addEventListener("pointercancel",event=>finishDrag(event,true));document.addEventListener("click",event=>{if(Date.now()<suppressClickUntil){event.preventDefault();event.stopImmediatePropagation()}},true);
 stockEl.onclick=drawStock;wasteEl.onclick=clickWaste;document.querySelectorAll(".foundation").forEach(element=>element.onclick=()=>clickFoundation(element.dataset.suit,element));tableauEl.onclick=event=>{const column=event.target.closest(".column");if(column)clickTableau(Number(column.dataset.column),event)};tableauEl.ondblclick=event=>{const column=event.target.closest(".column");if(column)doubleTableau(Number(column.dataset.column),event)};
 document.querySelector("#newGame").onclick=()=>newGame();document.querySelector("#playAgain").onclick=()=>newGame();document.querySelector("#undo").onclick=undo;document.querySelector("#hint").onclick=showHint;document.querySelector("#music").onclick=event=>{audio.music=!audio.music;event.currentTarget.setAttribute("aria-pressed",audio.music);event.currentTarget.textContent=audio.music?"♫ MUSIC ON":"♫ MUSIC OFF";if(audio.music)startMusic();else stopMusic()};document.querySelector("#sound").onclick=event=>{audio.sound=!audio.sound;event.currentTarget.setAttribute("aria-pressed",audio.sound);event.currentTarget.textContent=audio.sound?"◖)) SOUND ON":"◖)) SOUND OFF";if(audio.sound)sound("select")};
 document.addEventListener("pointerdown",()=>startMusic(),{once:true});document.addEventListener("keydown",()=>startMusic(),{once:true});document.addEventListener("visibilitychange",()=>{if(document.hidden)stopMusic();else if(audio.music&&audio.activated)startMusic()});setInterval(()=>{timerEl.textContent=formatTime(elapsed())},500);newGame(false);
