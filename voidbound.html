@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="theme-color" content="#071013">
+  <title>Voidbound: Breach Tactics | DanPC</title>
+  <meta name="description" content="Command five alien heroes in an original 3D tabletop tactical battle against the Solar Dominion.">
+  <link rel="icon" type="image/png" href="favicondanpc.png">
+  <link rel="stylesheet" href="voidbound.css?v=1">
+</head>
+<body>
+  <canvas id="game" aria-label="Voidbound tactical game board"></canvas>
+  <div class="grain" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand"><b>VOIDBOUND <span>// BREACH TACTICS</span></b><small>SOLAR OUTPOST K-17 · TABLETOP PROTOTYPE</small></div>
+    <div class="mission"><b id="phase">ALIEN TURN</b><small><span id="round">ROUND 1</span> · <span id="hostiles">5 HOSTILES</span></small></div>
+  </header>
+
+  <aside class="squad-panel">
+    <div class="panel-title">ALIEN SQUAD</div>
+    <div id="squad" class="squad"></div>
+  </aside>
+
+  <section class="unit-panel" id="unitPanel">
+    <div class="unit-copy"><small id="unitRole">SELECT A HERO</small><b id="unitName">YOUR SQUAD IS READY</b><span id="unitStats">Tap a miniature or character card.</span></div>
+    <button id="ability" disabled>SPECIAL ABILITY</button>
+  </section>
+
+  <section class="dice-panel" aria-live="polite">
+    <div class="die" id="die">◆</div>
+    <div><small>FLUX DIE</small><b id="rollText">AWAITING ACTION</b></div>
+  </section>
+
+  <div class="actionbar">
+    <div id="hint">Select an alien hero, then choose a glowing tile or enemy.</div>
+    <button id="endTurn">END ALIEN TURN</button>
+  </div>
+
+  <div class="toast" id="toast" aria-live="polite"></div>
+
+  <div class="menu" id="menu">
+    <div class="briefing">
+      <div class="kicker">AN ORIGINAL DANPC TABLETOP ADVENTURE</div>
+      <h1>VOIDBOUND<br><span>BREACH TACTICS</span></h1>
+      <p>Five alien specialists have boarded Solar Outpost K-17. Command every miniature, use cover and unique abilities, then defeat all five human defenders before your squad is eliminated.</p>
+      <div class="roster"><span>5 ALIEN HEROES</span><i>VS</i><span>5 HUMAN CLASSES</span></div>
+      <p class="controls"><b>Click or tap</b> to select, move and attack · <b>Drag</b> to rotate the table · <b>Wheel or pinch</b> to zoom</p>
+      <button id="start">BEGIN THE BREACH</button>
+      <a href="index.html">← Return to DanPC</a>
+    </div>
+  </div>
+
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="voidbound.js?v=1"></script>
+</body>
+</html>
