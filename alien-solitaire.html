@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="theme-color" content="#050914">
+  <title>Alien Solitaire: Orbital Deck | DanPC</title>
+  <meta name="description" content="Play a complete alien-themed Klondike solitaire mission on a living spaceship command table.">
+  <link rel="icon" type="image/png" href="favicondanpc.png">
+  <link rel="stylesheet" href="alien-solitaire.css?v=1">
+</head>
+<body>
+  <div class="starfield" aria-hidden="true"></div>
+  <main class="shell">
+    <header class="topbar">
+      <a class="back" href="arcade.html">← DanPC Arcade</a>
+      <div class="title"><p>ORBITAL RECREATION PROTOCOL</p><h1>ALIEN <span>SOLITAIRE</span></h1></div>
+      <div class="ship-status"><i></i> VESSEL ONLINE</div>
+    </header>
+
+    <section class="console" aria-label="Game controls">
+      <button id="newGame" class="primary">NEW MISSION</button>
+      <button id="undo">↶ UNDO</button>
+      <button id="hint">✦ HINT</button>
+      <button id="music" aria-pressed="true">♫ MUSIC ON</button>
+      <button id="sound" aria-pressed="true">◖)) SOUND ON</button>
+      <div class="readout"><span>MOVES <b id="moves">0</b></span><span>TIME <b id="timer">00:00</b></span><span>FOUNDATIONS <b id="progress">0/52</b></span></div>
+    </section>
+
+    <section class="ship-board" aria-label="Alien solitaire board">
+      <div class="board-label"><span>VEYRA-7 COMMAND TABLE</span><span id="missionCode">MISSION 0000</span></div>
+      <div class="scan" aria-hidden="true"></div>
+      <div class="upper-deck">
+        <button class="pile stock" id="stock" aria-label="Draw pile"></button>
+        <button class="pile waste" id="waste" aria-label="Waste pile"></button>
+        <div class="reactor" aria-hidden="true"><i></i><span>CORE</span></div>
+        <button class="pile foundation" data-suit="s" aria-label="Spades foundation"><span>♠</span></button>
+        <button class="pile foundation" data-suit="h" aria-label="Hearts foundation"><span>♥</span></button>
+        <button class="pile foundation" data-suit="d" aria-label="Diamonds foundation"><span>♦</span></button>
+        <button class="pile foundation" data-suit="c" aria-label="Clubs foundation"><span>♣</span></button>
+      </div>
+      <div class="deck-divider"><i></i><span>HOLOGRAPHIC PLAY SURFACE</span><i></i></div>
+      <div class="tableau" id="tableau" aria-label="Tableau columns"></div>
+      <div class="board-lights" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    </section>
+
+    <section class="mission-help">
+      <div><b id="status">Select any glowing card to begin.</b><span>Build downward in alternating colours. Move Aces to the four orbital foundations.</span></div>
+      <div class="legend"><span><i class="glow-key"></i> SELECTABLE</span><span><i class="target-key"></i> DESTINATION</span><span>DOUBLE-TAP = AUTO-LAUNCH</span></div>
+    </section>
+  </main>
+
+  <div class="victory" id="victory" hidden>
+    <div class="victory-card"><p>ORBITAL ALIGNMENT COMPLETE</p><h2>THE DECK IS<br><span>LIBERATED!</span></h2><div id="victoryStats"></div><button id="playAgain">DEAL ANOTHER GALAXY</button></div>
+  </div>
+  <div class="fx-layer" id="fxLayer" aria-hidden="true"></div>
+  <script src="alien-solitaire.js?v=1"></script>
+</body>
+</html>
