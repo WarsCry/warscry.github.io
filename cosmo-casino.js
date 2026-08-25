@@ -96,10 +96,10 @@
 
   const windowGlass = material('observation glass', '#071324', '#020613', 0.1, 0.08);
   windowGlass.alpha = 0.62;
-  const window = BABYLON.MeshBuilder.CreateDisc('observation window', { radius: 7.6, tessellation: 64 }, scene);
-  window.position = new BABYLON.Vector3(0, 3.4, 9.9);
-  window.rotation.x = Math.PI;
-  window.material = windowGlass;
+  const observationWindow = BABYLON.MeshBuilder.CreateDisc('observation window', { radius: 7.6, tessellation: 64 }, scene);
+  observationWindow.position = new BABYLON.Vector3(0, 3.4, 9.9);
+  observationWindow.rotation.x = Math.PI;
+  observationWindow.material = windowGlass;
 
   for (let i = 0; i < 180; i += 1) {
     const star = BABYLON.MeshBuilder.CreateSphere(`star ${i}`, { diameter: 0.018 + Math.random() * 0.05, segments: 3 }, scene);
