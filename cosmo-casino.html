@@ -7,7 +7,7 @@
   <title>Cosmo Casino | DanPC Arcade</title>
   <meta name="description" content="Play Blackjack and five-card draw Poker with fictional Cosmo Credits inside an alien spaceship lounge.">
   <link rel="icon" type="image/png" href="favicondanpc.png">
-  <link rel="stylesheet" href="cosmo-casino.css">
+  <link rel="stylesheet" href="cosmo-casino.css?v=20260825-3">
 </head>
 <body>
   <canvas id="spaceScene" aria-hidden="true"></canvas>
@@ -27,12 +27,23 @@
     </header>
 
     <section class="game-stage" aria-label="Cosmo Casino game table">
+      <div class="ship-console ship-console-left" aria-hidden="true">
+        <small>GRAVITY FIELD</small><strong>1.0 G</strong><i></i><span>DECK SEAL · LOCKED</span>
+      </div>
+      <div class="ship-console ship-console-right" aria-hidden="true">
+        <small>ORBITAL VECTOR</small><strong>STABLE</strong><i></i><span>OXYGEN · 98%</span>
+      </div>
+
       <div class="dealer-sign" id="dealerSign">
         <span class="signal-dot"></span>
         <span id="dealerName">ZYL-7 · YOUR DEALER</span>
       </div>
 
       <div class="table-console">
+        <div class="holo-sweep" aria-hidden="true"></div>
+        <div class="table-rails" aria-hidden="true">
+          <span class="rail rail-left"></span><span class="rail rail-right"></span><span class="rail-center"></span>
+        </div>
         <nav class="game-tabs" aria-label="Choose a card game">
           <button class="tab active" id="blackjackTab" type="button" data-game="blackjack">BLACKJACK</button>
           <button class="tab" id="pokerTab" type="button" data-game="poker">5-CARD POKER</button>
@@ -100,6 +111,6 @@
   <div class="effects" id="effects" aria-hidden="true"></div>
 
   <script src="https://cdn.babylonjs.com/babylon.js"></script>
-  <script src="cosmo-casino.js?v=20260825-2"></script>
+  <script src="cosmo-casino.js?v=20260825-3"></script>
 </body>
 </html>

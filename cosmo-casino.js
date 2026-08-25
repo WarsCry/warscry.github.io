@@ -86,6 +86,42 @@
   createArch(7.3, 1.12, magentaGlow);
   createArch(9.6, 1.23, purpleMetal);
 
+  const panelMetal = material('brushed hull panels', '#182332', null, 0.88, 0.27);
+  const panelGlass = material('console glass', '#092638', '#063748', 0.16, 0.18);
+  panelGlass.alpha = 0.82;
+  const loungePulseNodes = [];
+  for (const side of [-1, 1]) {
+    for (let index = 0; index < 3; index += 1) {
+      const wall = BABYLON.MeshBuilder.CreateBox(`wall module ${side} ${index}`, { width: 0.26, height: 3.75, depth: 2.65 }, scene);
+      wall.position = new BABYLON.Vector3(side * 8.65, 1.15, 1.6 + index * 3.05);
+      wall.material = panelMetal;
+      const inset = BABYLON.MeshBuilder.CreateBox(`wall display ${side} ${index}`, { width: 0.08, height: 2.35, depth: 1.78 }, scene);
+      inset.position = new BABYLON.Vector3(side * 8.49, 1.25, 1.6 + index * 3.05);
+      inset.material = index === 1 ? panelGlass : purpleMetal;
+      const statusBar = BABYLON.MeshBuilder.CreateBox(`wall status ${side} ${index}`, { width: 0.09, height: 0.09, depth: 1.65 }, scene);
+      statusBar.position = new BABYLON.Vector3(side * 8.42, 2.55, 1.6 + index * 3.05);
+      statusBar.material = index % 2 ? magentaGlow : cyanGlow;
+      loungePulseNodes.push(statusBar);
+    }
+  }
+
+  for (let index = -3; index <= 3; index += 1) {
+    const ceilingStrip = BABYLON.MeshBuilder.CreateBox(`ceiling conduit ${index}`, { width: 0.12, height: 0.08, depth: 6.4 }, scene);
+    ceilingStrip.position = new BABYLON.Vector3(index * 2.25, 6.15 - Math.abs(index) * 0.12, 4.9);
+    ceilingStrip.material = index % 2 ? magentaGlow : cyanGlow;
+    loungePulseNodes.push(ceilingStrip);
+  }
+
+  for (const x of [-6.1, 6.1]) {
+    const pod = BABYLON.MeshBuilder.CreateCylinder(`lounge reactor ${x}`, { diameter: 1.25, height: 2.4, tessellation: 24 }, scene);
+    pod.position = new BABYLON.Vector3(x, 0.05, 4.1);
+    pod.material = darkMetal;
+    const core = BABYLON.MeshBuilder.CreateCylinder(`lounge reactor core ${x}`, { diameter: 0.56, height: 2.05, tessellation: 20 }, scene);
+    core.position = new BABYLON.Vector3(x, 0.08, 4.1);
+    core.material = x < 0 ? cyanGlow : magentaGlow;
+    loungePulseNodes.push(core);
+  }
+
   for (let i = 0; i < 14; i += 1) {
     const angle = (i / 14) * Math.PI * 2;
     const column = BABYLON.MeshBuilder.CreateCylinder(`hull rib ${i}`, { diameter: 0.34, height: 7.5, tessellation: 10 }, scene);
@@ -146,6 +182,9 @@
     alienRoot.position.y = 0.3 + Math.sin(time * 1.25) * 0.045;
     tableRim.material.emissiveColor = BABYLON.Color3.FromHexString(Math.sin(time * 1.8) > 0 ? '#ffc34a' : '#ff9f32');
     camera.alpha = Math.PI / 2 + Math.sin(time * 0.12) * 0.022;
+    loungePulseNodes.forEach((node, index) => {
+      node.scaling.y = 1 + Math.sin(time * 1.5 + index * 0.7) * 0.025;
+    });
   });
 
   window.cosmoSceneEffects = {
@@ -240,16 +279,54 @@
     oscillator.stop(at + duration + 0.03);
   }
 
+  function noiseBurst(duration = 0.08, volume = 0.025, frequency = 1200, filterType = 'bandpass', delay = 0) {
+    if (!soundOn || !audioContext) return;
+    const length = Math.max(1, Math.floor(audioContext.sampleRate * duration));
+    const buffer = audioContext.createBuffer(1, length, audioContext.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let index = 0; index < length; index += 1) data[index] = (Math.random() * 2 - 1) * (1 - index / length);
+    const source = audioContext.createBufferSource();
+    const filter = audioContext.createBiquadFilter();
+    const gain = audioContext.createGain();
+    const at = audioContext.currentTime + delay;
+    source.buffer = buffer;
+    filter.type = filterType;
+    filter.frequency.value = frequency;
+    filter.Q.value = 1.4;
+    gain.gain.setValueAtTime(volume, at);
+    gain.gain.exponentialRampToValueAtTime(0.0001, at + duration);
+    source.connect(filter).connect(gain).connect(audioContext.destination);
+    source.start(at);
+  }
+
   function gameSound(name) {
     if (!audioContext || !soundOn) return;
-    if (name === 'chip') { tone(880, .07, 'square', .035); tone(1320, .09, 'sine', .025, .05); }
-    if (name === 'deal') { tone(210, .045, 'triangle', .025); tone(330, .06, 'sine', .018, .04); }
-    if (name === 'flip') { tone(390, .08, 'triangle', .03); tone(780, .08, 'sine', .018, .05); }
-    if (name === 'hold') { tone(560, .06, 'square', .025); }
-    if (name === 'win') [523, 659, 784, 1047].forEach((note, index) => tone(note, .32, 'sine', .055, index * .1));
-    if (name === 'loss') [330, 277, 220].forEach((note, index) => tone(note, .28, 'sawtooth', .035, index * .12));
-    if (name === 'push') { tone(440, .2, 'sine', .04); tone(554, .25, 'sine', .035, .08); }
-    if (name === 'error') { tone(125, .2, 'square', .035); }
+    if (name === 'chip') {
+      noiseBurst(.045, .035, 2400, 'highpass');
+      tone(740, .055, 'square', .028); tone(1110, .08, 'sine', .022, .045); tone(1480, .06, 'sine', .013, .085);
+    }
+    if (name === 'deal') {
+      [0, .075, .15].forEach((delay, index) => {
+        noiseBurst(.065, .022, 1300 + index * 230, 'bandpass', delay);
+        tone(185 + index * 48, .065, 'triangle', .017, delay + .02);
+      });
+    }
+    if (name === 'flip') {
+      noiseBurst(.12, .03, 1850, 'bandpass');
+      tone(330, .08, 'triangle', .025); tone(660, .1, 'sine', .02, .045); tone(990, .12, 'sine', .012, .09);
+    }
+    if (name === 'hold') { tone(520, .06, 'square', .022); tone(780, .1, 'sine', .018, .035); }
+    if (name === 'win') {
+      noiseBurst(.45, .018, 4200, 'highpass', .08);
+      [523, 659, 784, 1047, 1319].forEach((note, index) => tone(note, .42, index % 2 ? 'triangle' : 'sine', .05, index * .095));
+      [1568, 2093, 2637].forEach((note, index) => tone(note, .18, 'sine', .018, .48 + index * .09));
+    }
+    if (name === 'loss') {
+      noiseBurst(.32, .035, 230, 'lowpass');
+      [330, 277, 220, 165].forEach((note, index) => tone(note, .34, 'sawtooth', .025, index * .11));
+    }
+    if (name === 'push') { tone(440, .22, 'sine', .035); tone(554, .28, 'sine', .03, .08); tone(659, .24, 'triangle', .018, .16); }
+    if (name === 'error') { noiseBurst(.12, .028, 180, 'lowpass'); tone(125, .22, 'square', .03); }
   }
 
   function scheduleMusic() {
@@ -257,7 +334,7 @@
     const roots = [110, 130.81, 98, 146.83];
     const root = roots[musicStep % roots.length];
     const at = audioContext.currentTime;
-    [1, 1.5, 2].forEach((ratio, index) => {
+    [0.5, 1, 1.5, 2].forEach((ratio, index) => {
       const oscillator = audioContext.createOscillator();
       const gain = audioContext.createGain();
       const filter = audioContext.createBiquadFilter();
@@ -266,7 +343,7 @@
       filter.type = 'lowpass';
       filter.frequency.value = 720;
       gain.gain.setValueAtTime(0.0001, at);
-      gain.gain.exponentialRampToValueAtTime(index === 0 ? .022 : .012, at + .35);
+      gain.gain.exponentialRampToValueAtTime(index === 0 ? .015 : index === 1 ? .022 : .011, at + .35);
       gain.gain.exponentialRampToValueAtTime(.0001, at + 2.3);
       oscillator.connect(filter).connect(gain).connect(audioContext.destination);
       oscillator.start(at);
@@ -283,6 +360,16 @@
     oscillator.connect(gain).connect(audioContext.destination);
     oscillator.start(at + .65);
     oscillator.stop(at + 1.3);
+    const reply = audioContext.createOscillator();
+    const replyGain = audioContext.createGain();
+    reply.type = 'triangle';
+    reply.frequency.value = sparkle * .75;
+    replyGain.gain.setValueAtTime(.0001, at + 1.28);
+    replyGain.gain.exponentialRampToValueAtTime(.008, at + 1.31);
+    replyGain.gain.exponentialRampToValueAtTime(.0001, at + 1.82);
+    reply.connect(replyGain).connect(audioContext.destination);
+    reply.start(at + 1.28);
+    reply.stop(at + 1.85);
     musicStep += 1;
   }
 
@@ -382,6 +469,7 @@
     const element = document.createElement('div');
     element.className = `card${card.suit.red ? ' red' : ''}${hidden ? ' back' : ''}${selectable ? ' selectable' : ''}${selected ? ' selected' : ''}`;
     element.style.animationDelay = `${index * 70}ms`;
+    element.style.setProperty('--deal-index', index);
     if (!hidden) {
       element.innerHTML = `<span class="card-rank">${rankLabel(card.rank)}<small>${card.suit.symbol}</small></span><span class="card-center">${card.suit.symbol}</span>`;
     }
@@ -446,6 +534,9 @@
   function setStatus(message, info) {
     dom.status.textContent = message;
     if (info !== undefined) dom.info.textContent = info;
+    dom.status.classList.remove('signal-flash');
+    void dom.status.offsetWidth;
+    dom.status.classList.add('signal-flash');
   }
 
   function showToast(message) {
@@ -470,6 +561,20 @@
     coin.style.top = `${rect.top + rect.height / 2}px`;
     dom.effects.appendChild(coin);
     setTimeout(() => coin.remove(), 700);
+  }
+
+  function payoutOrbit(count = 7) {
+    const tableRect = dom.table.getBoundingClientRect();
+    for (let index = 0; index < count; index += 1) {
+      const coin = document.createElement('span');
+      coin.className = 'credit-fly payout-credit';
+      coin.textContent = 'CC';
+      coin.style.left = `${tableRect.left + tableRect.width * (.3 + Math.random() * .4)}px`;
+      coin.style.top = `${tableRect.top + tableRect.height * (.34 + Math.random() * .22)}px`;
+      coin.style.animationDelay = `${index * 55}ms`;
+      dom.effects.appendChild(coin);
+      setTimeout(() => coin.remove(), 1200 + index * 55);
+    }
   }
 
   function sparks(win = true) {
@@ -553,7 +658,7 @@
     dom.dealerName.textContent = outcome === 'win' ? 'ZYL-7 · IMPRESSED' : outcome === 'loss' ? 'ZYL-7 · HOUSE SIGNAL STRONG' : 'ZYL-7 · ORBITAL TIE';
     gameSound(outcome);
     pulseTable(outcome);
-    if (outcome === 'win') sparks(true);
+    if (outcome === 'win') { sparks(true); payoutOrbit(); }
     if (outcome === 'loss') sparks(false);
     render();
   }
