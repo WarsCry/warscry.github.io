@@ -7,18 +7,19 @@
   <title>Starfall: Alien Uprising | DanPC</title>
   <meta name="description" content="Defend an alien vessel from the Solar Dominion in a modern browser FPS.">
   <link rel="icon" type="image/png" href="favicondanpc.png">
-  <link rel="stylesheet" href="starfall.css?v=6">
+  <link rel="stylesheet" href="starfall.css?v=7">
 </head>
 <body>
   <canvas id="game"></canvas>
   <div class="scanlines" aria-hidden="true"></div>
+  <div class="speed-lines" aria-hidden="true"></div>
 
   <div class="hud">
     <div class="top">
       <div class="brand"><b>STARFALL <span>// UPRISING</span></b><small>ALIEN DEFENCE PROTOCOL</small></div>
       <div class="objective"><b id="left">HOSTILES: 6</b><small id="deckName">DECK 07 · BIO-CORE ATRIUM</small><div class="bar"><i id="healthBar"></i></div></div>
     </div>
-    <div class="bottom"><div class="stat">BIO-CORE<br><b id="health">100</b></div><div class="boost-status" id="boost"><span>⇧</span><b>THRUSTER +15%</b></div><div class="stat">PLASMA<br><b id="ammo">40</b></div></div>
+    <div class="bottom"><div class="stat">BIO-CORE<br><b id="health">100</b></div><div class="boost-status" id="boost"><span>⇧</span><b>THRUSTER +25%</b></div><div class="stat">PLASMA<br><b id="ammo">40</b></div></div>
   </div>
 
   <div class="cross"><i></i></div>
@@ -33,7 +34,12 @@
       <div class="kicker">DANPC DEEP-SPACE ARCADE · WEBGL EDITION</div>
       <h1>STARFALL<br><span>ALIEN UPRISING</span></h1>
       <p>You are the last Veyran sentinel aboard a captured bio-ship. Fight through five distinct decks and defeat the Dominion Overseer before they destroy its living core.</p>
-      <p><b>WASD</b> move · <b>Shift</b> boost +15% · <b>Mouse</b> look · <b>Right click</b> aim · <b>Left click</b> fire</p>
+      <div class="difficulty" aria-label="Difficulty selection">
+        <span>SELECT DIFFICULTY</span>
+        <div><button type="button" data-difficulty="beginner">BEGINNER</button><button type="button" class="selected" data-difficulty="novice">NOVICE</button><button type="button" data-difficulty="pro">PRO</button></div>
+        <small id="difficultyText">Balanced armour, enemy speed and fire pressure.</small>
+      </div>
+      <p><b>WASD</b> move · <b>Shift</b> boost +25% · <b>Mouse</b> look · <b>Right click</b> aim · <b>Left click</b> fire</p>
       <button id="start">INITIATE DEFENCE</button>
       <a class="back" href="index.html">← Return to DanPC</a>
     </div>
@@ -46,6 +52,6 @@
   </div>
 
   <script src="https://cdn.babylonjs.com/babylon.js"></script>
-  <script src="starfall.js?v=6"></script>
+  <script src="starfall.js?v=7"></script>
 </body>
 </html>
