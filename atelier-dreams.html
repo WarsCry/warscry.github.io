@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="theme-color" content="#100d2b">
+  <title>L’Atelier entre les rêves | DanPC</title>
+  <meta name="description" content="Une aventure anime interactive née d’une véritable page de carnet de croquis.">
+  <meta property="og:title" content="L’Atelier entre les rêves">
+  <meta property="og:description" content="Une aventure interactive de 30 minutes où tes choix redessinent l’histoire.">
+  <meta property="og:image" content="https://danpc.ca/assets/atelier/atelier-cover-v1.png">
+  <link rel="icon" type="image/png" href="favicondanpc.png">
+  <link rel="stylesheet" href="atelier-dreams.css?v=1">
+</head>
+<body>
+  <canvas id="stars" aria-hidden="true"></canvas>
+  <div class="scene-bg" id="sceneBg" aria-hidden="true"></div>
+  <div class="scene-wash" aria-hidden="true"></div>
+  <div class="paper-drift" id="paperDrift" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="home" href="index.html" aria-label="Retour à DanPC">‹ <span>DanPC</span></a>
+    <div class="mini-title"><i></i><span data-ui="shortTitle">L’Atelier entre les rêves</span></div>
+    <div class="top-actions">
+      <button class="icon-btn" id="langBtn" type="button" aria-label="Changer de langue">FR</button>
+      <button class="icon-btn" id="voiceBtn" type="button" aria-label="Narration">◉ <span data-ui="voice">Voix</span></button>
+      <button class="icon-btn active" id="soundBtn" type="button" aria-label="Ambiance sonore">♪ <span data-ui="sound">Son</span></button>
+    </div>
+  </header>
+
+  <main>
+    <section class="start-screen" id="startScreen">
+      <div class="eyebrow" data-ui="eyebrow">UNE HISTOIRE NÉE D’UN VRAI DESSIN</div>
+      <h1><span data-ui="titleA">L’Atelier</span><em data-ui="titleB">entre les rêves</em></h1>
+      <p class="lead" data-ui="lead">À minuit, une page de carnet s’ouvre sur un monde qui connaît ton nom. Sept gardiens t’attendent. Tes choix décideront de ce qui mérite d’être sauvé.</p>
+
+      <div class="setup">
+        <label for="playerName" data-ui="nameLabel">Quel nom doit apparaître dans l’histoire?</label>
+        <input id="playerName" maxlength="18" autocomplete="off" placeholder="Ton prénom" data-ui-placeholder="namePlaceholder">
+        <div class="start-actions">
+          <button class="primary" id="beginBtn" type="button"><span data-ui="begin">Ouvrir le carnet</span><b>→</b></button>
+          <button class="secondary hidden" id="resumeBtn" type="button" data-ui="resume">Reprendre l’histoire</button>
+        </div>
+      </div>
+
+      <div class="story-facts">
+        <span>◷ <b data-ui="duration">25–35 minutes</b></span>
+        <span>✦ <b data-ui="choices">Choix et actions tactiles</b></span>
+        <span>☾ <b data-ui="endings">Plusieurs fins</b></span>
+      </div>
+      <button class="sketch-link" id="sketchBtn" type="button"><span data-ui="seeSketch">Découvrir comment l’histoire a commencé</span> ↗</button>
+    </section>
+
+    <section class="story-screen hidden" id="storyScreen" aria-live="polite">
+      <div class="chapter-row">
+        <div><span id="chapterNo">CHAPITRE I</span><b id="chapterTitle">La page qui respirait</b></div>
+        <div class="progress-wrap"><span id="timeLeft">≈ 30 min</span><div class="progress"><i id="progressBar"></i></div></div>
+      </div>
+
+      <article class="story-card" id="storyCard">
+        <div class="speaker" id="speaker">LE NARRATEUR</div>
+        <h2 id="sceneTitle">Quand l’encre s’éveille</h2>
+        <div class="story-text" id="storyText"></div>
+        <div class="interaction" id="interaction"></div>
+        <div class="story-nav">
+          <button class="back-scene" id="backBtn" type="button" aria-label="Page précédente">←</button>
+          <button class="continue" id="continueBtn" type="button"><span data-ui="continue">Tourner la page</span><b>→</b></button>
+        </div>
+      </article>
+      <div class="hint" id="hint" data-ui="hint">Tu peux prendre ton temps. L’histoire attendra.</div>
+    </section>
+
+    <section class="ending-screen hidden" id="endingScreen">
+      <div class="ending-glow"></div>
+      <div class="eyebrow" data-ui="yourEnding">TA FIN</div>
+      <h2 id="endingTitle"></h2>
+      <p id="endingText"></p>
+      <div class="trait-card"><span data-ui="storySaw">L’histoire a vu en toi</span><b id="endingTrait"></b></div>
+      <div class="ending-actions">
+        <button class="primary" id="replayBtn" type="button" data-ui="replay">Recommencer avec d’autres choix</button>
+        <button class="secondary" id="revealBtn" type="button" data-ui="reveal">Revoir l’origine de l’histoire</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="sketch-modal hidden" id="sketchModal" role="dialog" aria-modal="true" aria-labelledby="sketchTitle">
+    <button class="close" id="closeSketch" type="button" aria-label="Fermer">×</button>
+    <div class="sketch-copy">
+      <span data-ui="originalPage">L’ORIGINE DU MONDE</span>
+      <h2 id="sketchTitle" data-ui="whereBegan">C’est ici que le rêve a commencé.</h2>
+      <p data-ui="sketchCopy">Ce monde est né d’une vraie page de carnet. Le dessin original reste précieusement privé; ses idées sont devenues cette nouvelle aventure.</p>
+    </div>
+    <div class="photo-frame"><img src="assets/atelier/atelier-origin-v1.png" alt="Une artiste tenant la page qui a inspiré les gardiens de l’Atelier"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="atelier-dreams.js?v=1"></script>
+</body>
+</html>
