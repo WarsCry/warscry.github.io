@@ -7,7 +7,7 @@
   <title>Alien Solitaire: Orbital Deck | DanPC</title>
   <meta name="description" content="Play a complete alien-themed Klondike solitaire mission on a living spaceship command table.">
   <link rel="icon" type="image/png" href="favicondanpc.png">
-  <link rel="stylesheet" href="alien-solitaire.css?v=2">
+  <link rel="stylesheet" href="alien-solitaire.css?v=3">
 </head>
 <body>
   <div class="starfield" aria-hidden="true"></div>
@@ -33,7 +33,7 @@
       <div class="upper-deck">
         <button class="pile stock" id="stock" aria-label="Draw pile"></button>
         <button class="pile waste" id="waste" aria-label="Waste pile"></button>
-        <div class="reactor" aria-hidden="true"><i></i><span>CORE</span></div>
+        <button class="reactor" id="coreEvent" type="button" aria-label="Open the core observation window"><i aria-hidden="true"></i><span>CORE</span><small>PRESS</small></button>
         <button class="pile foundation" data-suit="s" aria-label="Spades foundation"><span>♠</span></button>
         <button class="pile foundation" data-suit="h" aria-label="Hearts foundation"><span>♥</span></button>
         <button class="pile foundation" data-suit="d" aria-label="Diamonds foundation"><span>♦</span></button>
@@ -45,7 +45,7 @@
     </section>
 
     <section class="mission-help">
-      <div><b id="status">Drag or select any glowing card to begin.</b><span>Build downward in alternating colours. Move Aces to the four orbital foundations.</span></div>
+      <div><b id="status" aria-live="polite">Drag or select any glowing card to begin.</b><span>Build downward in alternating colours. Move Aces to the four orbital foundations.</span></div>
       <div class="legend"><span><i class="glow-key"></i> DRAG CARD / STACK</span><span><i class="target-key"></i> DESTINATION</span><span>DOUBLE-TAP = AUTO-LAUNCH</span></div>
     </section>
   </main>
@@ -54,6 +54,6 @@
     <div class="victory-card"><p>ORBITAL ALIGNMENT COMPLETE</p><h2>THE DECK IS<br><span>LIBERATED!</span></h2><div id="victoryStats"></div><button id="playAgain">DEAL ANOTHER GALAXY</button></div>
   </div>
   <div class="fx-layer" id="fxLayer" aria-hidden="true"></div>
-  <script src="alien-solitaire.js?v=2"></script>
+  <script src="alien-solitaire.js?v=3"></script>
 </body>
 </html>
