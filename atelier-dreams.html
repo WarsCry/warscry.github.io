@@ -10,7 +10,7 @@
   <meta property="og:description" content="Une aventure interactive de 30 minutes où tes choix redessinent l’histoire.">
   <meta property="og:image" content="https://danpc.ca/assets/atelier/atelier-cover-v1.png">
   <link rel="icon" type="image/png" href="favicondanpc.png">
-  <link rel="stylesheet" href="atelier-dreams.css?v=1">
+  <link rel="stylesheet" href="atelier-dreams.css?v=2">
 </head>
 <body>
   <canvas id="stars" aria-hidden="true"></canvas>
@@ -58,6 +58,7 @@
       </div>
 
       <article class="story-card" id="storyCard">
+        <button class="art-toggle" id="artToggle" type="button" aria-expanded="true"><span data-ui="viewArt">Voir l’image</span> ◉</button>
         <div class="speaker" id="speaker">LE NARRATEUR</div>
         <h2 id="sceneTitle">Quand l’encre s’éveille</h2>
         <div class="story-text" id="storyText"></div>
@@ -94,6 +95,6 @@
   </div>
 
   <div class="toast" id="toast"></div>
-  <script src="atelier-dreams.js?v=1"></script>
+  <script src="atelier-dreams.js?v=2"></script>
 </body>
 </html>
