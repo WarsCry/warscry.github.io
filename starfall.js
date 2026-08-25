@@ -6,8 +6,9 @@ if(!window.BABYLON){menu.querySelector('p').textContent='The 3D engine could not
 
 const engine=new BABYLON.Engine(canvas,true,{preserveDrawingBuffer:false,stencil:true,adaptToDeviceRatio:true});
 if(matchMedia('(pointer:coarse)').matches)engine.setHardwareScalingLevel(Math.max(1,devicePixelRatio*.85));
-let scene,camera,core,coreLight,ambientLight,shadowGenerator,enemies=[],projectiles=[],started=false,health=100,ammo=40,kills=0,lastShot=0,aiming=false,moveVector={x:0,y:0},turnDirection=0,currentLevel=1,pendingLevel=1,levelStartedAt=0;
+let scene,camera,core,coreLight,ambientLight,shadowGenerator,enemies=[],projectiles=[],started=false,health=100,ammo=40,kills=0,lastShot=0,aiming=false,sprinting=false,moveVector={x:0,y:0},turnDirection=0,currentLevel=1,pendingLevel=1,levelStartedAt=0;
 const V=BABYLON.Vector3,C=BABYLON.Color3;
+const WALK_SPEED=.42,BOOST_SPEED=WALK_SPEED*1.15;
 const deckNodes={1:[],2:[],3:[],4:[],5:[]};
 const LEVELS={
   1:{deck:'07',name:'DECK 07 · BIO-CORE ATRIUM',brief:'Secure the outer atrium and learn the ship’s defence systems.',ammo:42,spawn:[0,2,29],rotation:Math.PI,positions:[[-26,-18],[-14,-28],[0,-30],[14,-27],[26,-17],[-27,-5]],hp:74,eliteHp:96,eliteFrom:99,speed:.66,speedRange:.14,fireRange:16,fireMin:1.05,fireRangeDelay:.85,boltMin:4,boltRange:4,boltDuration:650,coreDamage:7,coreCooldown:1.4,grace:4.5,fog:'#050e12',fogDensity:.008,clear:[.006,.012,.025],light:[.42,.58,.66],ground:[.08,.12,.16],core:[.3,1,.78]},
@@ -27,7 +28,7 @@ function angleDistance(a,b){return Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-
 function buildScene(){
   scene=new BABYLON.Scene(engine);scene.clearColor=new BABYLON.Color4(.006,.012,.025,1);scene.collisionsEnabled=true;
   scene.fogMode=BABYLON.Scene.FOGMODE_EXP2;scene.fogDensity=.012;scene.fogColor=new C(.018,.055,.07);
-  camera=new BABYLON.UniversalCamera('sentinel',new V(0,2,29),scene);camera.minZ=.08;camera.maxZ=125;camera.fov=.92;camera.speed=.42;camera.angularSensibility=2900;camera.inertia=.55;camera.ellipsoid=new V(.55,1,.55);camera.checkCollisions=true;
+  camera=new BABYLON.UniversalCamera('sentinel',new V(0,2,29),scene);camera.minZ=.08;camera.maxZ=125;camera.fov=.92;camera.speed=WALK_SPEED;camera.angularSensibility=2900;camera.inertia=.55;camera.ellipsoid=new V(.55,1,.55);camera.checkCollisions=true;
   camera.keysUp=[87];camera.keysDown=[83];camera.keysLeft=[65];camera.keysRight=[68];camera.attachControl(canvas,true);
   ambientLight=new BABYLON.HemisphericLight('ship ambience',new V(0,1,0),scene);ambientLight.intensity=.54;ambientLight.diffuse=new C(.42,.58,.66);ambientLight.groundColor=new C(.08,.12,.16);
   coreLight=new BABYLON.PointLight('core light',new V(0,4,0),scene);coreLight.diffuse=new C(.3,1,.78);coreLight.intensity=1.35;coreLight.range=34;
@@ -35,22 +36,28 @@ function buildScene(){
   const glow=new BABYLON.GlowLayer('neon bloom',scene,{blurKernelSize:48});glow.intensity=.46;
   const pipeline=new BABYLON.DefaultRenderingPipeline('cinematic ship pipeline',true,scene,[camera]);pipeline.fxaaEnabled=true;pipeline.samples=matchMedia('(pointer:coarse)').matches?1:4;pipeline.bloomEnabled=!matchMedia('(pointer:coarse)').matches;pipeline.bloomThreshold=.82;pipeline.bloomWeight=.13;pipeline.imageProcessing.contrast=1.14;pipeline.imageProcessing.exposure=1.08;
 
-  const hull=texturedMaterial('curved hull','assets/starfall/hull-panels-v1.png',14,2),innerHull=texturedMaterial('inner hull panels','assets/starfall/hull-panels-v1.png',.24,1.05),metal=texturedMaterial('floor metal','assets/starfall/deck-panels-v1.png',1.35,1.35),metal2=material('floor inset','#080d13');metal.emissiveColor=new C(.035,.045,.05);
+  const hull=texturedMaterial('curved hull','assets/starfall/hull-panels-v1.png',14,2),innerHull=texturedMaterial('inner hull panels','assets/starfall/hull-panels-v1.png',.24,1.05),metal=texturedMaterial('floor metal','assets/starfall/deck-panels-v1.png',1.35,1.35),floorCircuit=texturedMaterial('circuit tread floor','assets/starfall/deck-circuits-v1.png',1.15,1.15),ceilingPanels=texturedMaterial('recessed ceiling armour','assets/starfall/ceiling-panels-v1.png',5.4,5.4),machinerySkin=texturedMaterial('machinery panel skin','assets/starfall/deck-circuits-v1.png',.62,.92),metal2=material('floor inset','#080d13');metal.emissiveColor=new C(.035,.045,.05);floorCircuit.diffuseColor=C.FromHexString('#85949a');floorCircuit.emissiveColor=new C(.02,.045,.045);ceilingPanels.diffuseColor=C.FromHexString('#8d989d');machinerySkin.diffuseColor=C.FromHexString('#617777');
   const trim=material('alien trim','#123f3a','#075044'),purple=material('veyran alloy','#2d1750','#16052f');
   const dangerMat=material('warning light','#481824','#b4193f'),glass=material('observation glass','#07182b','#073e58',.72);
 
   const wall=BABYLON.MeshBuilder.CreateCylinder('rounded outer hull',{height:10,diameter:72,tessellation:80,cap:BABYLON.Mesh.NO_CAP},scene);wall.position.y=5;wall.material=hull;wall.material.backFaceCulling=false;wall.checkCollisions=true;
-  const ceiling=BABYLON.MeshBuilder.CreateCylinder('armoured ceiling',{height:.35,diameter:72,tessellation:80},scene);ceiling.position.y=10;ceiling.material=metal2;
-  const base=BABYLON.MeshBuilder.CreateCylinder('lower hull',{height:.38,diameter:72,tessellation:80},scene);base.position.y=-.22;base.material=metal2;base.checkCollisions=true;
+  const ceiling=BABYLON.MeshBuilder.CreateCylinder('armoured ceiling',{height:.35,diameter:72,tessellation:80},scene);ceiling.position.y=10;ceiling.material=ceilingPanels;
+  const base=BABYLON.MeshBuilder.CreateCylinder('lower hull',{height:.38,diameter:72,tessellation:80},scene);base.position.y=-.22;base.material=floorCircuit;base.checkCollisions=true;
 
   for(let x=-30;x<=30;x+=6)for(let z=-30;z<=30;z+=6)if(Math.hypot(x,z)<32.8){
-    const panel=box('fixed deck panel',{width:5.72,height:.16,depth:5.72},new V(x,.02,z),((x+z)/6)%2?metal:metal2,true);panel.receiveShadows=true;
+    const panel=box('fixed deck panel',{width:5.72,height:.16,depth:5.72},new V(x,.02,z),((x+z)/6)%2?metal:floorCircuit,true);panel.receiveShadows=true;
     const slit=box('deck energy seam',{width:5.1,height:.025,depth:.055},new V(x,.115,z+2.55),trim);slit.isPickable=false;
   }
   for(let i=0;i<32;i++){
     const a=i*Math.PI*2/32,r=35.25,rib=box('curved bulkhead rib',{width:.48,height:8.9,depth:1.05},new V(Math.sin(a)*r,4.7,Math.cos(a)*r),i%8===0?purple:trim,true);rib.rotation.y=a;rib.isPickable=false;
     const lamp=box('rib lamp',{width:.13,height:3.4,depth:1.12},new V(Math.sin(a)*34.68,5.15,Math.cos(a)*34.68),i%4===0?dangerMat:trim);lamp.rotation.y=a;lamp.isPickable=false;
   }
+  for(const diameter of [20,40,61]){const rail=BABYLON.MeshBuilder.CreateTorus('recessed ceiling rail',{diameter,thickness:.13,tessellation:88},scene);rail.position.y=9.57;rail.material=trim;rail.isPickable=false}
+  for(let i=0;i<12;i++){
+    const a=i*Math.PI*2/12,r=22,beam=box('radial ceiling armour',{width:.66,height:.32,depth:23},new V(Math.sin(a)*r,9.55,Math.cos(a)*r),ceilingPanels);beam.rotation.y=a;beam.isPickable=false;
+    const lamp=box('overhead navigation light',{width:4.8,height:.12,depth:.26},new V(Math.sin(a)*27.5,9.32,Math.cos(a)*27.5),i%3===0?dangerMat:trim);lamp.rotation.y=a;lamp.isPickable=false;
+  }
+  const ceilingHub=BABYLON.MeshBuilder.CreateTorus('ceiling core aperture',{diameter:9.2,thickness:.45,tessellation:48},scene);ceilingHub.position.y=9.5;ceilingHub.material=purple;ceilingHub.isPickable=false;
   // A circular inner bulkhead turns the arena into an outer passage and a protected core chamber.
   // Four wide gates keep navigation readable while removing the empty-room feeling.
   for(let i=0;i<48;i++){
@@ -72,7 +79,7 @@ function buildScene(){
     for(let j=-1;j<=1;j++){const pipe=onDeck(1,BABYLON.MeshBuilder.CreateTube('bio conduit',{path:[new V(x+j*.5,3.2,z),new V(x+j*.5,6.8,z),new V(x+j*.8,8.5,z*.86)],radius:.09,tessellation:8},scene));pipe.material=trim;pipe.isPickable=false}
   }
   for(const z of [-34.55,34.55]){
-    const door=box('rounded blast door',{width:7.5,height:6.6,depth:.35},new V(0,3.3,z),metal2,true);door.material=metal2;
+    const door=box('rounded blast door',{width:7.5,height:6.6,depth:.35},new V(0,3.3,z),machinerySkin,true);
     const top=BABYLON.MeshBuilder.CreateTorus('door arch',{diameter:7.5,thickness:.38,tessellation:32,arc:.5},scene);top.position=new V(0,5.9,z+(z>0?-.22:.22));top.rotation.x=Math.PI/2;top.material=trim;top.isPickable=false;
     for(const x of [-3.5,3.5])box('door light',{width:.18,height:5.4,depth:.48},new V(x,3,z+(z>0?-.25:.25)),dangerMat);
   }
@@ -128,16 +135,16 @@ function buildScene(){
     for(const side of [-1,1]){const vine=onDeck(3,BABYLON.MeshBuilder.CreateTube('bio conduit vine',{path:[new V(x+side*.6,4.4,z),new V(x+side*.8,6.7,z),new V(x+side*1.7,8.6,z*.92)],radius:.075,tessellation:8},scene));vine.material=bioGlow;vine.isPickable=false}
   }
   for(const [x,z,rot] of [[-10,-7,.3],[10,-7,-.3],[-10,8,-.25],[10,8,.25]]){
-    const planter=onDeck(3,box('curved bio planter',{width:5.4,height:1.35,depth:2.1},new V(x,.68,z),bioDark,true));planter.rotation.y=rot;
+    const planter=onDeck(3,box('curved bio planter',{width:5.4,height:1.35,depth:2.1},new V(x,.68,z),machinerySkin,true));planter.rotation.y=rot;
     for(let j=-2;j<=2;j++){const bloom=onDeck(3,BABYLON.MeshBuilder.CreateSphere('alien bloom',{diameter:.52+Math.abs(j)*.05,segments:10},scene));bloom.position=new V(x+j*.85,1.55,z);bloom.material=j%2?bioGlow:trim;bloom.isPickable=false}
   }
   for(const [x,z] of [[0,24],[24,0],[0,-24],[-24,0]]){const light=onDeck(3,new BABYLON.PointLight('hydroponics lamp',new V(x,4,z),scene));light.diffuse=new C(.3,1,.65);light.intensity=.72;light.range=15}
 
   // Deck 10: angular navigation consoles, holographic star globes and curved
   // partitions create a larger tactical vault with many broken sight lines.
-  const navAlloy=pbr('navigation alloy','#18264d',.78,.3),navTrim=material('navigation glow','#335ea8','#2d7dff'),navHolo=material('navigation hologram','#64cfff','#316cff',.42);
+  const navAlloy=pbr('navigation alloy','#18264d',.78,.3),navSkin=texturedMaterial('navigation textured armour','assets/starfall/deck-circuits-v1.png',.75,1.1),navTrim=material('navigation glow','#335ea8','#2d7dff'),navHolo=material('navigation hologram','#64cfff','#316cff',.42);navSkin.diffuseColor=C.FromHexString('#49618f');
   for(const [x,z,rot] of [[-20,-17,.5],[0,-22,0],[20,-17,-.5],[-23,0,Math.PI/2],[23,0,Math.PI/2],[-18,18,-.5],[0,22,0],[18,18,.5]]){
-    const console=onDeck(4,box('navigation command console',{width:5.4,height:2.25,depth:1.45},new V(x,1.12,z),navAlloy,true));console.rotation.y=rot;console.rotation.x=-.06;
+    const console=onDeck(4,box('navigation command console',{width:5.4,height:2.25,depth:1.45},new V(x,1.12,z),navSkin,true));console.rotation.y=rot;console.rotation.x=-.06;
     const display=onDeck(4,box('navigation display',{width:4.4,height:.75,depth:.08},new V(x,2.12,z),navHolo));display.rotation.y=rot;display.rotation.x=-.35;display.isPickable=false;
   }
   for(let i=0;i<6;i++){
@@ -149,7 +156,7 @@ function buildScene(){
 
   // Deck 11: a broad boss arena. Tall cover walls and reinforced pylons are
   // deliberately separated so the player can hide, flank and re-engage.
-  const bossAlloy=pbr('nexus armour','#30151c',.84,.26),bossTrim=material('nexus energy','#8b2337','#ff284f'),bossGold=material('overseer gold','#8a642d','#ff9d32');
+  const bossAlloy=texturedMaterial('nexus textured armour','assets/starfall/hull-panels-v1.png',.68,1.08),bossTrim=material('nexus energy','#8b2337','#ff284f'),bossGold=material('overseer gold','#8a642d','#ff9d32');bossAlloy.diffuseColor=C.FromHexString('#70434a');
   for(let i=0;i<10;i++){
     const a=i*Math.PI*2/10,r=i%2?20:13.5,x=Math.sin(a)*r,z=Math.cos(a)*r;
     const shield=onDeck(5,box('nexus cover shield',{width:5.6,height:4.6,depth:1.05},new V(x,2.3,z),bossAlloy,true));shield.rotation.y=a;shield.isPickable=true;
@@ -269,6 +276,7 @@ function update(dt,t){
   }
 }
 function setAim(value){aiming=value;document.body.classList.toggle('aiming',value);if(camera)camera.fov=value?.58:.92}
+function setSprint(value){sprinting=value;if(camera)camera.speed=value?BOOST_SPEED:WALK_SPEED;document.querySelector('#boost')?.classList.toggle('active',value)}
 function setDeck(level){
   currentLevel=level;const config=LEVELS[level];
   for(const deck of [1,2,3,4,5])deckNodes[deck].forEach(node=>node.setEnabled(deck===level));
@@ -281,11 +289,11 @@ function completeLevel(){
   if(currentLevel<5){const cleared=LEVELS[currentLevel],next=LEVELS[currentLevel+1];pendingLevel=currentLevel+1;menu.querySelector('h1').innerHTML=`DECK ${cleared.deck} SECURED<br><span>CAMPAIGN ${pendingLevel}/5</span>`;menu.querySelectorAll('p')[0].textContent=next.brief;document.querySelector('#start').textContent=`ENTER DECK ${next.deck}`;menu.classList.remove('hidden')}else end(true)
 }
 function end(win){started=false;document.exitPointerLock?.();menu.classList.remove('hidden');if(win){pendingLevel=1;menu.querySelector('h1').innerHTML='SHIP LIBERATED<br><span>OVERSEER DEFEATED</span>';menu.querySelectorAll('p')[0].textContent='All five decks are secure. You used the nexus cover, defeated the Dominion Overseer and saved the living ship.';document.querySelector('#start').textContent='REPLAY 5-LEVEL CAMPAIGN'}else{const config=LEVELS[currentLevel];pendingLevel=currentLevel;menu.querySelector('h1').innerHTML='BIO-CORE LOST<br><span>DEFEAT</span>';menu.querySelectorAll('p')[0].textContent=`The Dominion broke through on ${config.name}. Reinitialize this deck and fight again.`;document.querySelector('#start').textContent=`RETRY DECK ${config.deck}`}}
-function reset(level=currentLevel){setDeck(level);const config=LEVELS[level];projectiles.forEach(projectile=>projectile.dispose());projectiles=[];health=100;ammo=config.ammo;kills=0;lastShot=0;levelStartedAt=performance.now();camera.position.copyFromFloats(...config.spawn);camera.rotation.copyFromFloats(0,config.rotation,0);camera.cameraDirection.copyFromFloats(0,0,0);camera.cameraRotation.copyFromFloats(0,0);resetEnemies();healthText.textContent=health;ammoText.textContent=ammo;updateHostileHUD();healthBar.style.width='100%';setAim(false)}
+function reset(level=currentLevel){setDeck(level);const config=LEVELS[level];projectiles.forEach(projectile=>projectile.dispose());projectiles=[];health=100;ammo=config.ammo;kills=0;lastShot=0;levelStartedAt=performance.now();camera.position.copyFromFloats(...config.spawn);camera.rotation.copyFromFloats(0,config.rotation,0);camera.cameraDirection.copyFromFloats(0,0,0);camera.cameraRotation.copyFromFloats(0,0);resetEnemies();healthText.textContent=health;ammoText.textContent=ammo;updateHostileHUD();healthBar.style.width='100%';setAim(false);setSprint(false)}
 
 buildScene();reset(1);engine.runRenderLoop(()=>scene.render());addEventListener('resize',()=>engine.resize());
 document.querySelector('#start').onclick=()=>{reset(pendingLevel);started=true;menu.classList.add('hidden');show(`DEPLOYMENT SHIELD: ${LEVELS[currentLevel].grace.toFixed(1)} SECONDS`);canvas.requestPointerLock?.()};
-canvas.addEventListener('contextmenu',e=>e.preventDefault());addEventListener('mousedown',e=>{if(e.button===2)setAim(true);else if(e.button===0)shoot()});addEventListener('mouseup',e=>{if(e.button===2)setAim(false)});addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();shoot()}});
+canvas.addEventListener('contextmenu',e=>e.preventDefault());addEventListener('mousedown',e=>{if(e.button===2)setAim(true);else if(e.button===0)shoot()});addEventListener('mouseup',e=>{if(e.button===2)setAim(false)});addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();shoot()}if((e.code==='ShiftLeft'||e.code==='ShiftRight')&&!sprinting){setSprint(true);show('THRUSTER BOOST +15%')}});addEventListener('keyup',e=>{if(e.code==='ShiftLeft'||e.code==='ShiftRight')setSprint(false)});addEventListener('blur',()=>setSprint(false));
 document.querySelector('#fire').onpointerdown=e=>{e.preventDefault();shoot()};document.querySelector('#touchAim').onpointerdown=e=>{e.preventDefault();setAim(!aiming)};
 document.querySelectorAll('[data-turn]').forEach(b=>{b.onpointerdown=e=>{e.preventDefault();turnDirection=Number(b.dataset.turn)};b.onpointerup=b.onpointercancel=()=>turnDirection=0});
 const stick=document.querySelector('#stick'),knob=stick.querySelector('i');let stickId=null;function moveStick(e){const r=stick.getBoundingClientRect(),x=e.clientX-(r.left+r.width/2),y=e.clientY-(r.top+r.height/2),len=Math.max(1,Math.hypot(x,y)),max=42,k=Math.min(1,max/len),dx=x*k,dy=y*k;knob.style.transform=`translate(${dx}px,${dy}px)`;moveVector={x:dx/max,y:-dy/max}}
