@@ -7,7 +7,7 @@
   <title>Starfall: Alien Uprising | DanPC</title>
   <meta name="description" content="Defend an alien vessel from the Solar Dominion in a modern browser FPS.">
   <link rel="icon" type="image/png" href="favicondanpc.png">
-  <link rel="stylesheet" href="starfall.css?v=3">
+  <link rel="stylesheet" href="starfall.css?v=4">
 </head>
 <body>
   <canvas id="game"></canvas>
@@ -16,7 +16,7 @@
   <div class="hud">
     <div class="top">
       <div class="brand"><b>STARFALL <span>// UPRISING</span></b><small>ALIEN DEFENCE PROTOCOL</small></div>
-      <div class="objective"><b id="left">HOSTILES: 7</b><small>DECK 07 · SOLAR DOMINION INCURSION</small><div class="bar"><i id="healthBar"></i></div></div>
+      <div class="objective"><b id="left">HOSTILES: 7</b><small id="deckName">DECK 07 · BIO-CORE ATRIUM</small><div class="bar"><i id="healthBar"></i></div></div>
     </div>
     <div class="bottom"><div class="stat">BIO-CORE<br><b id="health">100</b></div><div class="stat">PLASMA<br><b id="ammo">40</b></div></div>
   </div>
@@ -46,6 +46,6 @@
   </div>
 
   <script src="https://cdn.babylonjs.com/babylon.js"></script>
-  <script src="starfall.js?v=3"></script>
+  <script src="starfall.js?v=4"></script>
 </body>
 </html>

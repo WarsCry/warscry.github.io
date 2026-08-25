@@ -1,26 +1,33 @@
 (()=>{
 const canvas=document.querySelector('#game'),menu=document.querySelector('#menu'),msg=document.querySelector('#msg');
-const healthText=document.querySelector('#health'),healthBar=document.querySelector('#healthBar'),ammoText=document.querySelector('#ammo'),leftText=document.querySelector('#left');
+const healthText=document.querySelector('#health'),healthBar=document.querySelector('#healthBar'),ammoText=document.querySelector('#ammo'),leftText=document.querySelector('#left'),deckText=document.querySelector('#deckName');
 const hitMarker=document.querySelector('#hitMarker'),damage=document.querySelector('#damage'),muzzle=document.querySelector('#muzzle'),weapon=document.querySelector('#weapon');
 if(!window.BABYLON){menu.querySelector('p').textContent='The 3D engine could not load. Check your connection and reload the mission.';return}
 
 const engine=new BABYLON.Engine(canvas,true,{preserveDrawingBuffer:false,stencil:true,adaptToDeviceRatio:true});
 if(matchMedia('(pointer:coarse)').matches)engine.setHardwareScalingLevel(Math.max(1,devicePixelRatio*.85));
-let scene,camera,core,shadowGenerator,enemies=[],projectiles=[],started=false,health=100,ammo=40,kills=0,lastShot=0,aiming=false,moveVector={x:0,y:0},turnDirection=0;
+let scene,camera,core,coreLight,ambientLight,shadowGenerator,enemies=[],projectiles=[],started=false,health=100,ammo=40,kills=0,lastShot=0,aiming=false,moveVector={x:0,y:0},turnDirection=0,currentLevel=1,pendingLevel=1;
 const V=BABYLON.Vector3,C=BABYLON.Color3;
+const deckNodes={1:[],2:[]};
+const LEVELS={
+  1:{name:'DECK 07 · BIO-CORE ATRIUM',ammo:40,spawn:[0,2,18],rotation:Math.PI,positions:[[-18,-16],[-9,-21],[9,-20],[18,-13],[-20,7],[20,10],[0,13.5]],hp:78,eliteHp:110,eliteFrom:5,speed:.7,speedRange:.18,fireRange:17,fireMin:.85,fireRangeDelay:.75,boltMin:5,boltRange:4,boltDuration:520,coreDamage:8,coreCooldown:1.25,fog:'#050e12',fogDensity:.012},
+  2:{name:'DECK 08 · REACTOR LABYRINTH',ammo:52,spawn:[18,2,0],rotation:-Math.PI/2,positions:[[-20,-15],[-11,-21],[0,-23],[12,-21],[21,-13],[22,2],[19,15],[9,21],[-9,21],[-21,10]],hp:105,eliteHp:145,eliteFrom:7,speed:.96,speedRange:.25,fireRange:21,fireMin:.58,fireRangeDelay:.48,boltMin:7,boltRange:5,boltDuration:440,coreDamage:10,coreCooldown:.9,fog:'#170817',fogDensity:.016}
+};
 
 function material(name,diffuse,emissive=null,alpha=1){const m=new BABYLON.StandardMaterial(name,scene);m.diffuseColor=C.FromHexString(diffuse);m.specularColor=new C(.65,.75,.82);m.specularPower=96;m.alpha=alpha;if(emissive)m.emissiveColor=C.FromHexString(emissive);return m}
 function pbr(name,color,metallic=.65,roughness=.42,emissive=null){const m=new BABYLON.PBRMaterial(name,scene);m.albedoColor=C.FromHexString(color);m.metallic=metallic;m.roughness=roughness;m.environmentIntensity=.7;if(emissive)m.emissiveColor=C.FromHexString(emissive);return m}
 function texturedMaterial(name,url,uScale,vScale){const m=material(name,'#b9c2c8');const texture=new BABYLON.Texture(url,scene);texture.uScale=uScale;texture.vScale=vScale;texture.anisotropicFilteringLevel=8;m.diffuseTexture=texture;const bump=new BABYLON.Texture(url,scene);bump.uScale=uScale;bump.vScale=vScale;bump.level=.18;m.bumpTexture=bump;m.specularColor=new C(.36,.43,.48);m.specularPower=128;return m}
 function box(name,size,pos,mat,collision=false){const mesh=BABYLON.MeshBuilder.CreateBox(name,size,scene);mesh.position.copyFrom(pos);mesh.material=mat;mesh.checkCollisions=collision;return mesh}
+function onDeck(level,node){deckNodes[level].push(node);return node}
+function angleDistance(a,b){return Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)))}
 
 function buildScene(){
   scene=new BABYLON.Scene(engine);scene.clearColor=new BABYLON.Color4(.006,.012,.025,1);scene.collisionsEnabled=true;
   scene.fogMode=BABYLON.Scene.FOGMODE_EXP2;scene.fogDensity=.012;scene.fogColor=new C(.018,.055,.07);
   camera=new BABYLON.UniversalCamera('sentinel',new V(0,2,18),scene);camera.minZ=.08;camera.maxZ=90;camera.fov=.92;camera.speed=.38;camera.angularSensibility=2900;camera.inertia=.55;camera.ellipsoid=new V(.55,1,.55);camera.checkCollisions=true;
   camera.keysUp=[87];camera.keysDown=[83];camera.keysLeft=[65];camera.keysRight=[68];camera.attachControl(canvas,true);
-  const hemi=new BABYLON.HemisphericLight('ship ambience',new V(0,1,0),scene);hemi.intensity=.54;hemi.diffuse=new C(.42,.58,.66);hemi.groundColor=new C(.08,.12,.16);
-  const coreLight=new BABYLON.PointLight('core light',new V(0,4,0),scene);coreLight.diffuse=new C(.3,1,.78);coreLight.intensity=1.35;coreLight.range=24;
+  ambientLight=new BABYLON.HemisphericLight('ship ambience',new V(0,1,0),scene);ambientLight.intensity=.54;ambientLight.diffuse=new C(.42,.58,.66);ambientLight.groundColor=new C(.08,.12,.16);
+  coreLight=new BABYLON.PointLight('core light',new V(0,4,0),scene);coreLight.diffuse=new C(.3,1,.78);coreLight.intensity=1.35;coreLight.range=24;
   const combatLight=new BABYLON.DirectionalLight('combat shadows',new V(-.45,-1,.25),scene);combatLight.position=new V(12,18,-8);combatLight.intensity=.42;shadowGenerator=new BABYLON.ShadowGenerator(1024,combatLight);shadowGenerator.useBlurExponentialShadowMap=true;shadowGenerator.blurKernel=24;
   const glow=new BABYLON.GlowLayer('neon bloom',scene,{blurKernelSize:48});glow.intensity=.46;
   const pipeline=new BABYLON.DefaultRenderingPipeline('cinematic ship pipeline',true,scene,[camera]);pipeline.fxaaEnabled=true;pipeline.samples=matchMedia('(pointer:coarse)').matches?1:4;pipeline.bloomEnabled=!matchMedia('(pointer:coarse)').matches;pipeline.bloomThreshold=.82;pipeline.bloomWeight=.13;pipeline.imageProcessing.contrast=1.14;pipeline.imageProcessing.exposure=1.08;
@@ -46,20 +53,20 @@ function buildScene(){
   for(let i=0;i<48;i++){
     const a=i*Math.PI*2/48,gateDistance=Math.min(...[0,Math.PI/2,Math.PI,Math.PI*1.5,Math.PI*2].map(g=>Math.abs(a-g)));
     if(gateDistance<.2)continue;
-    const r=9.7,section=box('inner curved bulkhead',{width:1.32,height:5.15,depth:.72},new V(Math.sin(a)*r,2.575,Math.cos(a)*r),innerHull,true);section.rotation.y=a;section.isPickable=true;
-    if(i%4===0){const inset=box('bulkhead inset',{width:.62,height:3.8,depth:.08},new V(Math.sin(a)*9.3,3.1,Math.cos(a)*9.3),i%8===0?purple:trim);inset.rotation.y=a;inset.isPickable=false}
+    const r=9.7,section=onDeck(1,box('inner curved bulkhead',{width:1.32,height:5.15,depth:.72},new V(Math.sin(a)*r,2.575,Math.cos(a)*r),innerHull,true));section.rotation.y=a;section.isPickable=true;
+    if(i%4===0){const inset=onDeck(1,box('bulkhead inset',{width:.62,height:3.8,depth:.08},new V(Math.sin(a)*9.3,3.1,Math.cos(a)*9.3),i%8===0?purple:trim));inset.rotation.y=a;inset.isPickable=false}
   }
   for(const [x,z] of [[-2.75,9.65],[2.75,9.65],[-2.75,-9.65],[2.75,-9.65],[9.65,-2.75],[9.65,2.75],[-9.65,-2.75],[-9.65,2.75]]){
-    const column=BABYLON.MeshBuilder.CreateCylinder('rounded gate column',{height:6.4,diameter:1.05,tessellation:20},scene);column.position=new V(x,3.2,z);column.material=purple;column.checkCollisions=true;
-    const beacon=BABYLON.MeshBuilder.CreateSphere('gate beacon',{diameter:.3,segments:10},scene);beacon.position=new V(x,5.8,z);beacon.material=trim;beacon.isPickable=false;
+    const column=onDeck(1,BABYLON.MeshBuilder.CreateCylinder('rounded gate column',{height:6.4,diameter:1.05,tessellation:20},scene));column.position=new V(x,3.2,z);column.material=purple;column.checkCollisions=true;
+    const beacon=onDeck(1,BABYLON.MeshBuilder.CreateSphere('gate beacon',{diameter:.3,segments:10},scene));beacon.position=new V(x,5.8,z);beacon.material=trim;beacon.isPickable=false;
   }
-  for(const [x,z] of [[0,12],[12,0],[0,-12],[-12,0]]){const gateLight=new BABYLON.PointLight('gate deck light',new V(x,2.2,z),scene);gateLight.diffuse=new C(.28,.75,.68);gateLight.intensity=.62;gateLight.range=12}
+  for(const [x,z] of [[0,12],[12,0],[0,-12],[-12,0]]){const gateLight=onDeck(1,new BABYLON.PointLight('gate deck light',new V(x,2.2,z),scene));gateLight.diffuse=new C(.28,.75,.68);gateLight.intensity=.62;gateLight.range=12}
   for(const y of [.18,8.85]){const ring=BABYLON.MeshBuilder.CreateTorus('hull light ring',{diameter:49.2,thickness:.1,tessellation:72},scene);ring.position.y=y;ring.material=trim;ring.isPickable=false}
 
   for(const z of [-13,13])for(const x of [-13,13]){
-    const pod=BABYLON.MeshBuilder.CreateCylinder('curved machinery pod',{height:3.2,diameter:3.8,tessellation:20},scene);pod.position=new V(x,1.6,z);pod.material=purple;pod.checkCollisions=true;
-    const cap=BABYLON.MeshBuilder.CreateSphere('pod glow',{diameter:1.15,segments:16},scene);cap.position=new V(x,3.05,z);cap.material=trim;cap.isPickable=false;
-    for(let j=-1;j<=1;j++){const pipe=BABYLON.MeshBuilder.CreateTube('bio conduit',{path:[new V(x+j*.5,3.2,z),new V(x+j*.5,6.8,z),new V(x+j*.8,8.5,z*.86)],radius:.09,tessellation:8},scene);pipe.material=trim;pipe.isPickable=false}
+    const pod=onDeck(1,BABYLON.MeshBuilder.CreateCylinder('curved machinery pod',{height:3.2,diameter:3.8,tessellation:20},scene));pod.position=new V(x,1.6,z);pod.material=purple;pod.checkCollisions=true;
+    const cap=onDeck(1,BABYLON.MeshBuilder.CreateSphere('pod glow',{diameter:1.15,segments:16},scene));cap.position=new V(x,3.05,z);cap.material=trim;cap.isPickable=false;
+    for(let j=-1;j<=1;j++){const pipe=onDeck(1,BABYLON.MeshBuilder.CreateTube('bio conduit',{path:[new V(x+j*.5,3.2,z),new V(x+j*.5,6.8,z),new V(x+j*.8,8.5,z*.86)],radius:.09,tessellation:8},scene));pipe.material=trim;pipe.isPickable=false}
   }
   for(const z of [-24.55,24.55]){
     const door=box('rounded blast door',{width:7.5,height:6.6,depth:.35},new V(0,3.3,z),metal2,true);door.material=metal2;
@@ -71,21 +78,58 @@ function buildScene(){
     for(let i=0;i<18;i++){const star=BABYLON.MeshBuilder.CreateSphere('distant star',{diameter:.04+Math.random()*.08,segments:4},scene);star.position=new V(Math.sin(a)*26.1+(Math.random()-.5)*.4,3+Math.random()*4,(Math.random()-.5)*8);star.material=material(`star${a}${i}`,'#ffffff','#bcecff');star.isPickable=false}
   }
 
+  // Deck 08 is a concentric reactor labyrinth. Its offset gates force both the
+  // player and the attackers to wind through a different map before reaching the core.
+  const reactorHull=texturedMaterial('reactor armour','assets/starfall/hull-panels-v1.png',.42,1.12),reactorTrim=material('reactor trim','#5e173d','#d51d57'),reactorGlow=material('reactor energy','#ff8a38','#ff3f24'),reactorDark=pbr('reactor machinery','#130b1d',.8,.3);
+  reactorHull.diffuseColor=C.FromHexString('#765b72');
+  const outerGates=[Math.PI/4,Math.PI*3/4,Math.PI*5/4,Math.PI*7/4],innerGates=[0,Math.PI/2,Math.PI,Math.PI*3/2];
+  function reactorRing(radius,count,gates,height,gap){
+    const width=2*Math.PI*radius/count*.95;
+    for(let i=0;i<count;i++){
+      const a=i*Math.PI*2/count;if(gates.some(g=>angleDistance(a,g)<gap))continue;
+      const section=onDeck(2,box('reactor labyrinth bulkhead',{width,height,depth:.72},new V(Math.sin(a)*radius,height/2,Math.cos(a)*radius),reactorHull,true));section.rotation.y=a;
+      if(i%3===0){const strip=onDeck(2,box('reactor bulkhead pulse',{width:width*.55,height:2.5,depth:.075},new V(Math.sin(a)*(radius-.4),2.75,Math.cos(a)*(radius-.4)),i%6===0?reactorGlow:reactorTrim));strip.rotation.y=a;strip.isPickable=false}
+    }
+  }
+  reactorRing(14.4,56,outerGates,4.15,.16);reactorRing(7.55,40,innerGates,5.35,.24);
+  for(const radius of [14.75,7.9]){const floorRing=onDeck(2,BABYLON.MeshBuilder.CreateTorus('reactor floor circuit',{diameter:radius*2,thickness:.1,tessellation:72},scene));floorRing.position.y=.17;floorRing.material=reactorGlow;floorRing.isPickable=false}
+  for(const a of outerGates){
+    const channel=onDeck(2,box('reactor approach channel',{width:.16,height:.035,depth:7.2},new V(Math.sin(a)*18.2,.16,Math.cos(a)*18.2),reactorGlow));channel.rotation.y=a;channel.isPickable=false;
+    for(const side of [-1,1]){
+      const x=Math.sin(a)*14.4+Math.cos(a)*side*2.05,z=Math.cos(a)*14.4-Math.sin(a)*side*2.05;
+      const pylon=onDeck(2,BABYLON.MeshBuilder.CreateCylinder('reactor gate pylon',{height:5.4,diameter:1.15,tessellation:18},scene));pylon.position=new V(x,2.7,z);pylon.material=reactorDark;pylon.checkCollisions=true;
+      const crown=onDeck(2,BABYLON.MeshBuilder.CreateTorus('reactor gate crown',{diameter:1.25,thickness:.16,tessellation:20},scene));crown.position=new V(x,5.15,z);crown.material=reactorGlow;crown.isPickable=false;
+    }
+    const warningLight=onDeck(2,new BABYLON.PointLight('reactor warning light',new V(Math.sin(a)*12,3,Math.cos(a)*12),scene));warningLight.diffuse=new C(1,.18,.22);warningLight.intensity=.86;warningLight.range=11;
+  }
+  for(const a of innerGates){
+    for(const side of [-1,1]){
+      const x=Math.sin(a)*7.55+Math.cos(a)*side*2.2,z=Math.cos(a)*7.55-Math.sin(a)*side*2.2;
+      const column=onDeck(2,BABYLON.MeshBuilder.CreateCylinder('inner reactor column',{height:6.2,diameter:.88,tessellation:16},scene));column.position=new V(x,3.1,z);column.material=reactorTrim;column.checkCollisions=true;
+    }
+  }
+  for(const a of innerGates){
+    const r=11.2,x=Math.sin(a)*r,z=Math.cos(a)*r;
+    const reactor=onDeck(2,BABYLON.MeshBuilder.CreateCylinder('reactor capacitor',{height:4.4,diameter:2.35,tessellation:24},scene));reactor.position=new V(x,2.2,z);reactor.material=reactorDark;reactor.checkCollisions=true;
+    for(const y of [.7,2.2,3.7]){const band=onDeck(2,BABYLON.MeshBuilder.CreateTorus('capacitor energy band',{diameter:2.45,thickness:.13,tessellation:28},scene));band.position=new V(x,y,z);band.material=reactorGlow;band.isPickable=false}
+  }
+
   const dais=BABYLON.MeshBuilder.CreateCylinder('core dais',{height:.7,diameter:7,tessellation:32},scene);dais.position.y=.35;dais.material=purple;dais.checkCollisions=true;
   const coreRing=BABYLON.MeshBuilder.CreateTorus('core containment',{diameter:4.8,thickness:.32,tessellation:32},scene);coreRing.position.y=2.25;coreRing.material=trim;
   core=BABYLON.MeshBuilder.CreateSphere('living bio core',{diameter:3,segments:32},scene);core.position.y=2.4;core.material=material('living core','#4fffd9','#21c6a6');core.isPickable=false;
   const coreHalo=BABYLON.MeshBuilder.CreateTorus('core halo',{diameter:5.8,thickness:.08,tessellation:48},scene);coreHalo.position.y=2.4;coreHalo.rotation.x=Math.PI/2;coreHalo.material=trim;coreHalo.isPickable=false;
 
+  deckNodes[2].forEach(node=>node.setEnabled(false));
   scene.onBeforeRenderObservable.add(()=>{const t=performance.now()*.001;if(core){core.scaling.setAll(1+Math.sin(t*2.4)*.045);core.rotation.y=t*.25;coreHalo.rotation.z=t*.3}if(started)update(scene.getEngine().getDeltaTime()/1000,t)});
   return scene;
 }
 
 function capsule(name,height,radius,parent,pos,mat){const mesh=BABYLON.MeshBuilder.CreateCapsule(name,{height,radius,tessellation:12,subdivisions:3},scene);mesh.parent=parent;mesh.position.copyFrom(pos);mesh.material=mat;return mesh}
-function createEnemy(x,z,index){
+function createEnemy(x,z,index,path){
+  const config=LEVELS[currentLevel],reactorLevel=currentLevel===2;
   const root=new BABYLON.TransformNode(`Rigged Solar Dominion trooper ${index}`,scene);root.position=new V(x,0,z);
-  const gateOptions=[new V(0,0,10.8),new V(10.8,0,0),new V(0,0,-10.8),new V(-10.8,0,0)],gate=gateOptions.sort((a,b)=>V.DistanceSquared(a,root.position)-V.DistanceSquared(b,root.position))[0];
-  const maxHp=index>4?110:78;root.metadata={enemyRoot:true,hp:maxHp,maxHp,alive:true,cool:1.1+Math.random(),speed:.7+Math.random()*.18,path:[gate,new V(0,0,0)],pathIndex:0,hitReact:0,recoil:0};
-  const navy=pbr(`dominion navy ${index}`,'#172955',.72,.34),navyDark=pbr(`dominion undersuit ${index}`,'#080d18',.25,.68),gold=pbr(`solar gold ${index}`,'#9d742c',.82,.28),steel=pbr(`rifle metal ${index}`,'#151c24',.9,.25),visor=pbr(`helmet visor ${index}`,'#226ac6',.35,.18,'#0b5ab7'),red=pbr(`rank light ${index}`,'#531021',.35,.3,'#e51b4d');
+  const maxHp=index>=config.eliteFrom?config.eliteHp:config.hp;root.metadata={enemyRoot:true,hp:maxHp,maxHp,alive:true,cool:(reactorLevel ? .7 : 1.1)+Math.random(),speed:config.speed+Math.random()*config.speedRange,path,pathIndex:0,hitReact:0,recoil:0};
+  const navy=pbr(`dominion navy ${index}`,reactorLevel?'#421a42':'#172955',.72,.34),navyDark=pbr(`dominion undersuit ${index}`,'#080d18',.25,.68),gold=pbr(`solar gold ${index}`,reactorLevel?'#b8642f':'#9d742c',.82,.28),steel=pbr(`rifle metal ${index}`,'#151c24',.9,.25),visor=pbr(`helmet visor ${index}`,reactorLevel?'#d63855':'#226ac6',.35,.18,reactorLevel?'#b8173f':'#0b5ab7'),red=pbr(`rank light ${index}`,'#531021',.35,.3,'#e51b4d');
 
   const hips=new BABYLON.TransformNode('hips rig',scene);hips.parent=root;hips.position.y=1.45;
   const pelvis=BABYLON.MeshBuilder.CreateCylinder('segmented pelvis armour',{height:.48,diameterTop:.68,diameterBottom:.92,tessellation:8},scene);pelvis.parent=hips;pelvis.material=navy;
@@ -136,7 +180,14 @@ function createEnemy(x,z,index){
   root.metadata.parts={hips,spine,neck,shoulders:shoulderRigs,elbows,hipsRig:hipRigs,knees:kneeRigs,healthFill,muzzle:gunMuzzle};
   return root;
 }
-function resetEnemies(){enemies.forEach(e=>e.dispose(false,true));enemies=[];const positions=[[-18,-16],[-9,-21],[9,-20],[18,-13],[-20,7],[20,10],[0,13.5]];positions.forEach((p,i)=>enemies.push(createEnemy(p[0],p[1],i)))}
+function enemyPath(x,z,index){
+  if(currentLevel===1){const gates=[new V(0,0,10.8),new V(10.8,0,0),new V(0,0,-10.8),new V(-10.8,0,0)],rootPos=new V(x,0,z),gate=gates.sort((a,b)=>V.DistanceSquared(a,rootPos)-V.DistanceSquared(b,rootPos))[0];return[gate,new V(0,0,0)]}
+  const angle=Math.atan2(x,z),outerAngles=[Math.PI/4,Math.PI*3/4,Math.PI*5/4,Math.PI*7/4],innerAngles=[0,Math.PI/2,Math.PI,Math.PI*3/2];let outerIndex=0;
+  for(let i=1;i<outerAngles.length;i++)if(angleDistance(angle,outerAngles[i])<angleDistance(angle,outerAngles[outerIndex]))outerIndex=i;
+  const outer=outerAngles[outerIndex],inner=innerAngles[(outerIndex+(index%2))%4];
+  return[new V(Math.sin(outer)*14.2,0,Math.cos(outer)*14.2),new V(Math.sin(inner)*7.35,0,Math.cos(inner)*7.35),new V(0,0,0)]
+}
+function resetEnemies(){enemies.forEach(e=>e.dispose(false,true));enemies=[];LEVELS[currentLevel].positions.forEach((p,i)=>enemies.push(createEnemy(p[0],p[1],i,enemyPath(p[0],p[1],i))))}
 
 function show(text){msg.textContent=text;msg.classList.add('show');clearTimeout(show.timer);show.timer=setTimeout(()=>msg.classList.remove('show'),900)}
 function animateClass(el,name){el.classList.remove(name);void el.offsetWidth;el.classList.add(name)}
@@ -149,29 +200,42 @@ function shoot(){
   const pick=scene.pickWithRay(camera.getForwardRay(100));
   if(pick?.hit&&pick.pickedMesh.metadata?.enemy?.metadata?.alive){const enemy=pick.pickedMesh.metadata.enemy;enemy.metadata.hp-=aiming?58:42;enemy.metadata.hitReact=1;const ratio=Math.max(0,enemy.metadata.hp/enemy.metadata.maxHp);enemy.metadata.parts.healthFill.scaling.x=ratio;enemy.metadata.parts.healthFill.position.x=-(1-ratio)*.55;impact(pick.pickedPoint);animateClass(hitMarker,'show');plasmaSound(true);show(enemy.metadata.hp>0?'✕ ARMOUR HIT':'✕ CRITICAL PLASMA IMPACT');if(enemy.metadata.hp<=0)killEnemy(enemy)}else{if(pick?.hit)impact(pick.pickedPoint,'#65ffe0');show('SHOT MISSED')}
 }
-function killEnemy(enemy){enemy.metadata.alive=false;kills++;leftText.textContent=`HOSTILES: ${enemies.length-kills}`;show('DOMINION TROOPER NEUTRALIZED');enemy.getChildMeshes().forEach(m=>m.isPickable=false);BABYLON.Animation.CreateAndStartAnimation('trooper fall',enemy,'rotation.z',60,34,0,Math.PI*.48,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);BABYLON.Animation.CreateAndStartAnimation('trooper drop',enemy,'position.y',60,34,enemy.position.y,enemy.position.y-.5,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,null,()=>setTimeout(()=>enemy.setEnabled(false),450));if(kills===enemies.length)setTimeout(()=>end(true),1000)}
+function killEnemy(enemy){enemy.metadata.alive=false;kills++;leftText.textContent=`HOSTILES: ${enemies.length-kills}`;show('DOMINION TROOPER NEUTRALIZED');enemy.getChildMeshes().forEach(m=>m.isPickable=false);BABYLON.Animation.CreateAndStartAnimation('trooper fall',enemy,'rotation.z',60,34,0,Math.PI*.48,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);BABYLON.Animation.CreateAndStartAnimation('trooper drop',enemy,'position.y',60,34,enemy.position.y,enemy.position.y-.5,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,null,()=>setTimeout(()=>enemy.setEnabled(false),450));if(kills===enemies.length){started=false;setTimeout(completeLevel,1000)}}
 function enemyBolt(enemy){
-  const muzzlePoint=enemy.metadata.parts.muzzle;muzzlePoint.computeWorldMatrix(true);const origin=muzzlePoint.getAbsolutePosition().clone(),target=camera.position.clone(),bolt=BABYLON.MeshBuilder.CreateSphere('solar bolt',{diameter:.22,segments:8},scene);enemy.metadata.recoil=1;bolt.position.copyFrom(origin);bolt.material=material(`bolt${Math.random()}`,'#ffb02e','#ff6a00');bolt.isPickable=false;const start=performance.now(),duration=520;
-  projectiles.push(bolt);scene.onBeforeRenderObservable.add(function fly(){const k=Math.min(1,(performance.now()-start)/duration);bolt.position=BABYLON.Vector3.Lerp(origin,target,k);bolt.scaling.setAll(1+k*1.4);if(k>=1){scene.onBeforeRenderObservable.removeCallback(fly);bolt.dispose();projectiles=projectiles.filter(x=>x!==bolt);takeDamage(5+Math.floor(Math.random()*4))}});
+  const config=LEVELS[currentLevel],muzzlePoint=enemy.metadata.parts.muzzle;muzzlePoint.computeWorldMatrix(true);const origin=muzzlePoint.getAbsolutePosition().clone(),target=camera.position.clone(),bolt=BABYLON.MeshBuilder.CreateSphere('solar bolt',{diameter:.22,segments:8},scene);enemy.metadata.recoil=1;bolt.position.copyFrom(origin);bolt.material=material(`bolt${Math.random()}`,'#ffb02e','#ff6a00');bolt.isPickable=false;const start=performance.now(),duration=config.boltDuration;
+  projectiles.push(bolt);scene.onBeforeRenderObservable.add(function fly(){const k=Math.min(1,(performance.now()-start)/duration);bolt.position=BABYLON.Vector3.Lerp(origin,target,k);bolt.scaling.setAll(1+k*1.4);if(k>=1){scene.onBeforeRenderObservable.removeCallback(fly);bolt.dispose();projectiles=projectiles.filter(x=>x!==bolt);takeDamage(config.boltMin+Math.floor(Math.random()*config.boltRange))}});
 }
 function takeDamage(amount){if(!started)return;health=Math.max(0,health-amount);healthText.textContent=health;healthBar.style.width=`${health}%`;animateClass(damage,'show');show('SOLAR BOLT IMPACT');if(!health)end(false)}
 function update(dt,t){
+  const config=LEVELS[currentLevel];
   if(turnDirection)camera.rotation.y+=turnDirection*dt*1.7;
   if(moveVector.x||moveVector.y){const forward=new V(Math.sin(camera.rotation.y),0,Math.cos(camera.rotation.y)),right=new V(forward.z,0,-forward.x),movement=forward.scale(moveVector.y*dt*5).add(right.scale(moveVector.x*dt*5));camera.cameraDirection.addInPlace(movement)}
   for(const enemy of enemies){if(!enemy.metadata.alive||!enemy.isEnabled())continue;const toCore=core.position.subtract(enemy.position),distance=Math.hypot(toCore.x,toCore.z),toPlayer=camera.position.subtract(enemy.position),playerDistance=Math.hypot(toPlayer.x,toPlayer.z);enemy.rotation.y=Math.atan2(toPlayer.x,toPlayer.z)+Math.PI;enemy.metadata.cool-=dt;
     const pathTarget=enemy.metadata.path[Math.min(enemy.metadata.pathIndex,enemy.metadata.path.length-1)],toTarget=pathTarget.subtract(enemy.position),pathDistance=Math.hypot(toTarget.x,toTarget.z),walking=enemy.metadata.pathIndex<enemy.metadata.path.length-1||distance>4.1;
     if(pathDistance<1.25&&enemy.metadata.pathIndex<enemy.metadata.path.length-1)enemy.metadata.pathIndex++;
     const rig=enemy.metadata.parts,phase=t*7.2+enemy.uniqueId,stride=walking?Math.sin(phase):0;rig.hips.position.y=1.45+(walking?Math.abs(Math.sin(phase*2))*.035:0);rig.hipsRig[0].rotation.x=stride*.58;rig.hipsRig[1].rotation.x=-stride*.58;rig.knees[0].rotation.x=Math.max(0,-stride)*.72;rig.knees[1].rotation.x=Math.max(0,stride)*.72;rig.shoulders[0].rotation.x=-stride*.32-.28;rig.shoulders[1].rotation.x=stride*.2-.72;rig.elbows[0].rotation.x=-.18;rig.elbows[1].rotation.x=-.72-enemy.metadata.recoil*.28;rig.spine.rotation.y=walking?Math.sin(phase)*.055:0;if(enemy.metadata.hitReact>0){rig.spine.rotation.z=Math.sin(enemy.metadata.hitReact*Math.PI)*.22;enemy.metadata.hitReact=Math.max(0,enemy.metadata.hitReact-dt*4.5)}else rig.spine.rotation.z=0;enemy.metadata.recoil=Math.max(0,enemy.metadata.recoil-dt*5);
-    if(distance>4.1){const activeTarget=enemy.metadata.path[Math.min(enemy.metadata.pathIndex,enemy.metadata.path.length-1)],stepTarget=activeTarget.subtract(enemy.position);stepTarget.y=0;if(stepTarget.lengthSquared()>.01){const step=stepTarget.normalize().scale(enemy.metadata.speed*dt);enemy.position.addInPlace(step);enemy.rotation.y=Math.atan2(step.x,step.z)+Math.PI}}else{enemy.metadata.cool-=dt*1.4;if(enemy.metadata.cool<0){enemy.metadata.cool=1.25;takeDamage(8);show('BIO-CORE UNDER ATTACK')}}
-    if(playerDistance<17&&enemy.metadata.cool<0){enemy.metadata.cool=.85+Math.random()*.75;enemyBolt(enemy)}
+    if(distance>4.1){const activeTarget=enemy.metadata.path[Math.min(enemy.metadata.pathIndex,enemy.metadata.path.length-1)],stepTarget=activeTarget.subtract(enemy.position);stepTarget.y=0;if(stepTarget.lengthSquared()>.01){const step=stepTarget.normalize().scale(enemy.metadata.speed*dt);enemy.position.addInPlace(step);enemy.rotation.y=Math.atan2(step.x,step.z)+Math.PI}}else{enemy.metadata.cool-=dt*1.4;if(enemy.metadata.cool<0){enemy.metadata.cool=config.coreCooldown;takeDamage(config.coreDamage);show('BIO-CORE UNDER ATTACK')}}
+    if(playerDistance<config.fireRange&&enemy.metadata.cool<0){enemy.metadata.cool=config.fireMin+Math.random()*config.fireRangeDelay;enemyBolt(enemy)}
   }
 }
 function setAim(value){aiming=value;document.body.classList.toggle('aiming',value);if(camera)camera.fov=value?.58:.92}
-function end(win){started=false;document.exitPointerLock?.();menu.classList.remove('hidden');menu.querySelector('h1').innerHTML=win?'DECK SECURED<br><span>VICTORY</span>':'BIO-CORE LOST<br><span>DEFEAT</span>';menu.querySelectorAll('p')[0].textContent=win?'The living ship is free. The Solar Dominion boarding force has fallen.':'The Dominion destroyed the living core. Reinitialize the defence protocol and fight again.';document.querySelector('#start').textContent='RESTART MISSION'}
-function reset(){health=100;ammo=40;kills=0;camera.position.copyFromFloats(0,2,18);camera.rotation.copyFromFloats(0,Math.PI,0);resetEnemies();healthText.textContent=health;ammoText.textContent=ammo;leftText.textContent=`HOSTILES: ${enemies.length}`;healthBar.style.width='100%';setAim(false)}
+function setDeck(level){
+  currentLevel=level;const config=LEVELS[level];
+  for(const deck of [1,2])deckNodes[deck].forEach(node=>node.setEnabled(deck===level));
+  scene.fogColor=C.FromHexString(config.fog);scene.fogDensity=config.fogDensity;scene.clearColor=level===1?new BABYLON.Color4(.006,.012,.025,1):new BABYLON.Color4(.03,.006,.025,1);
+  ambientLight.diffuse=level===1?new C(.42,.58,.66):new C(.72,.3,.4);ambientLight.groundColor=level===1?new C(.08,.12,.16):new C(.18,.035,.08);coreLight.diffuse=level===1?new C(.3,1,.78):new C(.75,.28,.58);
+  deckText.textContent=config.name;
+}
+function completeLevel(){
+  document.exitPointerLock?.();
+  if(currentLevel===1){pendingLevel=2;menu.querySelector('h1').innerHTML='DECK 07 SECURED<br><span>DESCEND DEEPER</span>';menu.querySelectorAll('p')[0].textContent='The first boarding force is down—but a stronger Dominion squad has breached Deck 08. Enter the reactor labyrinth and protect the core again.';document.querySelector('#start').textContent='ENTER DECK 08';menu.classList.remove('hidden')}
+  else end(true);
+}
+function end(win){started=false;document.exitPointerLock?.();menu.classList.remove('hidden');if(win){pendingLevel=1;menu.querySelector('h1').innerHTML='SHIP LIBERATED<br><span>CAMPAIGN VICTORY</span>';menu.querySelectorAll('p')[0].textContent='Both decks are secure. You defeated the elite reactor assault and saved the living ship.';document.querySelector('#start').textContent='REPLAY CAMPAIGN'}else{pendingLevel=currentLevel;menu.querySelector('h1').innerHTML='BIO-CORE LOST<br><span>DEFEAT</span>';menu.querySelectorAll('p')[0].textContent=`The Dominion broke through on Deck ${currentLevel===1?'07':'08'}. Reinitialize this deck and fight again.`;document.querySelector('#start').textContent=`RETRY DECK ${currentLevel===1?'07':'08'}`}}
+function reset(level=currentLevel){setDeck(level);const config=LEVELS[level];health=100;ammo=config.ammo;kills=0;lastShot=0;camera.position.copyFromFloats(...config.spawn);camera.rotation.copyFromFloats(0,config.rotation,0);camera.cameraDirection.copyFromFloats(0,0,0);camera.cameraRotation.copyFromFloats(0,0);resetEnemies();healthText.textContent=health;ammoText.textContent=ammo;leftText.textContent=`HOSTILES: ${enemies.length}`;healthBar.style.width='100%';setAim(false)}
 
-buildScene();reset();engine.runRenderLoop(()=>scene.render());addEventListener('resize',()=>engine.resize());
-document.querySelector('#start').onclick=()=>{reset();started=true;menu.classList.add('hidden');canvas.requestPointerLock?.()};
+buildScene();reset(1);engine.runRenderLoop(()=>scene.render());addEventListener('resize',()=>engine.resize());
+document.querySelector('#start').onclick=()=>{reset(pendingLevel);started=true;menu.classList.add('hidden');canvas.requestPointerLock?.()};
 canvas.addEventListener('contextmenu',e=>e.preventDefault());addEventListener('mousedown',e=>{if(e.button===2)setAim(true);else if(e.button===0)shoot()});addEventListener('mouseup',e=>{if(e.button===2)setAim(false)});addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();shoot()}});
 document.querySelector('#fire').onpointerdown=e=>{e.preventDefault();shoot()};document.querySelector('#touchAim').onpointerdown=e=>{e.preventDefault();setAim(!aiming)};
 document.querySelectorAll('[data-turn]').forEach(b=>{b.onpointerdown=e=>{e.preventDefault();turnDirection=Number(b.dataset.turn)};b.onpointerup=b.onpointercancel=()=>turnDirection=0});
