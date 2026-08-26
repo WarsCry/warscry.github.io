@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#05050b">
+  <title>Xeno Mahjong: Temple of the Stars | DanPC</title>
+  <meta name="description" content="Play a fully 3D alien Mahjong Solitaire puzzle on a Maya-inspired temple table.">
+  <link rel="icon" type="image/png" href="favicondanpc.png">
+  <link rel="stylesheet" href="xeno-mahjong.css?v=2">
+</head>
+<body>
+  <main class="game-shell">
+    <header class="topbar">
+      <a href="arcade.html">← DANPC ARCADE</a>
+      <div><small>ORBITAL ARCHAEOLOGY DECK</small><strong>XENO MAHJONG</strong></div>
+      <span class="online"><i></i> TEMPLE LINKED</span>
+    </header>
+
+    <section class="game-stage" aria-label="3D alien Mahjong Solitaire table">
+      <canvas id="renderCanvas" aria-label="Mahjong temple table"></canvas>
+      <div class="atmosphere"></div>
+
+      <div class="stats left">
+        <small>TILES REMAINING</small><b id="tilesRemaining">128</b><span id="movesAvailable">SCANNING MOVES</span>
+      </div>
+      <div class="stats right">
+        <small>TEMPLE TIME</small><b id="timer">00:00</b><span id="matches">0 MATCHES</span>
+      </div>
+
+      <div class="selection" id="selectionText">SELECT TWO FREE TILES WITH THE SAME ALIEN GLYPH</div>
+      <div class="controls" aria-label="Mahjong controls">
+        <button id="hintButton">✦ HINT</button>
+        <button id="shuffleButton">⌁ HIVE SHUFFLE</button>
+        <button id="undoButton">↶ UNDO</button>
+        <button id="soundButton" aria-pressed="true">◖)) SOUND</button>
+      </div>
+
+      <div class="start-screen" id="startScreen">
+        <p>RECOVERED GAME PROTOCOL</p>
+        <h1>XENO MAHJONG<br><span>TEMPLE OF THE STARS</span></h1>
+        <div class="temple-mark"><i></i><i></i><i></i><b>◉</b></div>
+        <p class="intro">A complete alien tile puzzle rests above a forgotten stepped temple. Match identical free glyphs until the table is empty.</p>
+        <div class="rules"><span><b>1</b> A tile must have no tile covering it.</span><span><b>2</b> Its left or right side must be open.</span><span><b>3</b> Match two identical alien symbols.</span></div>
+        <button id="startButton">AWAKEN THE TEMPLE</button>
+        <small>Tap tiles on mobile · Click on PC · Drag to orbit · Pinch or wheel to zoom</small>
+      </div>
+
+      <div class="victory hidden" id="victoryScreen">
+        <p>THE CONSTELLATION IS COMPLETE</p><h2>TEMPLE AWAKENED</h2><div class="victory-glyph">◉</div>
+        <p id="victoryStats"></p><button id="replayButton">BUILD A NEW TEMPLE</button>
+      </div>
+    </section>
+  </main>
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="xeno-mahjong.js?v=2"></script>
+</body>
+</html>
