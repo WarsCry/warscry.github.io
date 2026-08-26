@@ -93,15 +93,17 @@
   const shell = document.querySelector('.shell');
   const pinball2d = new window.XenoPinball2D($('pinball2d'), {
     onScore: (points, label) => addScore(points, label),
-    onReady: () => announce('BALL READY — HOLD TO LAUNCH', 1700),
+    onReady: () => announce('ROCKET READY — HOLD TO LAUNCH', 1700),
     onCharge: (percent) => { $('tableLaunch').textContent = percent === null ? 'HOLD TO LAUNCH' : `POWER ${percent}%`; },
     onLaunch: (power) => { sound('launch'); announce(`PLASMA LAUNCH ${power}%`, 1000); },
     onFlipper: () => sound('flipper'),
     onRail: () => sound('rail'),
     onBumper: () => sound('bumper'),
     onTarget: () => sound('target'),
-    onRamp: (label) => { addScore(2500, label); sound('ramp'); },
+    onRamp: (label) => { sound('ramp'); announce(label, 900); },
     onBankComplete: () => { multiplier = Math.min(8, multiplier + 1); sound('ramp'); announce(`TARGET BANK COMPLETE ×${multiplier}`, 1700); updateHud(); },
+    onCombo: (count) => { sound('target'); announce(`${count}X FLOW COMBO`, 1200); },
+    onFlow: () => { sound('multiball'); announce('MAXIMUM FLOW — SCORE SURGE', 1900); },
     onCoreCharged: () => activate2DMultiball(),
     onDrain: (remaining) => handle2DDrain(remaining),
   });
@@ -303,7 +305,7 @@
   function checkRamps(ball){rampSensors.forEach((sensor,index)=>{const keyName=`${index}`;if(ball.z>.85)ball.rampPass.delete(keyName);if(ball.prevZ>.45&&ball.z<=.45&&Math.abs(ball.x-sensor.x)<.72&&!ball.rampPass.has(keyName)){ball.rampPass.add(keyName);addScore(2500,index?'RIGHT ORBIT':'LEFT ORBIT');sound('ramp');burst(sensor.x,sensor.z,index?machines[selected].secondary:machines[selected].accent)}})}
   function startMultiball(){multiballStarted=true;multiplier=Math.min(8,multiplier+1);sound('multiball');announce(activeProfile.jackpot,2600);addScore(10000,'CORE CHARGED');spawnBall(false,-.5,-3.2,3.4,3.6);spawnBall(false,.5,-3.2,-3.4,3.6);updateHud()}
   function activate2DMultiball(){if(multiballStarted)return;multiballStarted=true;multiplier=Math.min(8,multiplier+1);sound('multiball');announce(activeProfile.jackpot,2600);addScore(10000,'CORE CHARGED');pinball2d.addMultiball();updateHud()}
-  function handle2DDrain(remaining){sound('drain');if(remaining){announce('MULTIBALL LOST — KEEP FIGHTING',1400);return}ballsLeft--;updateHud();if(ballsLeft>0){announce(`BALL ${4-ballsLeft} READY`,1600);setTimeout(()=>{if(gameActive&&mode==='play')pinball2d.serveBall()},900)}else endGame()}
+  function handle2DDrain(remaining){sound('drain');if(remaining){announce('MULTIBALL LOST — KEEP FIGHTING',1400);return}ballsLeft--;updateHud();if(ballsLeft>0){announce(`ROCKET ${4-ballsLeft} READY`,1600);setTimeout(()=>{if(gameActive&&mode==='play')pinball2d.serveBall()},900)}else endGame()}
   function burst(x,z,material) {
     const pieces=[];for(let i=0;i<10;i++){const mesh=BABYLON.MeshBuilder.CreatePolyhedron('score spark',{type:1,size:.055+Math.random()*.075},scene);mesh.parent=gameRoot;mesh.position.set(x,2.63,z);mesh.material=material;pieces.push({mesh,vx:(Math.random()-.5)*.08,vy:.035+Math.random()*.07,vz:(Math.random()-.5)*.08})}
     let frames=0;const observer=scene.onBeforeRenderObservable.add(()=>{frames++;pieces.forEach(p=>{p.mesh.position.x+=p.vx;p.mesh.position.y+=p.vy;p.mesh.position.z+=p.vz;p.vy-=.002;p.mesh.rotation.y+=.15});if(frames>35){scene.onBeforeRenderObservable.remove(observer);pieces.forEach(p=>p.mesh.dispose())}})
