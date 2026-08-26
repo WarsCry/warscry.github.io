@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#05040d">
+  <title>Xeno Pinball Arena | DanPC</title>
+  <meta name="description" content="Enter a circular 3D alien arcade and play a complete original pinball table.">
+  <link rel="icon" type="image/png" href="favicondanpc.png">
+  <link rel="stylesheet" href="xeno-pinball.css?v=2">
+</head>
+<body>
+  <main class="shell">
+    <canvas id="renderCanvas" aria-label="3D alien pinball arcade"></canvas>
+    <div class="scanlines"></div>
+    <header class="topbar">
+      <a href="arcade.html">← DANPC ARCADE</a>
+      <div><small>DEEP-SPACE RECREATION DECK</small><strong>XENO PINBALL ARENA</strong></div>
+      <p>HIGH SCORE <b id="highScore">0</b></p>
+    </header>
+
+    <section class="lobby-panel" id="lobbyPanel">
+      <p class="eyebrow">THREE MACHINES · ONE ORBITAL ARCADE</p>
+      <h1 id="machineName">HIVE CORE</h1>
+      <p id="machineDescription">Wake the living reactor, charge its three organs, and survive the queen’s multiball.</p>
+      <div class="machine-picker">
+        <button id="previousMachine" aria-label="Previous machine">‹</button>
+        <div><span id="machineNumber">MACHINE 01 / 03</span><b id="machineDifficulty">BALANCED</b></div>
+        <button id="nextMachine" aria-label="Next machine">›</button>
+      </div>
+      <button class="primary" id="enterMachine">APPROACH MACHINE</button>
+      <small>Choose with the arrows or click a cabinet · drag to look around</small>
+    </section>
+
+    <section class="hud hidden" id="gameHud">
+      <div><small>SCORE</small><b id="score">0000000</b></div>
+      <div><small>MULTIPLIER</small><b id="multiplier">×1</b></div>
+      <div><small>BALLS</small><b id="balls">3</b></div>
+      <div><small>MISSION</small><b id="mission">AWAKEN THE HIVE</b></div>
+    </section>
+    <div class="message hidden" id="message">BALL READY</div>
+    <button class="leave hidden" id="leaveMachine">← ARCADE FLOOR</button>
+    <div class="mobile-controls hidden" id="mobileControls">
+      <button id="leftFlipper">◢ LEFT</button>
+      <button class="launch" id="launchBall">LAUNCH</button>
+      <button id="rightFlipper">RIGHT ◣</button>
+    </div>
+
+    <section class="result-screen hidden" id="resultScreen">
+      <p>RUN COMPLETE</p><h2 id="resultTitle">HIVE CORE</h2>
+      <div><small>FINAL SCORE</small><b id="finalScore">0</b></div>
+      <p id="resultMessage">The arcade has recorded your signal.</p>
+      <button id="replayButton">PLAY AGAIN</button><button class="secondary" id="returnButton">CHOOSE ANOTHER MACHINE</button>
+    </section>
+
+    <section class="start-screen" id="startScreen">
+      <p>ORBITAL RECREATION DECK // ONLINE</p>
+      <h2>XENO<br><span>PINBALL</span></h2>
+      <div class="orb"><i></i><i></i><i></i></div>
+      <p>Walk into a circular alien arcade, choose a real table, and chase the high score through lights, ramps, bumpers, missions, and multiball.</p>
+      <button id="startButton">OPEN THE ARCADE</button>
+      <small>Keyboard: Z / ← and / / → flippers · Space launches · Phone controls included</small>
+    </section>
+  </main>
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="xeno-pinball.js?v=2"></script>
+</body>
+</html>
