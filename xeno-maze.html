@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#020708">
+  <title>Xeno Maze: Signal Lost | DanPC</title>
+  <meta name="description" content="Escape a living alien labyrinth using touch, mouse, or keyboard controls.">
+  <link rel="icon" type="image/png" href="favicondanpc.png">
+  <link rel="stylesheet" href="xeno-maze.css?v=1">
+</head>
+<body>
+  <main class="game-shell">
+    <header class="topbar">
+      <a href="arcade.html" class="back">← DANPC ARCADE</a>
+      <div class="identity"><span>DERELICT VESSEL // SECTOR 9</span><strong>XENO MAZE</strong></div>
+      <div class="signal"><span></span> SIGNAL FRAGMENTED</div>
+    </header>
+
+    <section class="viewport" aria-label="Alien maze game">
+      <canvas id="mazeCanvas" aria-label="Living alien labyrinth"></canvas>
+      <div class="scanlines"></div>
+      <div class="vignette"></div>
+
+      <div class="hud left-hud">
+        <small>LABYRINTH</small>
+        <b id="levelLabel">SPECIMEN DECK</b>
+        <span id="mapLabel">MAP 01</span>
+      </div>
+      <div class="hud right-hud">
+        <small>EXPOSURE</small>
+        <b id="timer">00:00</b>
+        <span id="distanceLabel">EXIT SIGNAL: --</span>
+      </div>
+      <div class="objective" id="objective">FOLLOW THE GREEN SIGNAL. FIND THE AIRLOCK.</div>
+      <div class="drag-hint" id="dragHint"><span></span> DRAG TO MOVE · WASD / ARROWS</div>
+      <div class="nerve-meter"><small>NERVE</small><div><i id="nerveFill"></i></div></div>
+      <div class="quick-controls" aria-label="Game settings">
+        <button id="soundToggle" aria-pressed="true">◖)) SOUND</button>
+        <button id="scareToggle" aria-pressed="true">☠ SCARES</button>
+      </div>
+
+      <div class="motion-shadow" id="motionShadow"><i></i><i></i></div>
+      <div class="jump-scare" id="jumpScare" aria-hidden="true">
+        <div class="creature">
+          <i class="crown"></i><i class="eye left"></i><i class="eye right"></i>
+          <i class="mouth"><b></b><b></b><b></b><b></b><b></b></i>
+        </div>
+        <strong id="scareMessage">IT FOUND YOU</strong>
+      </div>
+
+      <div class="sector-screen hidden" id="sectorScreen">
+        <p id="sectorKicker">SECTOR SURVIVED</p>
+        <h2 id="sectorTitle">THE SHIP GOES DEEPER</h2>
+        <p id="sectorText">The next labyrinth is larger, darker, and less empty.</p>
+        <button id="sectorButton">DESCEND TO THE NEXT SECTOR</button>
+      </div>
+
+      <div class="start-screen" id="startScreen">
+        <div class="warning-mark">⌁</div>
+        <p class="eyebrow">BIOLOGICAL NAVIGATION TEST</p>
+        <h1>XENO MAZE<br><span>SIGNAL LOST</span></h1>
+        <p class="intro">The ship is alive. The corridors move when you stop looking. Follow the dying exit signal before something finds you first.</p>
+        <div class="control-row">
+          <span>PHONE / TABLET</span><b>SLIDE A FINGER</b>
+          <span>PC</span><b>DRAG OR USE WASD</b>
+        </div>
+        <div class="feature-strip"><span>6 LIVING SECTORS</span><span>PROCEDURAL MAPS</span><span>HEADPHONES RECOMMENDED</span></div>
+        <button id="startButton">ENTER THE LABYRINTH</button>
+        <small class="content-note">Contains flashing lights and optional sudden scare effects.</small>
+      </div>
+    </section>
+  </main>
+  <script src="xeno-maze.js?v=2"></script>
+</body>
+</html>
