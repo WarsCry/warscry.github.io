@@ -45,6 +45,10 @@
     dark: pbr('void metal', '#050a10', .7, .3),
     tile: pbr('tile ceramic', '#aebba0', .05, .5),
   };
+  function textureMaterial(material, url, scale, tint) { const texture = new BABYLON.Texture(url, scene, false, false, BABYLON.Texture.TRILINEAR_SAMPLINGMODE); texture.uScale = scale; texture.vScale = scale; texture.anisotropicFilteringLevel = 16; material.albedoTexture = texture; material.albedoColor = hex(tint); }
+  textureMaterial(mat.stone, 'assets/textures/alien-temple-v1.webp', 2.4, '#9a9d92');
+  textureMaterial(mat.carved, 'assets/textures/alien-temple-v1.webp', 1.45, '#839389');
+  textureMaterial(mat.dark, 'assets/textures/alien-hull-v1.webp', 3.5, '#56656a');
   const highlight = new BABYLON.HighlightLayer('tile glow', scene);
   highlight.blurHorizontalSize = 1.25;
   highlight.blurVerticalSize = 1.25;

@@ -17,6 +17,10 @@
   const makeMat = (name, hex, emissive = null, metal = .25, rough = .38) => { const m = new BABYLON.PBRMaterial(name, scene); m.albedoColor = color(hex); m.metallic = metal; m.roughness = rough; if (emissive) m.emissiveColor = color(emissive); return m; };
   const mat = { floor: makeMat('black glass', '#07151d', null, .75, .18), wall: makeMat('ribbed hull', '#10182b', null, .7, .28), mint: makeMat('mint neon', '#70ffe1', '#36bfa6', .2, .18), acid: makeMat('acid neon', '#caff62', '#7eab35', .2, .18), violet: makeMat('violet neon', '#a26fff', '#5e35b8', .2, .18), pink: makeMat('pink neon', '#ff4f9a', '#a01f58', .2, .18), gold: makeMat('gold trim', '#ffd66c', '#654914', .72, .22), chrome: makeMat('dark chrome', '#566675', null, .9, .14), glass: makeMat('canopy glass', '#15384b', '#071d2b', .1, .08) };
   mat.glass.alpha = .64;
+  const hullTexture = new BABYLON.Texture('assets/textures/alien-hull-v1.webp', scene, false, false, BABYLON.Texture.TRILINEAR_SAMPLINGMODE); hullTexture.uScale = 5; hullTexture.vScale = 5;
+  const wallTexture = hullTexture.clone(); wallTexture.uScale = 2.2; wallTexture.vScale = 5.5;
+  mat.floor.albedoTexture = hullTexture; mat.floor.albedoColor = new BABYLON.Color3(.32,.39,.42); mat.wall.albedoTexture = wallTexture; mat.wall.albedoColor = new BABYLON.Color3(.48,.52,.58);
+  const cabinetTexture = new BABYLON.Texture('assets/textures/alien-circuit-v1.webp', scene, false, false, BABYLON.Texture.TRILINEAR_SAMPLINGMODE); cabinetTexture.uScale = 3.4; cabinetTexture.vScale = 4.8; mat.chrome.albedoTexture = cabinetTexture; mat.chrome.albedoColor = new BABYLON.Color3(.42,.5,.55);
   const box = (name, w, h, d, x, y, z, material) => { const mesh = BABYLON.MeshBuilder.CreateBox(name, { width: w, height: h, depth: d }, scene); mesh.position.set(x, y, z); mesh.material = material; return mesh; };
 
   function buildRoom() {

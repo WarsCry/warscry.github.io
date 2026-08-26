@@ -30,7 +30,14 @@
     return mat;
   }
 
-  const darkMetal = material('obsidian hull', '#101020', null, 0.82, 0.3);
+  function textureMaterial(mat, url, uScale, vScale, tint) {
+    const texture = new BABYLON.Texture(url, scene, false, false, BABYLON.Texture.TRILINEAR_SAMPLINGMODE);
+    texture.uScale = uScale; texture.vScale = vScale; texture.anisotropicFilteringLevel = 16;
+    mat.albedoTexture = texture; mat.albedoColor = BABYLON.Color3.FromHexString(tint);
+    return mat;
+  }
+
+  const darkMetal = textureMaterial(material('obsidian hull', '#101020', null, 0.82, 0.3), 'assets/textures/alien-hull-v1.webp', 4.5, 4.5, '#53616b');
   const purpleMetal = material('violet alloy', '#251343', null, 0.62, 0.35);
   const cyanGlow = material('cyan conduits', '#063b47', '#22dcca', 0.25, 0.25);
   const goldGlow = material('credit gold', '#8f5b12', '#ffc34a', 0.6, 0.22);
@@ -66,7 +73,7 @@
   const tableTop = BABYLON.MeshBuilder.CreateCylinder('holographic felt', { diameter: 10.4, height: 0.16, tessellation: 64 }, scene);
   tableTop.scaling.z = 0.65;
   tableTop.position = new BABYLON.Vector3(0, -0.2, 1.6);
-  tableTop.material = material('midnight felt', '#071c25', '#03151a', 0.12, 0.72);
+  tableTop.material = textureMaterial(material('midnight felt', '#071c25', '#03151a', 0.12, 0.72), 'assets/textures/orbital-felt-v1.webp', 2.2, 1.5, '#82738f');
   const tableRim = BABYLON.MeshBuilder.CreateTorus('table neon rim', { diameter: 10.65, thickness: 0.16, tessellation: 96 }, scene);
   tableRim.scaling.z = 0.65;
   tableRim.rotation.x = Math.PI / 2;
@@ -86,7 +93,7 @@
   createArch(7.3, 1.12, magentaGlow);
   createArch(9.6, 1.23, purpleMetal);
 
-  const panelMetal = material('brushed hull panels', '#182332', null, 0.88, 0.27);
+  const panelMetal = textureMaterial(material('brushed hull panels', '#182332', null, 0.88, 0.27), 'assets/textures/alien-circuit-v1.webp', 2.4, 3.2, '#5e6978');
   const panelGlass = material('console glass', '#092638', '#063748', 0.16, 0.18);
   panelGlass.alpha = 0.82;
   const loungePulseNodes = [];

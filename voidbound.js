@@ -45,6 +45,7 @@ const isFloor=(x,z)=>z>=0&&z<HEIGHT&&x>=0&&x<WIDTH&&MAP[z][x]==='.';
 const neighbours=(x,z)=>[[x+1,z],[x-1,z],[x,z+1],[x,z-1]].filter(([nx,nz])=>isFloor(nx,nz));
 
 function standard(name,color,emissive=null,alpha=1){const mat=new B.StandardMaterial(name,scene);mat.diffuseColor=C.FromHexString(color);mat.specularColor=new C(.35,.48,.5);mat.specularPower=96;mat.alpha=alpha;if(emissive)mat.emissiveColor=C.FromHexString(emissive);return mat}
+function textureMaterial(mat,url,scale,tint){const texture=new B.Texture(url,scene,false,false,B.Texture.TRILINEAR_SAMPLINGMODE);texture.uScale=scale;texture.vScale=scale;texture.anisotropicFilteringLevel=16;mat.diffuseTexture=texture;mat.diffuseColor=C.FromHexString(tint);return mat}
 function box(name,options,position,material){const mesh=B.MeshBuilder.CreateBox(name,options,scene);mesh.position.copyFrom(position);mesh.material=material;return mesh}
 function part(unit,mesh,material){mesh.parent=unit.root;mesh.material=material;mesh.metadata={unit};unit.meshes.push(mesh);return mesh}
 
@@ -60,6 +61,7 @@ function buildScene(){
   const pipeline=new B.DefaultRenderingPipeline('tabletop finish',true,scene,[camera]);pipeline.fxaaEnabled=true;pipeline.samples=matchMedia('(pointer:coarse)').matches?1:4;pipeline.imageProcessing.contrast=1.16;pipeline.imageProcessing.exposure=1.08;pipeline.bloomEnabled=!matchMedia('(pointer:coarse)').matches;pipeline.bloomThreshold=.86;pipeline.bloomWeight=.1;
 
   materials.floorA=standard('graphite deck','#16282b');materials.floorB=standard('alloy deck','#203438');materials.floorC=standard('worn deck','#172329');materials.wall=standard('outpost wall','#26343d');materials.wallInset=standard('wall armour inset','#0c171e');materials.mint=standard('alien route','#14564f','#17ae92');materials.red=standard('dominion route','#69202c','#d52645');materials.void=standard('void table edge','#05080d');materials.move=standard('move highlight','#174f48','#39e5c5',.58);materials.selection=standard('selection ring','#173f39','#67ffe2',.78);
+  textureMaterial(materials.floorA,'assets/textures/alien-hull-v1.webp',1.15,'#7b898c');textureMaterial(materials.floorB,'assets/textures/alien-circuit-v1.webp',1.05,'#667d7e');textureMaterial(materials.floorC,'assets/textures/alien-biomech-v1.webp',1.2,'#5d746d');textureMaterial(materials.wall,'assets/textures/alien-hull-v1.webp',1.5,'#68777c');textureMaterial(materials.wallInset,'assets/textures/alien-circuit-v1.webp',1.25,'#53696b');textureMaterial(materials.void,'assets/textures/alien-biomech-v1.webp',2.8,'#374842');
   const table=box('floating tactical table',{width:WIDTH*CELL+1.8,height:.48,depth:HEIGHT*CELL+1.8},new V(0,-.39,0),materials.void);table.receiveShadows=true;
   const underglow=box('table underglow',{width:WIDTH*CELL+1.2,height:.08,depth:HEIGHT*CELL+1.2},new V(0,-.68,0),materials.mint);underglow.isPickable=false;
   for(let z=0;z<HEIGHT;z++)for(let x=0;x<WIDTH;x++){
