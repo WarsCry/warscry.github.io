@@ -64,7 +64,7 @@ function buildScene(){
   const glow=new BABYLON.GlowLayer('neon bloom',scene,{blurKernelSize:24});glow.intensity=.27;
   const pipeline=new BABYLON.DefaultRenderingPipeline('clear ship pipeline',true,scene,[camera]);pipeline.fxaaEnabled=true;pipeline.samples=matchMedia('(pointer:coarse)').matches?1:4;pipeline.bloomEnabled=!matchMedia('(pointer:coarse)').matches;pipeline.bloomThreshold=.94;pipeline.bloomWeight=.045;pipeline.bloomScale=.55;pipeline.sharpenEnabled=true;pipeline.sharpen.edgeAmount=.22;pipeline.sharpen.colorAmount=.85;pipeline.imageProcessing.contrast=1.1;pipeline.imageProcessing.exposure=1.04;
 
-  const hull=texturedMaterial('curved premium hull','assets/textures/alien-hull-v1.webp',8,2.2),innerHull=texturedMaterial('inner premium hull panels','assets/textures/alien-hull-v1.webp',1.1,1.8),metal=texturedMaterial('modular alien deck plating','assets/textures/alien-hull-v1.webp',2.2,2.2),metalAlt=texturedMaterial('alternate holographic deck plating','assets/textures/alien-circuit-v1.webp',1.8,1.8),ceilingPanels=texturedMaterial('recessed circuit ceiling armour','assets/textures/alien-circuit-v1.webp',4.2,4.2),machinerySkin=texturedMaterial('living machinery panel skin','assets/textures/alien-biomech-v1.webp',1.15,1.3),metal2=material('floor inset','#080d13');hull.diffuseColor=C.FromHexString('#879a9d');innerHull.diffuseColor=C.FromHexString('#72878a');metal.diffuseColor=C.FromHexString('#78888b');metalAlt.diffuseColor=C.FromHexString('#607577');ceilingPanels.diffuseColor=C.FromHexString('#778f94');machinerySkin.diffuseColor=C.FromHexString('#52746b');
+  const hull=texturedMaterial('curved premium hull','assets/textures/starfall-bulkhead-v2.webp',3.6,2.1),innerHull=texturedMaterial('inner premium hull panels','assets/textures/starfall-bulkhead-v2.webp',1.08,1.45),metal=texturedMaterial('modular alien deck plating','assets/textures/starfall-deck-v2.webp',1.16,1.16),metalAlt=texturedMaterial('alternate holographic deck plating','assets/textures/starfall-deck-v2.webp',1.32,1.32),ceilingPanels=texturedMaterial('recessed ventilation ceiling armour','assets/textures/starfall-ceiling-v2.webp',3.2,3.2),machinerySkin=texturedMaterial('living machinery panel skin','assets/textures/starfall-living-machinery-v2.webp',1.05,1.15),metal2=texturedMaterial('lower deck armour','assets/textures/starfall-deck-v2.webp',5.8,5.8);hull.diffuseColor=C.FromHexString('#879a9d');innerHull.diffuseColor=C.FromHexString('#74898b');metal.diffuseColor=C.FromHexString('#a2aaac');metalAlt.diffuseColor=C.FromHexString('#6e8687');ceilingPanels.diffuseColor=C.FromHexString('#87979b');machinerySkin.diffuseColor=C.FromHexString('#6b806a');metal2.diffuseColor=C.FromHexString('#303b3d');
   const trim=material('alien trim','#123f3a','#075044'),purple=material('veyran alloy','#2d1750','#16052f');
   const dangerMat=material('warning light','#481824','#b4193f'),glass=material('observation glass','#07182b','#073e58',.72);
 
@@ -119,7 +119,7 @@ function buildScene(){
 
   // Deck 08 is a concentric reactor labyrinth. Its offset gates force both the
   // player and the attackers to wind through a different map before reaching the core.
-  const reactorHull=texturedMaterial('reactor armour','assets/starfall/hull-panels-v1.png',.42,1.12),reactorTrim=material('reactor trim','#5e173d','#d51d57'),reactorGlow=material('reactor energy','#ff8a38','#ff3f24'),reactorDark=pbr('reactor machinery','#130b1d',.8,.3);
+  const reactorHull=texturedMaterial('reactor armour','assets/textures/starfall-bulkhead-v2.webp',.72,1.3),reactorTrim=material('reactor trim','#5e173d','#d51d57'),reactorGlow=material('reactor energy','#ff8a38','#ff3f24'),reactorDark=pbr('reactor machinery','#130b1d',.8,.3);
   reactorHull.diffuseColor=C.FromHexString('#765b72');
   const outerGates=[Math.PI/4,Math.PI*3/4,Math.PI*5/4,Math.PI*7/4],innerGates=[0,Math.PI/2,Math.PI,Math.PI*3/2];
   function reactorRing(radius,count,gates,height,gap){
@@ -155,7 +155,7 @@ function buildScene(){
 
   // Deck 09: a living hydroponics ring with rounded growth tanks, luminous
   // planters and overhead conduits. The gaps between clusters form broad lanes.
-  const bioAlloy=pbr('hydroponics alloy','#103d39',.62,.4),bioDark=pbr('hydroponics machinery','#071814',.72,.34),bioGlow=material('growth energy','#56ffc2','#19a86f'),bioGlass=material('nutrient glass','#173c42','#0a6170',.34),babySkin=material('infant mint skin','#7fe4c1','#143d35'),babyBelly=material('infant soft belly','#b7ffe1','#17483c'),babyEyes=material('infant sleeping eyes','#a9fff0','#5affdf'),babyCord=material('nutrient cord','#73c8c4','#287e76');bioGlass.backFaceCulling=false;bioGlass.needDepthPrePass=true;
+  const bioAlloy=texturedMaterial('hydroponics living alloy','assets/textures/starfall-living-machinery-v2.webp',.72,1.05),bioDark=pbr('hydroponics machinery','#071814',.72,.34),bioGlow=material('growth energy','#56ffc2','#19a86f'),bioGlass=material('nutrient glass','#173c42','#0a6170',.34),babySkin=material('infant mint skin','#7fe4c1','#143d35'),babyBelly=material('infant soft belly','#b7ffe1','#17483c'),babyEyes=material('infant sleeping eyes','#a9fff0','#5affdf'),babyCord=material('nutrient cord','#73c8c4','#287e76');bioAlloy.diffuseColor=C.FromHexString('#6b8a73');bioGlass.backFaceCulling=false;bioGlass.needDepthPrePass=true;
   for(let i=0;i<12;i++){
     const a=i*Math.PI*2/12,r=i%2?22:16,x=Math.sin(a)*r,z=Math.cos(a)*r;
     const tank=onDeck(3,BABYLON.MeshBuilder.CreateCylinder('rounded growth tank',{height:4.6,diameter:2.8,tessellation:24},scene));tank.position=new V(x,2.3,z);tank.material=i%2?bioGlass:bioAlloy;tank.checkCollisions=true;
@@ -172,7 +172,7 @@ function buildScene(){
 
   // Deck 10: angular navigation consoles, holographic star globes and curved
   // partitions create a larger tactical vault with many broken sight lines.
-  const navAlloy=pbr('navigation alloy','#18264d',.78,.3),navSkin=texturedMaterial('navigation textured armour','assets/starfall/deck-circuits-v1.png',.75,1.1),navTrim=material('navigation glow','#335ea8','#2d7dff'),navHolo=material('navigation hologram','#64cfff','#316cff',.42);navSkin.diffuseColor=C.FromHexString('#49618f');
+  const navAlloy=pbr('navigation alloy','#18264d',.78,.3),navSkin=texturedMaterial('navigation textured armour','assets/textures/starfall-ceiling-v2.webp',.82,1.15),navTrim=material('navigation glow','#335ea8','#2d7dff'),navHolo=material('navigation hologram','#64cfff','#316cff',.42);navSkin.diffuseColor=C.FromHexString('#6178a8');
   for(const [x,z,rot] of [[-20,-17,.5],[0,-22,0],[20,-17,-.5],[-23,0,Math.PI/2],[23,0,Math.PI/2],[-18,18,-.5],[0,22,0],[18,18,.5]]){
     const console=onDeck(4,box('navigation command console',{width:5.4,height:2.25,depth:1.45},new V(x,1.12,z),navSkin,true));console.rotation.y=rot;console.rotation.x=-.06;
     const display=onDeck(4,box('navigation display',{width:4.4,height:.75,depth:.08},new V(x,2.12,z),navHolo));display.rotation.y=rot;display.rotation.x=-.35;display.isPickable=false;
@@ -186,7 +186,7 @@ function buildScene(){
 
   // Deck 11: a broad boss arena. Tall cover walls and reinforced pylons are
   // deliberately separated so the player can hide, flank and re-engage.
-  const bossAlloy=texturedMaterial('nexus textured armour','assets/starfall/hull-panels-v1.png',.68,1.08),bossTrim=material('nexus energy','#8b2337','#ff284f'),bossGold=material('overseer gold','#8a642d','#ff9d32');bossAlloy.diffuseColor=C.FromHexString('#70434a');
+  const bossAlloy=texturedMaterial('nexus textured armour','assets/textures/starfall-living-machinery-v2.webp',.68,1.08),bossTrim=material('nexus energy','#8b2337','#ff284f'),bossGold=material('overseer gold','#8a642d','#ff9d32');bossAlloy.diffuseColor=C.FromHexString('#805357');
   for(let i=0;i<10;i++){
     const a=i*Math.PI*2/10,r=i%2?20:13.5,x=Math.sin(a)*r,z=Math.cos(a)*r;
     const shield=onDeck(5,box('nexus cover shield',{width:5.6,height:4.6,depth:1.05},new V(x,2.3,z),bossAlloy,true));shield.rotation.y=a;shield.isPickable=true;
