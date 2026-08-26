@@ -7,7 +7,7 @@
   <title>Xeno Mahjong: Temple of the Stars | DanPC</title>
   <meta name="description" content="Play a fully 3D alien Mahjong Solitaire puzzle on a Maya-inspired temple table.">
   <link rel="icon" type="image/png" href="favicondanpc.png">
-  <link rel="stylesheet" href="xeno-mahjong.css?v=2">
+  <link rel="stylesheet" href="xeno-mahjong.css?v=3">
   <link rel="stylesheet" href="premium-materials.css?v=1">
 </head>
 <body class="premium-mahjong">
@@ -21,6 +21,7 @@
     <section class="game-stage" aria-label="3D alien Mahjong Solitaire table">
       <canvas id="renderCanvas" aria-label="Mahjong temple table"></canvas>
       <div class="atmosphere"></div>
+      <div class="temple-event" id="templeEvent" aria-live="polite"><i></i><strong>THE GUARDIAN REMEMBERS YOU</strong></div>
 
       <div class="stats left">
         <small>TILES REMAINING</small><b id="tilesRemaining">128</b><span id="movesAvailable">SCANNING MOVES</span>
@@ -54,6 +55,6 @@
     </section>
   </main>
   <script src="https://cdn.babylonjs.com/babylon.js"></script>
-  <script src="xeno-mahjong.js?v=3"></script>
+  <script src="xeno-mahjong.js?v=4"></script>
 </body>
 </html>

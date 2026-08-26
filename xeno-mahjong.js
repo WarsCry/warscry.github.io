@@ -4,10 +4,11 @@
   const $ = (id) => document.getElementById(id);
   const canvas = $('renderCanvas');
   const engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
+  engine.setHardwareScalingLevel(1 / Math.min(window.devicePixelRatio || 1, 1.75));
   const scene = new BABYLON.Scene(engine);
   scene.clearColor = new BABYLON.Color4(.008, .018, .025, 1);
   scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
-  scene.fogDensity = .012;
+  scene.fogDensity = .0075;
   scene.fogColor = new BABYLON.Color3(.015, .04, .045);
 
   const camera = new BABYLON.ArcRotateCamera('orbit', -Math.PI / 2, Math.PI * .33, 31, new BABYLON.Vector3(0, 1.5, 0), scene);
@@ -25,8 +26,8 @@
   moon.position = new BABYLON.Vector3(9, 18, -10);
   moon.intensity = 1.2;
   const shadows = new BABYLON.ShadowGenerator(2048, moon);
-  shadows.useBlurExponentialShadowMap = true;
-  shadows.blurKernel = 24;
+  shadows.usePercentageCloserFiltering = true;
+  shadows.filteringQuality = BABYLON.ShadowGenerator.QUALITY_MEDIUM;
   const hex = BABYLON.Color3.FromHexString;
   const pbr = (name, color, metal, rough, glow) => {
     const material = new BABYLON.PBRMaterial(name, scene);
@@ -42,6 +43,9 @@
     jade: pbr('alien jade', '#2a9a78', .34, .25, '#124f3e'),
     acid: pbr('acid glow', '#aaff5c', .12, .2, '#6dcf36'),
     gold: pbr('sun gold', '#d7a94b', .62, .24, '#493513'),
+    moss: pbr('living temple moss', '#2c7a35', .02, .9, '#12391a'),
+    leaf: pbr('jungle leaf', '#43b653', .02, .7, '#174e25'),
+    water: pbr('sacred green water', '#155b4c', .18, .18, '#0c4236'),
     dark: pbr('void metal', '#050a10', .7, .3),
     tile: pbr('tile ceramic', '#aebba0', .05, .5),
   };
@@ -50,14 +54,15 @@
   textureMaterial(mat.carved, 'assets/textures/alien-temple-v1.webp', 1.45, '#839389');
   textureMaterial(mat.dark, 'assets/textures/alien-hull-v1.webp', 3.5, '#56656a');
   const highlight = new BABYLON.HighlightLayer('tile glow', scene);
-  highlight.blurHorizontalSize = 1.25;
-  highlight.blurVerticalSize = 1.25;
+  highlight.blurHorizontalSize = .55;
+  highlight.blurVerticalSize = .55;
   const glyphs = ['◉', '✦', '⌁', '☽', '△', '⊕', '◇', '☄', '♆', '♁', '☼', '∞', '⌬', '⟁', '☯', '♢', '☊', '⌖', '✧', '⟡', '◈', '⏣', '⍟', '⌾', '☿', '⚶', '⧫', '⦿', '✺', '⟟', '⸙', '☍'];
   const glyphMaterials = new Map();
-  const ui = { remaining: $('tilesRemaining'), moves: $('movesAvailable'), timer: $('timer'), matches: $('matches'), message: $('selectionText'), start: $('startScreen'), victory: $('victoryScreen'), victoryStats: $('victoryStats'), hint: $('hintButton'), shuffle: $('shuffleButton'), undo: $('undoButton'), sound: $('soundButton') };
+  const ui = { remaining: $('tilesRemaining'), moves: $('movesAvailable'), timer: $('timer'), matches: $('matches'), message: $('selectionText'), start: $('startScreen'), victory: $('victoryScreen'), victoryStats: $('victoryStats'), hint: $('hintButton'), shuffle: $('shuffleButton'), undo: $('undoButton'), sound: $('soundButton'), event: $('templeEvent') };
   let tiles = [], selected = null, locked = false, history = [], matchCount = 0;
   let gameActive = false, victoryMode = false, startedAt = 0, timerHandle = 0;
-  let soundOn = true, audioCtx = null, masterGain = null, ambienceTimer = 0;
+  let soundOn = true, audioCtx = null, masterGain = null, effectsGain = null, ambienceGain = null, ambienceTimer = 0;
+  let guardianRoot = null, guardianEyes = [], templeEventPlayed = false, nextTempleEvent = 8;
 
   function box(name, size, position, material, edges = false) {
     const mesh = BABYLON.MeshBuilder.CreateBox(name, { width: size[0], height: size[1], depth: size[2] }, scene);
@@ -75,7 +80,12 @@
   function buildTemple() {
     box('floor', [44, .7, 38], [0, -1.05, 0], mat.dark);
     for (let i = 0; i < 4; i++) box(`altar ${i}`, [23 - i * 1.1, .46, 15 - i * .8], [0, -.55 + i * .3, 0], i % 2 ? mat.carved : mat.stone, true);
-    for (let x = -10; x <= 10; x += 2) { const seam = box('jade seam', [.045, .025, 13.4], [x, .63, 0], mat.jade); seam.isPickable = false; }
+    for (let x = -10; x <= 10; x += 2) { const seam = box('jade seam', [.035, .025, 13.4], [x, .63, 0], mat.jade); seam.isPickable = false; }
+    for (let step = 0; step < 5; step++) {
+      const backStep = box(`jungle pyramid ${step}`, [19-step*2.3,1.05,4.8-step*.42], [0,-.2+step*.72,15.3+step*.35], step%2?mat.carved:mat.stone, true);
+      backStep.isPickable=false;
+      [-1,1].forEach(side=>{const moss=box('pyramid moss',[2.1,.16,4-step*.3],[side*(6.8-step*.72),.37+step*.72,15.05+step*.35],mat.moss);moss.rotation.y=side*.04;moss.isPickable=false});
+    }
     [-1, 1].forEach((side) => {
       for (let z = -11; z <= 11; z += 7.3) {
         const pillar = BABYLON.MeshBuilder.CreateCylinder('temple pillar', { height: 8.6, diameter: 2.25, tessellation: 6 }, scene);
@@ -89,8 +99,16 @@
           ring.rotation.x = Math.PI / 2;
           ring.material = mat.jade;
         });
+        for(let vine=0;vine<3;vine++){
+          const path=[];for(let p=0;p<9;p++){const y=.25+p*.78,x=side*14.2+Math.sin(p*.85+vine)*(.6+vine*.08),zz=z+Math.cos(p*.72+vine)*.56;path.push(new BABYLON.Vector3(x,y,zz))}
+          const creeper=BABYLON.MeshBuilder.CreateTube('hanging jungle vine',{path,radius:.055+vine*.012,tessellation:7},scene);creeper.material=vine===1?mat.leaf:mat.moss;creeper.isPickable=false;
+        }
       }
     });
+    for(let i=0;i<18;i++){
+      const angle=i/18*Math.PI*2,radius=15.8+(i%3)*1.5,x=Math.cos(angle)*radius,z=Math.sin(angle)*13.8;
+      const leaf=BABYLON.MeshBuilder.CreateSphere('temple jungle leaf',{diameter:.85+(i%4)*.14,segments:8},scene);leaf.position.set(x,.2+(i%5)*.42,z);leaf.scaling.set(.42,1.2,.2);leaf.rotation.set(angle*.3,angle,-angle*.25);leaf.material=i%4?mat.leaf:mat.moss;leaf.isPickable=false;
+    }
     for (let i = 0; i < 12; i++) {
       const angle = i / 12 * Math.PI * 2;
       const marker = BABYLON.MeshBuilder.CreatePolyhedron('wall glyph', { type: 1, size: .65 }, scene);
@@ -104,7 +122,15 @@
     ring.position.copyFrom(gate.position); ring.rotation.x = Math.PI / 2; ring.material = mat.acid;
     const eye = BABYLON.MeshBuilder.CreateSphere('gate eye', { diameter: 1.5, segments: 20 }, scene);
     eye.position.set(0, 5.4, 15.25); eye.scaling.y = .45; eye.material = mat.jade;
-    scene.registerBeforeRender(() => { eye.rotation.y += .002; ring.rotation.z -= .0012; });
+    const pool=BABYLON.MeshBuilder.CreateDisc('sacred jungle pool',{radius:3.1,tessellation:48},scene);pool.position.set(0,.64,-10.8);pool.rotation.x=Math.PI/2;pool.material=mat.water;pool.isPickable=false;
+    for(let i=0;i<3;i++){const poolRing=BABYLON.MeshBuilder.CreateTorus('pool glyph ring',{diameter:2.6+i*1.45,thickness:.045,tessellation:56},scene);poolRing.position.set(0,.67+i*.008,-10.8);poolRing.rotation.x=Math.PI/2;poolRing.material=i%2?mat.acid:mat.jade;poolRing.isPickable=false}
+
+    guardianRoot=new BABYLON.TransformNode('hidden temple guardian',scene);guardianRoot.position.set(0,5.5,14.3);guardianRoot.scaling.setAll(.01);guardianRoot.setEnabled(false);
+    const mask=BABYLON.MeshBuilder.CreateSphere('guardian stone mask',{diameter:3.4,segments:20},scene);mask.parent=guardianRoot;mask.scaling.set(1.2,.82,.34);mask.material=mat.carved;
+    const jaw=box('guardian jaw',[2.2,.65,.65],[0,-1.05,-.18],mat.moss);jaw.parent=guardianRoot;
+    [-1,0,1].forEach((slot)=>{const guardianEye=BABYLON.MeshBuilder.CreateSphere('guardian acid eye',{diameter:slot? .48:.58,segments:14},scene);guardianEye.parent=guardianRoot;guardianEye.position.set(slot*.72,.24+Math.abs(slot)*.1,-.58);guardianEye.scaling.y=.55;guardianEye.material=mat.acid;guardianEyes.push(guardianEye)});
+    [-1,1].forEach(side=>{const horn=BABYLON.MeshBuilder.CreateCylinder('guardian jade horn',{height:2.2,diameterTop:0,diameterBottom:.55,tessellation:7},scene);horn.parent=guardianRoot;horn.position.set(side*1.65,.8,0);horn.rotation.z=side*-.7;horn.material=mat.jade});
+    scene.registerBeforeRender(() => { eye.rotation.y += .002; ring.rotation.z -= .0012; guardianEyes.forEach((item,index)=>item.scaling.x=.9+Math.sin(performance.now()*.008+index)*.12); });
   }
 
   function glyphMaterial(symbol) {
@@ -233,26 +259,27 @@
 
   function choose(tile) {
     if (!gameActive || locked || !tile?.alive) return;
-    if (!isFree(tile)) { flash(tile, new BABYLON.Color3(1, .18, .12), 420); message('SEALED BY THE TEMPLE', 'error'); sound('blocked'); return; }
+    if (!isFree(tile)) { flash(tile, new BABYLON.Color3(1, .18, .12), 420); message('SEALED BY THE TEMPLE', 'error'); sound('blocked',tile); return; }
     if (!selected) {
       selected = tile; tile.root.position.y = tile.homeY + .18;
       highlight.addMesh(tile.base, new BABYLON.Color3(.4, 1, .72)); highlight.addMesh(tile.face, new BABYLON.Color3(.4, 1, .72));
-      message(`${tile.symbol} SELECTED — FIND ITS TWIN`, 'good'); sound('select'); return;
+      message(`${tile.symbol} SELECTED — FIND ITS TWIN`, 'good'); sound('select',tile); return;
     }
-    if (selected.id === tile.id) { clearSelection(); message('SELECT A FREE TILE'); sound('select'); return; }
+    if (selected.id === tile.id) { clearSelection(); message('SELECT A FREE TILE'); sound('select',tile); return; }
     if (selected.symbol !== tile.symbol) {
       const first = selected; flash(tile, new BABYLON.Color3(1, .2, .15), 450); flash(first, new BABYLON.Color3(1, .2, .15), 450);
-      message('THE GLYPHS DO NOT MATCH', 'error'); sound('blocked'); clearSelection(); return;
+      message('THE GLYPHS DO NOT MATCH', 'error'); sound('blocked',tile); clearSelection(); return;
     }
     const first = selected; clearSelection(); locked = true; first.alive = false; tile.alive = false; history.push([first.id, tile.id]); matchCount++;
-    message('GLYPH PAIR RELEASED', 'good'); sound('match'); animateMatch(first, tile);
+    message('GLYPH PAIR RELEASED', 'good'); sound('match',{x:(first.x+tile.x)/2}); animateMatch(first, tile);
+    if(!templeEventPlayed&&matchCount>=nextTempleEvent)setTimeout(triggerTempleEvent,620);
   }
 
   function hint() {
     if (locked) return;
     clearSelection(); const pair = availablePairs()[0]; if (!pair) return;
     pair.forEach((tile, index) => { flash(tile, new BABYLON.Color3(1, .72, .18), 1250 + index * 100); });
-    message('THE TEMPLE REVEALS A PAIR', 'good'); sound('hint');
+    message('THE TEMPLE REVEALS A PAIR', 'good'); sound('hint',{x:(pair[0].x+pair[1].x)/2});
   }
   function hiveShuffle() {
     if (locked) return;
@@ -278,41 +305,45 @@
 
   function prepareAudio() {
     if (audioCtx) return;
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)(); masterGain = audioCtx.createGain(); masterGain.gain.value = soundOn ? 1.25 : 0;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)(); masterGain = audioCtx.createGain(); masterGain.gain.value = soundOn ? 1.05 : 0;
     const compressor = audioCtx.createDynamicsCompressor(); compressor.threshold.value = -19; compressor.ratio.value = 6; compressor.attack.value = .004; compressor.release.value = .18;
+    effectsGain=audioCtx.createGain();effectsGain.gain.value=1.55;ambienceGain=audioCtx.createGain();ambienceGain.gain.value=.42;effectsGain.connect(masterGain);ambienceGain.connect(masterGain);
     masterGain.connect(compressor).connect(audioCtx.destination);
   }
-  function tone(freq, duration, type = 'sine', volume = .12, delay = 0, endFreq) {
+  function stereoNode(pan){if(!audioCtx.createStereoPanner)return null;const node=audioCtx.createStereoPanner();node.pan.value=Math.max(-.82,Math.min(.82,pan||0));return node}
+  function tone(freq, duration, type = 'sine', volume = .12, delay = 0, endFreq, pan = 0, bus = effectsGain) {
     if (!soundOn || !audioCtx) return;
     const now = audioCtx.currentTime + delay, osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
     osc.type = type; osc.frequency.setValueAtTime(freq, now); if (endFreq) osc.frequency.exponentialRampToValueAtTime(endFreq, now + duration);
     gain.gain.setValueAtTime(.001, now); gain.gain.exponentialRampToValueAtTime(volume, now + .012); gain.gain.exponentialRampToValueAtTime(.001, now + duration);
-    osc.connect(gain).connect(masterGain); osc.start(now); osc.stop(now + duration + .03);
+    const panner=stereoNode(pan);osc.connect(gain);if(panner)gain.connect(panner).connect(bus);else gain.connect(bus);osc.start(now); osc.stop(now + duration + .03);
   }
-  function noise(duration = .12, volume = .08, delay = 0) {
+  function noise(duration = .12, volume = .08, delay = 0, frequency = 1650, pan = 0, bus = effectsGain) {
     if (!soundOn || !audioCtx) return;
     const rate = audioCtx.sampleRate, buffer = audioCtx.createBuffer(1, rate * duration, rate), data = buffer.getChannelData(0);
     for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 2);
     const src = audioCtx.createBufferSource(), filter = audioCtx.createBiquadFilter(), gain = audioCtx.createGain();
-    filter.type = 'bandpass'; filter.frequency.value = 1650; gain.gain.value = volume; src.buffer = buffer; src.connect(filter).connect(gain).connect(masterGain); src.start(audioCtx.currentTime + delay);
+    filter.type = 'bandpass'; filter.frequency.value = frequency;filter.Q.value=1.6; gain.gain.value = volume; src.buffer = buffer;const panner=stereoNode(pan);src.connect(filter).connect(gain);if(panner)gain.connect(panner).connect(bus);else gain.connect(bus);src.start(audioCtx.currentTime + delay);
   }
-  function sound(kind) {
+  function sound(kind,source) {
     if (!soundOn || !audioCtx) return;
-    if (kind === 'select') { tone(520, .09, 'triangle', .11, 0, 680); noise(.045, .05); }
-    if (kind === 'blocked') tone(165, .18, 'sawtooth', .08, 0, 95);
-    if (kind === 'match') { noise(.1, .15); tone(480, .25, 'triangle', .13, .01, 920); tone(720, .35, 'sine', .1, .08, 1250); }
-    if (kind === 'hint') [440, 660, 880].forEach((freq, i) => tone(freq, .24, 'sine', .08, i * .08));
-    if (kind === 'shuffle') for (let i = 0; i < 10; i++) tone(210 + i * 45, .08, 'square', .035, i * .035);
-    if (kind === 'undo') tone(660, .25, 'triangle', .1, 0, 280);
-    if (kind === 'victory') { [392, 523, 659, 784, 1047].forEach((freq, i) => tone(freq, .9, 'sine', .12, i * .16)); for (let i = 0; i < 18; i++) noise(.07, .035, .15 + i * .08); }
+    const pan=Math.max(-.78,Math.min(.78,(source?.x||0)/10));
+    if (kind === 'select') { noise(.052,.16,0,2350,pan);tone(1180,.07,'triangle',.12,0,760,pan);tone(190,.045,'sine',.08,.012,140,pan); }
+    if (kind === 'blocked') {noise(.08,.11,0,520,pan);tone(145,.22,'sawtooth',.1,0,72,pan)}
+    if (kind === 'match') { noise(.085,.22,0,2700,pan);noise(.12,.11,.055,940,pan);tone(610,.24,'triangle',.15,.015,1240,pan);tone(920,.38,'sine',.12,.08,1680,pan);tone(120,.18,'sine',.07,0,72,pan); }
+    if (kind === 'hint') [440,660,990].forEach((freq,i)=>tone(freq,.28,'sine',.09,i*.07,freq*1.22,pan));
+    if (kind === 'shuffle') for(let i=0;i<12;i++){noise(.04,.055,i*.032,1100+i*95,(i%2?-.5:.5));tone(180+i*32,.075,'square',.035,i*.032,260+i*36,(i%2?-.4:.4))}
+    if (kind === 'undo') {tone(720,.28,'triangle',.12,0,240,pan);noise(.07,.08,.02,1300,pan)}
+    if (kind === 'guardian') {noise(.72,.21,0,280,0);tone(72,1.2,'sawtooth',.16,0,34,0);tone(680,.45,'square',.07,.08,110,0);noise(.18,.16,.48,2100,0)}
+    if (kind === 'victory') { [392,523,659,784,1047].forEach((freq,i)=>tone(freq,.9,'sine',.12,i*.16,undefined,(i-2)*.24));for(let i=0;i<18;i++)noise(.07,.035,.15+i*.08,1800,(i%2?-.55:.55)); }
   }
   function startAmbience() {
     prepareAudio(); if (ambienceTimer) return;
-    [44, 66].forEach((freq, i) => { const osc = audioCtx.createOscillator(), gain = audioCtx.createGain(); osc.type = i ? 'triangle' : 'sine'; osc.frequency.value = freq; gain.gain.value = .025; osc.connect(gain).connect(masterGain); osc.start(); });
-    ambienceTimer = setInterval(() => { if (soundOn && gameActive) { const base = [174, 220, 261, 329][Math.floor(Math.random() * 4)]; tone(base, 1.8, 'sine', .025, 0, base * 1.5); } }, 3400);
+    [44,66].forEach((freq,i)=>{const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();osc.type=i?'triangle':'sine';osc.frequency.value=freq;gain.gain.value=.025;osc.connect(gain).connect(ambienceGain);osc.start()});
+    ambienceTimer=setInterval(()=>{if(soundOn&&gameActive){const base=[174,220,261,329][Math.floor(Math.random()*4)];tone(base,1.8,'sine',.025,0,base*1.5,(Math.random()-.5)*.7,ambienceGain)}},3400);
   }
   function toggleSound() {
-    prepareAudio(); soundOn = !soundOn; masterGain.gain.setTargetAtTime(soundOn ? 1.25 : 0, audioCtx.currentTime, .03);
+    prepareAudio(); soundOn = !soundOn; masterGain.gain.setTargetAtTime(soundOn ? 1.05 : 0, audioCtx.currentTime, .03);
     ui.sound.setAttribute('aria-pressed', String(soundOn)); ui.sound.textContent = soundOn ? '◖)) SOUND' : '◖)) MUTED'; if (soundOn) sound('select');
   }
   function startTimer() {
@@ -329,6 +360,13 @@
     const observer = scene.onBeforeRenderObservable.add(() => pieces.forEach((piece) => { piece.mesh.position.y += piece.speed; piece.mesh.rotation.y += piece.spin; piece.mesh.rotation.x += piece.spin * .7; }));
     setTimeout(() => { scene.onBeforeRenderObservable.remove(observer); pieces.forEach((piece) => piece.mesh.dispose()); }, 5200);
   }
+  function triggerTempleEvent(){
+    if(templeEventPlayed||!gameActive||!guardianRoot)return;templeEventPlayed=true;guardianRoot.setEnabled(true);guardianRoot.position.set(0,5.5,14.3);guardianRoot.scaling.setAll(.01);
+    const approach=new BABYLON.Animation('guardian approach','position.z',60,BABYLON.Animation.ANIMATIONTYPE_FLOAT),scale=new BABYLON.Animation('guardian reveal','scaling',60,BABYLON.Animation.ANIMATIONTYPE_VECTOR3);
+    approach.setKeys([{frame:0,value:14.3},{frame:13,value:8.2},{frame:48,value:8.8},{frame:76,value:14.3}]);scale.setKeys([{frame:0,value:new BABYLON.Vector3(.01,.01,.01)},{frame:12,value:new BABYLON.Vector3(1.28,1.28,1.28)},{frame:48,value:new BABYLON.Vector3(1,1,1)},{frame:76,value:new BABYLON.Vector3(.01,.01,.01)}]);guardianRoot.animations=[approach,scale];
+    ui.event.classList.add('show');document.querySelector('.game-stage').classList.add('quake');key.intensity=72;sound('guardian');message('AN ANCIENT PRESENCE HAS AWAKENED','good');
+    scene.beginAnimation(guardianRoot,0,76,false,1,()=>{guardianRoot.setEnabled(false);key.intensity=victoryMode?64:38});setTimeout(()=>document.querySelector('.game-stage').classList.remove('quake'),520);setTimeout(()=>ui.event.classList.remove('show'),1850);
+  }
   function win() {
     gameActive = false; victoryMode = true; clearInterval(timerHandle); const elapsed = formatTime((performance.now() - startedAt) / 1000);
     ui.victoryStats.textContent = `${matchCount} pairs released · ${elapsed}`; message('THE STAR GATE IS OPEN', 'good'); sound('victory'); victoryBurst(); key.intensity = 64;
@@ -336,7 +374,7 @@
   }
   function startGame() {
     prepareAudio(); if (audioCtx.state === 'suspended') audioCtx.resume();
-    ui.start.classList.add('hidden'); ui.victory.classList.add('hidden'); gameActive = true; victoryMode = false; locked = false; history = []; matchCount = 0; key.intensity = 38;
+    ui.start.classList.add('hidden'); ui.victory.classList.add('hidden'); ui.event.classList.remove('show'); gameActive = true; victoryMode = false; locked = false; history = []; matchCount = 0; key.intensity = 38;templeEventPlayed=false;nextTempleEvent=6+Math.floor(Math.random()*7);guardianRoot?.setEnabled(false);
     startTimer(); startAmbience(); updateHud(); message('SELECT A FREE TILE'); sound('hint');
   }
   function replay() { clearSelection(); buildBoard(); startGame(); }
