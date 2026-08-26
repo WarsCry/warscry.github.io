@@ -4,7 +4,7 @@ const starCount=document.querySelector('#starCount'),celebration=document.queryS
 const encouragement=document.querySelector('#encouragement'),rewardIcon=document.querySelector('#rewardIcon');
 const rewardTitle=document.querySelector('#rewardTitle'),rewardText=document.querySelector('#rewardText');
 const themeButton=document.querySelector('#themeButton'),languageButton=document.querySelector('#languageButton');
-let stars=0,currentGame='',soundOn=true,audioContext,audioMaster,audioCompressor,audioEffects,audioMusic,praiseIndex=0,theme='cosmos',language='fr',lastMemorySignature='',storyStep=0,storyRewarded=false,storyVoiceToken=0,currentStoryKey='',ambience=null,mazeAnimation=0;
+let stars=0,currentGame='',soundOn=true,audioContext,audioMaster,audioCompressor,audioEffects,audioMusic,crowdYayBuffer,crowdYayLoading,praiseIndex=0,theme='cosmos',language='fr',lastMemorySignature='',storyStep=0,storyRewarded=false,storyVoiceToken=0,currentStoryKey='',ambience=null,mazeAnimation=0;
 
 const copy={
   fr:{home:'Accueil',welcomeKicker:'MISSION DES PETITS EXPLORATEURS',welcomeTitle:'Choisis un jeu!',welcomeText:'Sans pub. Sans achat. Joue autant que tu veux.',parent:'💜 Conçu pour les petites mains — aucun lien caché dans les jeux.',play:'Jouer',listen:'Écouter',again:'Encore! 🔄',newDrawing:'Nouveau dessin! 🎨',themeCosmos:'Mode Cosmos',themeUnicorn:'Mode Licorne',soundOn:'Désactiver les sons',soundOff:'Activer les sons',
@@ -134,7 +134,10 @@ stories.eva={
   endings:{fr:'Eva ferme les yeux avec un sourire. La princesse Marie se blottit près du lit. Les bons aliments ont donné de la force à son corps, les câlins ont rempli son cœur et tous les beaux souvenirs commencent à danser dans ses rêves. Chut… bonnes vacances et bonne nuit.',en:'Eva closes her eyes with a smile. Princess Marie curls up beside the bed. Good food gave her body strength, cuddles filled her heart, and every beautiful memory begins dancing through her dreams. Shhh… happy vacation and good night.'}
 };
 
-function audioReady(){if(!soundOn)return;if(!audioContext){audioContext=new(window.AudioContext||window.webkitAudioContext)();audioMaster=audioContext.createGain();audioMaster.gain.value=1.2;audioCompressor=audioContext.createDynamicsCompressor();audioCompressor.threshold.value=-18;audioCompressor.knee.value=22;audioCompressor.ratio.value=6;audioCompressor.attack.value=.004;audioCompressor.release.value=.24;audioEffects=audioContext.createGain();audioEffects.gain.value=2.45;audioMusic=audioContext.createGain();audioMusic.gain.value=2.05;audioEffects.connect(audioCompressor);audioMusic.connect(audioCompressor);audioCompressor.connect(audioMaster);audioMaster.connect(audioContext.destination)}if(audioContext.state==='suspended')audioContext.resume();return audioContext}
+function audioReady(){if(!soundOn)return;if(!audioContext){audioContext=new(window.AudioContext||window.webkitAudioContext)();audioMaster=audioContext.createGain();audioMaster.gain.value=1.2;audioCompressor=audioContext.createDynamicsCompressor();audioCompressor.threshold.value=-18;audioCompressor.knee.value=22;audioCompressor.ratio.value=6;audioCompressor.attack.value=.004;audioCompressor.release.value=.24;audioEffects=audioContext.createGain();audioEffects.gain.value=2.45;audioMusic=audioContext.createGain();audioMusic.gain.value=2.05;audioEffects.connect(audioCompressor);audioMusic.connect(audioCompressor);audioCompressor.connect(audioMaster);audioMaster.connect(audioContext.destination)}if(audioContext.state==='suspended')audioContext.resume();preloadCrowdYay();return audioContext}
+function preloadCrowdYay(){
+  if(crowdYayBuffer||crowdYayLoading||!audioContext)return;crowdYayLoading=fetch('assets/cosmo-kids/kids-crowd-yay.mp3').then(response=>{if(!response.ok)throw new Error('crowd sound');return response.arrayBuffer()}).then(data=>audioContext.decodeAudioData(data)).then(buffer=>crowdYayBuffer=buffer).catch(()=>null)
+}
 function tone(frequency,delay=0,duration=.14,volume=.08,wave='sine',endFrequency=frequency){
   const ctx=audioReady();if(!ctx)return;const o=ctx.createOscillator(),g=ctx.createGain(),now=ctx.currentTime+delay;
   o.connect(g);g.connect(audioEffects);o.type=wave;o.frequency.setValueAtTime(frequency,now);o.frequency.exponentialRampToValueAtTime(Math.max(40,endFrequency),now+duration);
@@ -154,6 +157,12 @@ function applause(){
     for(let j=0;j<data.length;j++)data[j]=(Math.random()*2-1)*(1-j/data.length);
     const source=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),gain=ctx.createGain();source.buffer=buffer;filter.type='bandpass';filter.frequency.value=900+Math.random()*1200;gain.gain.value=.035+Math.random()*.025;
     source.connect(filter);filter.connect(gain);gain.connect(audioEffects);source.start(start)}
+}
+function kidsCrowdYay(){
+  const ctx=audioReady();if(!ctx)return;const start=ctx.currentTime+.025;
+  if(crowdYayBuffer){const source=ctx.createBufferSource(),gain=ctx.createGain();source.buffer=crowdYayBuffer;gain.gain.value=.42;source.connect(gain);gain.connect(audioEffects);source.start(start);source.stop(start+Math.min(2.9,crowdYayBuffer.duration))}
+  const crowd=ctx.createGain();crowd.gain.value=.88;crowd.connect(audioEffects);
+  for(let i=0;i<10;i++){const when=start+Math.random()*.15,duration=.95+Math.random()*.38,pitch=245+Math.random()*95,voice=ctx.createOscillator(),voiceGain=ctx.createGain(),pan=ctx.createStereoPanner?ctx.createStereoPanner():ctx.createGain();voice.type=i%3?'sawtooth':'square';voice.frequency.setValueAtTime(pitch,when);voice.frequency.exponentialRampToValueAtTime(pitch*1.25,when+duration*.45);voice.frequency.exponentialRampToValueAtTime(pitch*.94,when+duration);voiceGain.gain.setValueAtTime(.001,when);voiceGain.gain.linearRampToValueAtTime(.022+Math.random()*.012,when+.07);voiceGain.gain.setValueAtTime(.026,when+duration*.68);voiceGain.gain.exponentialRampToValueAtTime(.001,when+duration);if(pan.pan)pan.pan.value=-.85+Math.random()*1.7;voiceGain.connect(pan);pan.connect(crowd);[[620,360,7],[1850,2450,8],[2700,3200,10]].forEach(([from,to,q],index)=>{const filter=ctx.createBiquadFilter();filter.type='bandpass';filter.Q.value=q;filter.frequency.setValueAtTime(from+(Math.random()-.5)*120,when);filter.frequency.exponentialRampToValueAtTime(to+(Math.random()-.5)*160,when+duration);voice.connect(filter);filter.connect(voiceGain)});voice.start(when);voice.stop(when+duration+.03)}
 }
 function speak(text,calm=false,onDone){
   if(!soundOn||!('speechSynthesis'in window)){if(onDone)setTimeout(onDone,350);return}
@@ -175,8 +184,8 @@ function burst(){const icons=theme==='cosmos'?['⭐','✨','💜','💚']:['🌸
 function celebrate(){
   stars++;starCount.textContent=stars;starCount.parentElement.classList.remove('score-pop');void starCount.offsetWidth;starCount.parentElement.classList.add('score-pop');
   const praises=praiseSets[language],praise=praises[praiseIndex++%praises.length];rewardTitle.textContent=praise[0];rewardText.textContent=praise[1];rewardIcon.textContent=praise[2];
-  sound('good');setTimeout(applause,180);setTimeout(()=>speakPraise(`${praise[0]} ${praise[1]}`),380);celebration.classList.add('show');celebration.setAttribute('aria-hidden','false');burst();
-  setTimeout(()=>{celebration.classList.remove('show');celebration.setAttribute('aria-hidden','true');newRound.classList.remove('hidden')},1900);
+  sound('good');setTimeout(kidsCrowdYay,70);setTimeout(applause,180);setTimeout(()=>speakPraise(`${praise[0]} ${praise[1]}`),1450);celebration.classList.add('show');celebration.setAttribute('aria-hidden','false');burst();
+  setTimeout(()=>{celebration.classList.remove('show');celebration.setAttribute('aria-hidden','true');newRound.classList.remove('hidden')},2700);
 }
 function labels(){return copy[language]}
 function cardCopy(game){const base=[...labels().cards[game]];if(game==='memory')base[1]=theme==='cosmos'?(language==='fr'?'Mémoire spatiale':'Space Memory'):(language==='fr'?'Mémoire enchantée':'Enchanted Memory');if(game==='counting'){base[0]=language==='fr'?(theme==='cosmos'?'MISSION ÉTOILES':'MISSION FLEURS'):(theme==='cosmos'?'STAR MISSION':'FLOWER MISSION');base[1]=language==='fr'?(theme==='cosmos'?'Compte les étoiles':'Compte les fleurs'):(theme==='cosmos'?'Count the stars':'Count the flowers')}return base}
