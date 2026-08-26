@@ -7,7 +7,7 @@
   <title>Alien Solitaire: Orbital Deck | DanPC</title>
   <meta name="description" content="Play a complete alien-themed Klondike solitaire mission on a living spaceship command table.">
   <link rel="icon" type="image/png" href="favicondanpc.png">
-  <link rel="stylesheet" href="alien-solitaire.css?v=4">
+  <link rel="stylesheet" href="alien-solitaire.css?v=5">
 </head>
 <body>
   <div class="starfield" aria-hidden="true"></div>
@@ -24,7 +24,7 @@
       <button id="hint">✦ HINT</button>
       <button id="music" aria-pressed="true">♫ MUSIC ON</button>
       <button id="sound" aria-pressed="true">◖)) SOUND ON</button>
-      <div class="readout"><span>MOVES <b id="moves">0</b></span><span>TIME <b id="timer">00:00</b></span><span>FOUNDATIONS <b id="progress">0/52</b></span></div>
+      <div class="readout"><span>DRAW <b id="drawMode">—</b></span><span>MOVES <b id="moves">0</b></span><span>TIME <b id="timer">00:00</b></span><span>FOUNDATIONS <b id="progress">0/52</b></span></div>
     </section>
 
     <section class="ship-board" aria-label="Alien solitaire board">
@@ -50,10 +50,22 @@
     </section>
   </main>
 
+  <div class="draw-choice" id="drawChoice">
+    <div class="draw-choice-card" role="dialog" aria-modal="true" aria-labelledby="drawChoiceTitle" aria-describedby="drawChoiceHelp">
+      <p>SELECT DRAW PROTOCOL</p>
+      <h2 id="drawChoiceTitle">HOW MANY<br><span>CARDS?</span></h2>
+      <div id="drawChoiceHelp">Choose before the mission begins. You can select a different mode for every new game.</div>
+      <div class="draw-options">
+        <button type="button" data-draw="1"><i class="draw-icon one" aria-hidden="true"><em></em></i><b>DRAW 1</b><small>Relaxed mission<br>One new card at a time</small></button>
+        <button type="button" data-draw="3"><i class="draw-icon three" aria-hidden="true"><em></em><em></em><em></em></i><b>DRAW 3</b><small>Classic challenge<br>Three cards per signal</small></button>
+      </div>
+    </div>
+  </div>
+
   <div class="victory" id="victory" hidden>
     <div class="victory-card"><p>ORBITAL ALIGNMENT COMPLETE</p><h2>THE DECK IS<br><span>LIBERATED!</span></h2><div id="victoryStats"></div><button id="playAgain">DEAL ANOTHER GALAXY</button></div>
   </div>
   <div class="fx-layer" id="fxLayer" aria-hidden="true"></div>
-  <script src="alien-solitaire.js?v=4"></script>
+  <script src="alien-solitaire.js?v=5"></script>
 </body>
 </html>
