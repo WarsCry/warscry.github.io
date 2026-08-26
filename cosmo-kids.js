@@ -171,6 +171,10 @@ function speak(text,calm=false,onDone){
 }
 function speakPraise(text){speak(text)}
 function sound(type='good'){
+  const fx=window.DanArcadeFX;
+  if(type==='flip')fx?.play('card',{enabled:soundOn,volume:.1,rate:1.28,cooldown:80});
+  if(type==='key')fx?.play('magic',{enabled:soundOn,volume:.12,rate:1.18,cooldown:160});
+  if(type==='unlock'){fx?.play('door',{enabled:soundOn,volume:.12,rate:1.35,duration:.65});fx?.burst(document.querySelector('.game-area'),'#ffd978',18)}
   if(type==='tap'){tone(430,0,.07,.045,'sine',520);return}if(type==='flip'){tone(330,0,.08,.05,'triangle',520);return}
   if(type==='no'){tone(210,0,.13,.065,'triangle',155);tone(155,.12,.14,.05,'triangle',120);return}
   if(type==='match'){tone(520,0,.1,.065);tone(660,.09,.1,.07);tone(820,.18,.13,.075);return}

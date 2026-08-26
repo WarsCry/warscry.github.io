@@ -356,6 +356,11 @@
     }
     if (name === 'push') { tone(440, .22, 'sine', .035); tone(554, .28, 'sine', .03, .08); tone(659, .24, 'triangle', .018, .16); }
     if (name === 'error') { noiseBurst(.12, .028, 180, 'lowpass'); tone(125, .22, 'square', .03); }
+    const fx = window.DanArcadeFX;
+    if (['deal', 'flip', 'hold'].includes(name)) fx?.play('card', { enabled: soundOn, volume: name === 'deal' ? .18 : .14, rate: name === 'hold' ? 1.12 : .94, cooldown: 45 });
+    if (name === 'chip') fx?.play('coin', { enabled: soundOn, volume: .24, rate: 1.05 });
+    if (name === 'win') { fx?.play('coin', { enabled: soundOn, volume: .34, rate: 1.08 }); fx?.play('cheer', { enabled: soundOn, volume: .24, offset: .1, duration: 2.2 }); fx?.hit(document.querySelector('.casino-table') || document.body, '#ffd96f', .9); }
+    if (name === 'loss') fx?.shake(document.querySelector('.casino-table') || document.body, .35);
   }
 
   function scheduleMusic() {

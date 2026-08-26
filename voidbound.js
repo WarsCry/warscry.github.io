@@ -35,6 +35,7 @@ const engine=new B.Engine(canvas,true,{stencil:true,adaptToDeviceRatio:true});
 if(matchMedia('(pointer:coarse)').matches)engine.setHardwareScalingLevel(Math.max(1,devicePixelRatio*.8));
 let scene,camera,heroes=[],enemies=[],selected=null,selectionRing,turn='player',round=1,busy=false,started=false,abilityMode=false,pointerStart=null;
 const tiles=new Map(),materials={};
+const arcadeFx=()=>window.DanArcadeFX;
 
 const key=(x,z)=>`${x},${z}`;
 const world=(x,z)=>new V((x-(WIDTH-1)/2)*CELL,.19,(z-(HEIGHT-1)/2)*CELL);
@@ -146,7 +147,7 @@ function selectHero(unit){if(!unit?.alive||unit.team!=='hero'||turn!=='player'||
 function canAbilityTarget(hero,target){return !hero.abilityUsed&&target.team==='enemy'&&target.alive&&['grenadier','seer'].includes(hero.type)&&canAttack(hero,target,hero.abilityRange)}
 
 async function moveAlong(unit,path){for(const [x,z] of path){await tweenUnit(unit,x,z);unit.x=x;unit.z=z}renderUI()}
-function tweenUnit(unit,x,z){return new Promise(resolve=>{const start=unit.root.position.clone(),end=world(x,z),began=performance.now(),duration=175;const observer=scene.onBeforeRenderObservable.add(()=>{const t=Math.min(1,(performance.now()-began)/duration),smooth=t*t*(3-2*t);unit.root.position=V.Lerp(start,end,smooth);unit.root.position.y=end.y+Math.sin(Math.PI*t)*.2;if(t>=1){scene.onBeforeRenderObservable.remove(observer);unit.root.position.copyFrom(end);resolve()}})})}
+function tweenUnit(unit,x,z){return new Promise(resolve=>{const start=unit.root.position.clone(),end=world(x,z),began=performance.now(),duration=175;const observer=scene.onBeforeRenderObservable.add(()=>{const t=Math.min(1,(performance.now()-began)/duration),smooth=t*t*(3-2*t);unit.root.position=V.Lerp(start,end,smooth);unit.root.position.y=end.y+Math.sin(Math.PI*t)*.2;if(t>=1){scene.onBeforeRenderObservable.remove(observer);unit.root.position.copyFrom(end);arcadeFx()?.play('step',{volume:.15,rate:unit.team==='hero'?1.18:.88,cooldown:95});resolve()}})})}
 
 async function moveSelected(x,z){
   if(!selected||busy||turn!=='player'||abilityMode)return;const reachable=flood(selected,selected.moveLeft),goal=key(x,z);if(!reachable.has(goal)||reachable.get(goal).distance===0)return;
@@ -159,7 +160,7 @@ async function launchEffect(attacker,target,color){const orb=B.MeshBuilder.Creat
 function commanderBonus(attacker){return attacker.team==='enemy'&&enemies.some(enemy=>enemy.alive&&enemy.type==='commander'&&enemy!==attacker&&distance(enemy,attacker)<=3)?1:0}
 
 async function attack(attacker,target,{free=false,ability=false}={}){
-  const roll=rollFlux();setRoll(`${attacker.name} ROLLED ${roll}`);tone(attacker.team==='hero'?620:210,.1,'sawtooth');await launchEffect(attacker,target,attacker.color);
+  const roll=rollFlux();setRoll(`${attacker.name} ROLLED ${roll}`);tone(attacker.team==='hero'?620:210,.1,'sawtooth');arcadeFx()?.play(ability?'magic':'laser',{volume:ability ? .24 : .2,rate:attacker.team==='hero'?1.08:.82,cooldown:80});await launchEffect(attacker,target,attacker.color);
   if(roll===1&&!ability){showToast(`${attacker.name} MISSED`);setRoll('MISS · FLUX COLLAPSE');tone(90,.16,'square')}else{
     let amount=attacker.damage+commanderBonus(attacker);if(roll===6)amount+=2;if(ability)amount=ability;
     await damageUnit(target,amount);setRoll(roll===6?`CRITICAL · ${amount} DAMAGE`:`${amount} DAMAGE`);
@@ -169,7 +170,7 @@ async function attack(attacker,target,{free=false,ability=false}={}){
 
 async function damageUnit(target,amount){
   const absorbed=Math.min(target.shield||0,amount);target.shield-=absorbed;amount-=absorbed;if(absorbed)showToast(`${target.name} SHIELD ABSORBED ${absorbed}`);
-  if(amount>0){target.hp=Math.max(0,target.hp-amount);showToast(`${target.name} TOOK ${amount} DAMAGE`);tone(target.team==='hero'?110:175,.13,'square')}
+  if(amount>0){target.hp=Math.max(0,target.hp-amount);showToast(`${target.name} TOOK ${amount} DAMAGE`);tone(target.team==='hero'?110:175,.13,'square');arcadeFx()?.play('metal',{volume:.24,rate:target.team==='hero' ? .82 : 1.2,cooldown:70});arcadeFx()?.hit(canvas,target.team==='hero'?'#ff526d':'#72ffe0',.45)}
   target.root.scaling=new V(1.18,.76,1.18);await wait(120);target.root.scaling.setAll(1);
   if(target.hp<=0){target.alive=false;target.meshes.forEach(mesh=>mesh.isPickable=false);showToast(`${target.name} ELIMINATED`);B.Animation.CreateAndStartAnimation('miniature defeated',target.root,'scaling',60,28,new V(1,1,1),new V(.02,.02,.02),B.Animation.ANIMATIONLOOPMODE_CONSTANT,null,()=>target.root.setEnabled(false))}
   renderUI();refreshHighlights();
@@ -231,7 +232,7 @@ function checkBattle(){
   if(started&&!heroes.some(unit=>unit.alive)){finish(false);return true}
   return false;
 }
-function finish(win){started=false;turn='ended';busy=false;clearOutlines();selectionRing.setEnabled(false);menu.querySelector('h1').innerHTML=win?'OUTPOST SECURED<br><span>ALIENS VICTORIOUS</span>':'SQUAD LOST<br><span>THE BREACH FAILED</span>';menu.querySelector('p').textContent=win?'All five Solar Dominion defenders have fallen. The alien squad now controls Outpost K-17.':'The Solar Dominion eliminated the alien squad. Rebuild your tactics and try the breach again.';document.querySelector('#start').textContent=win?'PLAY AGAIN':'RETRY MISSION';document.querySelector('#start').onclick=()=>location.reload();menu.classList.remove('hidden');renderUI()}
+function finish(win){started=false;turn='ended';busy=false;clearOutlines();selectionRing.setEnabled(false);if(win){arcadeFx()?.play('cheer',{volume:.32,duration:2.8});arcadeFx()?.hit(canvas,'#caff68',1)}else{arcadeFx()?.play('metal',{volume:.34,rate:.58});arcadeFx()?.shake(canvas,.8)}menu.querySelector('h1').innerHTML=win?'OUTPOST SECURED<br><span>ALIENS VICTORIOUS</span>':'SQUAD LOST<br><span>THE BREACH FAILED</span>';menu.querySelector('p').textContent=win?'All five Solar Dominion defenders have fallen. The alien squad now controls Outpost K-17.':'The Solar Dominion eliminated the alien squad. Rebuild your tactics and try the breach again.';document.querySelector('#start').textContent=win?'PLAY AGAIN':'RETRY MISSION';document.querySelector('#start').onclick=()=>location.reload();menu.classList.remove('hidden');renderUI()}
 
 function renderUI(){
   phaseEl.textContent=turn==='player'?'ALIEN TURN':turn==='enemy'?'HUMAN TURN':'MISSION COMPLETE';roundEl.textContent=`ROUND ${round}`;hostilesEl.textContent=`${enemies.filter(unit=>unit.alive).length} HOSTILES`;

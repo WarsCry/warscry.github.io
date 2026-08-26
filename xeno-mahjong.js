@@ -328,6 +328,12 @@
   function sound(kind,source) {
     if (!soundOn || !audioCtx) return;
     const pan=Math.max(-.78,Math.min(.78,(source?.x||0)/10));
+    const fx=window.DanArcadeFX;
+    if(kind==='select')fx?.play('metal',{enabled:soundOn,volume:.12,rate:1.72,pan,cooldown:55});
+    if(kind==='match'){fx?.play('metal',{enabled:soundOn,volume:.24,rate:1.35,pan,cooldown:55});fx?.burst(document.querySelector('.game-stage'),'#9cff68',10)}
+    if(kind==='shuffle')fx?.play('card',{enabled:soundOn,volume:.18,rate:.78,duration:.5});
+    if(kind==='guardian'){fx?.play('door',{enabled:soundOn,volume:.36,rate:.62,duration:1.2});fx?.play('metal',{enabled:soundOn,volume:.3,rate:.58,offset:.08});fx?.shake(document.querySelector('.game-stage'),.85)}
+    if(kind==='victory'){fx?.play('cheer',{enabled:soundOn,volume:.3,duration:2.8});fx?.hit(document.querySelector('.game-stage'),'#caff68',1)}
     if (kind === 'select') { noise(.052,.16,0,2350,pan);tone(1180,.07,'triangle',.12,0,760,pan);tone(190,.045,'sine',.08,.012,140,pan); }
     if (kind === 'blocked') {noise(.08,.11,0,520,pan);tone(145,.22,'sawtooth',.1,0,72,pan)}
     if (kind === 'match') { noise(.085,.22,0,2700,pan);noise(.12,.11,.055,940,pan);tone(610,.24,'triangle',.15,.015,1240,pan);tone(920,.38,'sine',.12,.08,1680,pan);tone(120,.18,'sine',.07,0,72,pan); }

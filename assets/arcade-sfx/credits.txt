@@ -1,0 +1,12 @@
+DanPC Arcade shared sound library
+
+The following recordings were downloaded from Mixkit and are used under the Mixkit Sound Effects Free License:
+https://mixkit.co/license/#sfxFree
+
+- Poker card placement — https://mixkit.co/free-sound-effects/casino/
+- Clinking coins — https://mixkit.co/free-sound-effects/casino/
+- Laser weapon shot — https://mixkit.co/free-sound-effects/laser/
+- Metal hammer hit — https://mixkit.co/free-sound-effects/impact/
+- Sci fi futuristic door open — https://mixkit.co/free-sound-effects/doors/
+- Robot step — https://mixkit.co/free-sound-effects/footsteps/
+- Crystal chime — https://mixkit.co/free-sound-effects/sci-fi/

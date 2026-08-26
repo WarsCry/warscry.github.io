@@ -170,6 +170,12 @@
   }
   function sound(kind) {
     if (!audioCtx) return;
+    const fx=window.DanArcadeFX;
+    if(['flipper','rail','bumper','target','drain'].includes(kind))fx?.play('metal',{volume:kind==='bumper' ? .25 : kind==='drain' ? .28 : .15,rate:kind==='rail'?1.55:kind==='target'?1.32:kind==='drain' ? .62 : .92,cooldown:kind==='rail'?75:35});
+    if(kind==='launch')fx?.play('laser',{volume:.2,rate:.58,duration:.7});
+    if(kind==='ramp')fx?.play('magic',{volume:.14,rate:1.25,cooldown:130});
+    if(kind==='multiball'){fx?.play('cheer',{volume:.28,duration:2.2});fx?.hit(document.querySelector('.table-overlay')||canvas,'#caff62',1)}
+    if(kind==='extra')fx?.play('coin',{volume:.28,rate:1.12});
     if (kind === 'select') tone(530,.08,.035,'sine',0,1.25);
     else if (kind === 'flipper') { noise(.075,.085,720); tone(115,.07,.045,'square',0,.7); }
     else if (kind === 'launch') { noise(.38,.07,420); tone(90,.5,.06,'sawtooth',0,3.8); tone(760,.18,.04,'triangle',.35,1.4); }
