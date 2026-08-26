@@ -251,6 +251,10 @@
   let musicOn = savedAudio.music !== false;
   let soundOn = savedAudio.sound !== false;
   let audioContext = null;
+  let audioMaster = null;
+  let audioCompressor = null;
+  let soundBus = null;
+  let musicBus = null;
   let musicTimer = null;
   let musicStep = 0;
 
@@ -259,7 +263,25 @@
   }
 
   function ensureAudio() {
-    if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      audioMaster = audioContext.createGain();
+      audioMaster.gain.value = 1.2;
+      audioCompressor = audioContext.createDynamicsCompressor();
+      audioCompressor.threshold.value = -18;
+      audioCompressor.knee.value = 22;
+      audioCompressor.ratio.value = 6;
+      audioCompressor.attack.value = .004;
+      audioCompressor.release.value = .24;
+      soundBus = audioContext.createGain();
+      soundBus.gain.value = 2.55;
+      musicBus = audioContext.createGain();
+      musicBus.gain.value = 2.15;
+      soundBus.connect(audioCompressor);
+      musicBus.connect(audioCompressor);
+      audioCompressor.connect(audioMaster);
+      audioMaster.connect(audioContext.destination);
+    }
     if (audioContext.state === 'suspended') audioContext.resume();
     if (musicOn && !musicTimer) startMusic();
   }
@@ -274,7 +296,7 @@
     gain.gain.setValueAtTime(0.0001, at);
     gain.gain.exponentialRampToValueAtTime(volume, at + 0.015);
     gain.gain.exponentialRampToValueAtTime(0.0001, at + duration);
-    oscillator.connect(gain).connect(audioContext.destination);
+    oscillator.connect(gain).connect(soundBus);
     oscillator.start(at);
     oscillator.stop(at + duration + 0.03);
   }
@@ -295,7 +317,7 @@
     filter.Q.value = 1.4;
     gain.gain.setValueAtTime(volume, at);
     gain.gain.exponentialRampToValueAtTime(0.0001, at + duration);
-    source.connect(filter).connect(gain).connect(audioContext.destination);
+    source.connect(filter).connect(gain).connect(soundBus);
     source.start(at);
   }
 
@@ -345,7 +367,7 @@
       gain.gain.setValueAtTime(0.0001, at);
       gain.gain.exponentialRampToValueAtTime(index === 0 ? .015 : index === 1 ? .022 : .011, at + .35);
       gain.gain.exponentialRampToValueAtTime(.0001, at + 2.3);
-      oscillator.connect(filter).connect(gain).connect(audioContext.destination);
+      oscillator.connect(filter).connect(gain).connect(musicBus);
       oscillator.start(at);
       oscillator.stop(at + 2.4);
     });
@@ -357,7 +379,7 @@
     gain.gain.setValueAtTime(.0001, at + .65);
     gain.gain.exponentialRampToValueAtTime(.012, at + .68);
     gain.gain.exponentialRampToValueAtTime(.0001, at + 1.25);
-    oscillator.connect(gain).connect(audioContext.destination);
+    oscillator.connect(gain).connect(musicBus);
     oscillator.start(at + .65);
     oscillator.stop(at + 1.3);
     const reply = audioContext.createOscillator();
@@ -367,7 +389,7 @@
     replyGain.gain.setValueAtTime(.0001, at + 1.28);
     replyGain.gain.exponentialRampToValueAtTime(.008, at + 1.31);
     replyGain.gain.exponentialRampToValueAtTime(.0001, at + 1.82);
-    reply.connect(replyGain).connect(audioContext.destination);
+    reply.connect(replyGain).connect(musicBus);
     reply.start(at + 1.28);
     reply.stop(at + 1.85);
     musicStep += 1;

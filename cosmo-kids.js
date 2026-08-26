@@ -4,7 +4,7 @@ const starCount=document.querySelector('#starCount'),celebration=document.queryS
 const encouragement=document.querySelector('#encouragement'),rewardIcon=document.querySelector('#rewardIcon');
 const rewardTitle=document.querySelector('#rewardTitle'),rewardText=document.querySelector('#rewardText');
 const themeButton=document.querySelector('#themeButton'),languageButton=document.querySelector('#languageButton');
-let stars=0,currentGame='',soundOn=true,audioContext,praiseIndex=0,theme='cosmos',language='fr',lastMemorySignature='',storyStep=0,storyRewarded=false,storyVoiceToken=0,currentStoryKey='',ambience=null;
+let stars=0,currentGame='',soundOn=true,audioContext,audioMaster,audioCompressor,audioEffects,audioMusic,praiseIndex=0,theme='cosmos',language='fr',lastMemorySignature='',storyStep=0,storyRewarded=false,storyVoiceToken=0,currentStoryKey='',ambience=null;
 
 const copy={
   fr:{home:'Accueil',welcomeKicker:'MISSION DES PETITS EXPLORATEURS',welcomeTitle:'Choisis un jeu!',welcomeText:'Sans pub. Sans achat. Joue autant que tu veux.',parent:'💜 Conçu pour les petites mains — aucun lien caché dans les jeux.',play:'Jouer',listen:'Écouter',again:'Encore! 🔄',newDrawing:'Nouveau dessin! 🎨',themeCosmos:'Mode Cosmos',themeUnicorn:'Mode Licorne',soundOn:'Désactiver les sons',soundOff:'Activer les sons',
@@ -132,16 +132,16 @@ stories.eva={
   endings:{fr:'Eva ferme les yeux avec un sourire. La princesse Marie se blottit près du lit. Les bons aliments ont donné de la force à son corps, les câlins ont rempli son cœur et tous les beaux souvenirs commencent à danser dans ses rêves. Chut… bonnes vacances et bonne nuit.',en:'Eva closes her eyes with a smile. Princess Marie curls up beside the bed. Good food gave her body strength, cuddles filled her heart, and every beautiful memory begins dancing through her dreams. Shhh… happy vacation and good night.'}
 };
 
-function audioReady(){if(!soundOn)return;audioContext||=new(window.AudioContext||window.webkitAudioContext)();if(audioContext.state==='suspended')audioContext.resume();return audioContext}
+function audioReady(){if(!soundOn)return;if(!audioContext){audioContext=new(window.AudioContext||window.webkitAudioContext)();audioMaster=audioContext.createGain();audioMaster.gain.value=1.2;audioCompressor=audioContext.createDynamicsCompressor();audioCompressor.threshold.value=-18;audioCompressor.knee.value=22;audioCompressor.ratio.value=6;audioCompressor.attack.value=.004;audioCompressor.release.value=.24;audioEffects=audioContext.createGain();audioEffects.gain.value=2.45;audioMusic=audioContext.createGain();audioMusic.gain.value=2.05;audioEffects.connect(audioCompressor);audioMusic.connect(audioCompressor);audioCompressor.connect(audioMaster);audioMaster.connect(audioContext.destination)}if(audioContext.state==='suspended')audioContext.resume();return audioContext}
 function tone(frequency,delay=0,duration=.14,volume=.08,wave='sine',endFrequency=frequency){
   const ctx=audioReady();if(!ctx)return;const o=ctx.createOscillator(),g=ctx.createGain(),now=ctx.currentTime+delay;
-  o.connect(g);g.connect(ctx.destination);o.type=wave;o.frequency.setValueAtTime(frequency,now);o.frequency.exponentialRampToValueAtTime(Math.max(40,endFrequency),now+duration);
+  o.connect(g);g.connect(audioEffects);o.type=wave;o.frequency.setValueAtTime(frequency,now);o.frequency.exponentialRampToValueAtTime(Math.max(40,endFrequency),now+duration);
   g.gain.setValueAtTime(.001,now);g.gain.linearRampToValueAtTime(volume,now+.018);g.gain.exponentialRampToValueAtTime(.001,now+duration);o.start(now);o.stop(now+duration+.02);
 }
 function stopAmbience(){if(!ambience)return;clearInterval(ambience.timer);ambience.nodes.forEach(node=>{try{node.stop()}catch{}try{node.disconnect()}catch{}});try{ambience.master.disconnect()}catch{}ambience=null}
 function ambientNote(frequency,duration=.75,volume=.035){if(!ambience)return;const ctx=audioContext,o=ctx.createOscillator(),g=ctx.createGain(),now=ctx.currentTime;o.type='sine';o.frequency.value=frequency;g.gain.setValueAtTime(.001,now);g.gain.linearRampToValueAtTime(volume,now+.08);g.gain.exponentialRampToValueAtTime(.001,now+duration);o.connect(g);g.connect(ambience.master);o.start(now);o.stop(now+duration+.05)}
 function startAmbience(kind='dream'){
-  stopAmbience();const ctx=audioReady();if(!ctx)return;const master=ctx.createGain();master.gain.value=kind==='forest'?.032:kind==='ocean'?.027:.024;master.connect(ctx.destination);const nodes=[];
+  stopAmbience();const ctx=audioReady();if(!ctx)return;const master=ctx.createGain();master.gain.value=kind==='forest'?.032:kind==='ocean'?.027:.024;master.connect(audioMusic);const nodes=[];
   const buffer=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*.16;const breeze=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),breezeGain=ctx.createGain();breeze.buffer=buffer;breeze.loop=true;filter.type='lowpass';filter.frequency.value=kind==='forest'?760:kind==='ocean'?340:430;breezeGain.gain.value=kind==='forest'?.22:kind==='ocean'?.18:.14;breeze.connect(filter);filter.connect(breezeGain);breezeGain.connect(master);breeze.start();nodes.push(breeze);
   for(const frequency of kind==='forest'?[98,147]:kind==='ocean'?[82,123]:[110,165]){const drone=ctx.createOscillator(),gain=ctx.createGain();drone.type='sine';drone.frequency.value=frequency;gain.gain.value=.035;drone.connect(gain);gain.connect(master);drone.start();nodes.push(drone)}
   ambience={kind,master,nodes,timer:setInterval(()=>{if(kind==='forest'){ambientNote(1900+Math.random()*900,.16,.026);setTimeout(()=>ambientNote(2200+Math.random()*700,.12,.018),180)}else if(kind==='ocean'){ambientNote([262,330,392][Math.floor(Math.random()*3)],1.6,.021);setTimeout(()=>ambientNote(720+Math.random()*260,.22,.012),700)}else{ambientNote([392,523,659][Math.floor(Math.random()*3)],1.25,.025)}},kind==='forest'?3900:kind==='ocean'?4700:5200)};
@@ -151,11 +151,11 @@ function applause(){
   for(let i=0;i<16;i++){const start=ctx.currentTime+.05+i*.045+Math.random()*.035,buffer=ctx.createBuffer(1,Math.floor(ctx.sampleRate*.055),ctx.sampleRate),data=buffer.getChannelData(0);
     for(let j=0;j<data.length;j++)data[j]=(Math.random()*2-1)*(1-j/data.length);
     const source=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),gain=ctx.createGain();source.buffer=buffer;filter.type='bandpass';filter.frequency.value=900+Math.random()*1200;gain.gain.value=.035+Math.random()*.025;
-    source.connect(filter);filter.connect(gain);gain.connect(ctx.destination);source.start(start)}
+    source.connect(filter);filter.connect(gain);gain.connect(audioEffects);source.start(start)}
 }
 function speak(text,calm=false,onDone){
   if(!soundOn||!('speechSynthesis'in window)){if(onDone)setTimeout(onDone,350);return}
-  speechSynthesis.cancel();const voice=new SpeechSynthesisUtterance(text);voice.lang=language==='fr'?'fr-CA':'en-CA';voice.pitch=calm?1.08:1.35;voice.rate=calm?.78:.92;voice.volume=.86;
+  speechSynthesis.cancel();const voice=new SpeechSynthesisUtterance(text);voice.lang=language==='fr'?'fr-CA':'en-CA';voice.pitch=calm?1.08:1.35;voice.rate=calm?.78:.92;voice.volume=1;
   if(onDone){let finished=false,fallback;const finish=()=>{if(finished)return;finished=true;clearTimeout(fallback);setTimeout(onDone,700)};voice.onend=finish;voice.onerror=finish;fallback=setTimeout(finish,Math.min(15000,Math.max(6500,text.length*130)))}speechSynthesis.speak(voice)
 }
 function speakPraise(text){speak(text)}
