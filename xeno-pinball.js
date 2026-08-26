@@ -37,7 +37,7 @@
     const root = new BABYLON.TransformNode('player alien', scene); root.position.set(0, 0, 8); root.rotation.y = Math.PI;
     const body = BABYLON.MeshBuilder.CreateCapsule('alien body', { height: 2.05, radius: .48, tessellation: 18 }, scene); body.parent = root; body.position.y = 1.45; body.material = mat.violet;
     const head = BABYLON.MeshBuilder.CreateSphere('alien head', { diameter: 1.28, segments: 24 }, scene); head.parent = root; head.position.set(0, 2.72, 0); head.scaling.set(1, .78, .76); head.material = mat.acid;
-    [-.28, .28].forEach((x) => { const eye = BABYLON.MeshBuilder.CreateSphere('alien eye', { diameter: .28, segments: 12 }, scene); eye.parent = root; eye.position.set(x, 2.82, -.47); eye.scaling.set(.72, 1.22, .35); eye.material = mat.floor; });
+    [-.28, .28].forEach((x) => { const eye = BABYLON.MeshBuilder.CreateSphere('alien eye', { diameter: .28, segments: 12 }, scene); eye.parent = root; eye.position.set(x, 2.82, .47); eye.scaling.set(.72, 1.22, .35); eye.material = mat.floor; });
     const antenna = BABYLON.MeshBuilder.CreateCylinder('alien antenna', { height: .62, diameter: .07, tessellation: 10 }, scene); antenna.parent = root; antenna.position.set(0, 3.55, 0); antenna.material = mat.mint;
     const antennaTip = BABYLON.MeshBuilder.CreateSphere('antenna light', { diameter: .22, segments: 12 }, scene); antennaTip.parent = root; antennaTip.position.set(0, 3.88, 0); antennaTip.material = mat.pink;
     const limbs = {};
@@ -77,7 +77,11 @@
     { gravity: 1.3, launch: 11.8, mission: 'BREAK THE THREE SEALS', jackpot: 'GUARDIAN AWAKENED', bumpers: [[0,-2.05,.54],[-1.35,-.9,.4],[1.35,-.9,.4],[0,.15,.36]], targets: [[-1.5,.9],[0,.65],[1.5,.9]], ramps: [-1.95,1.95] },
   ];
   const $ = (id) => document.getElementById(id);
-  const ui = { lobby: $('lobbyPanel'), walk: $('walkControls'), hud: $('gameHud'), controls: $('mobileControls'), message: $('message'), leave: $('leaveMachine'), result: $('resultScreen'), score: $('score'), multiplier: $('multiplier'), balls: $('balls'), mission: $('mission'), high: $('highScore'), final: $('finalScore'), resultTitle: $('resultTitle'), resultMessage: $('resultMessage') };
+  const ui = {
+    lobby: $('lobbyPanel'), walk: $('walkControls'), hud: $('gameHud'), controls: $('mobileControls'), message: $('message'), leave: $('leaveMachine'), result: $('resultScreen'),
+    score: $('score'), multiplier: $('multiplier'), balls: $('balls'), mission: $('mission'), high: $('highScore'), final: $('finalScore'), resultTitle: $('resultTitle'), resultMessage: $('resultMessage'),
+    table: $('tableMode'), tableMessage: $('tableMessage'), tableScore: $('tableScore'), tableMultiplier: $('tableMultiplier'), tableBalls: $('tableBalls'), tableMission: $('tableMission')
+  };
   let selected = 0, mode = 'intro', gameRoot = null, activeProfile = null, gameActive = false;
   let score = 0, multiplier = 1, ballsLeft = 3, targetBank = 0, coreCharge = 0, multiballStarted = false, extraBallAwarded = false;
   let balls = [], bumpers = [], targets = [], walls = [], flippers = [], rampSensors = [], decor = [], messageTimer = 0, physicsAccumulator = 0, tableCreature = null, plunger = null;
@@ -86,6 +90,21 @@
   let audioCtx = null, audioMaster = null, effectsBus = null, musicBus = null, musicTimer = 0, musicStep = 0;
   let highScore = Number(localStorage.getItem('xenoPinballHigh') || 0);
   ui.high.textContent = highScore.toLocaleString();
+  const shell = document.querySelector('.shell');
+  const pinball2d = new window.XenoPinball2D($('pinball2d'), {
+    onScore: (points, label) => addScore(points, label),
+    onReady: () => announce('BALL READY — HOLD TO LAUNCH', 1700),
+    onCharge: (percent) => { $('tableLaunch').textContent = percent === null ? 'HOLD TO LAUNCH' : `POWER ${percent}%`; },
+    onLaunch: (power) => { sound('launch'); announce(`PLASMA LAUNCH ${power}%`, 1000); },
+    onFlipper: () => sound('flipper'),
+    onRail: () => sound('rail'),
+    onBumper: () => sound('bumper'),
+    onTarget: () => sound('target'),
+    onRamp: (label) => { addScore(2500, label); sound('ramp'); },
+    onBankComplete: () => { multiplier = Math.min(8, multiplier + 1); sound('ramp'); announce(`TARGET BANK COMPLETE ×${multiplier}`, 1700); updateHud(); },
+    onCoreCharged: () => activate2DMultiball(),
+    onDrain: (remaining) => handle2DDrain(remaining),
+  });
 
   function showMachine(index, moveCamera = mode === 'intro') {
     selected = (index + machines.length) % machines.length;
@@ -111,7 +130,11 @@
       avatar.target = null; const direction = walkingInput.forward ? 1 : -1; avatar.root.position.x += Math.sin(avatar.yaw) * direction * 5.1 * dt; avatar.root.position.z += Math.cos(avatar.yaw) * direction * 5.1 * dt; moving = direction;
     } else if (avatar.target) {
       const dx = avatar.target.x - avatar.root.position.x, dz = avatar.target.z - avatar.root.position.z, distance = Math.hypot(dx, dz);
-      if (distance < .22) { const shouldEnter = avatar.enterOnArrival; avatar.target = null; avatar.enterOnArrival = false; if (shouldEnter) startGame(); }
+      if (distance < .22) {
+        const shouldEnter = avatar.enterOnArrival, machine = machines[selected]; avatar.target = null; avatar.enterOnArrival = false;
+        avatar.yaw = Math.atan2(machine.x - avatar.root.position.x, machine.z - avatar.root.position.z); avatar.root.rotation.y = avatar.yaw;
+        if (shouldEnter) { announce('CABINET LINKED', 600); setTimeout(() => { if (mode === 'lobby') startGame(); }, 180); }
+      }
       else { const targetYaw = Math.atan2(dx, dz), delta = Math.atan2(Math.sin(targetYaw-avatar.yaw),Math.cos(targetYaw-avatar.yaw)); avatar.yaw += Math.max(-3.2*dt,Math.min(3.2*dt,delta)); avatar.root.position.x += dx/distance*Math.min(distance,4.4*dt); avatar.root.position.z += dz/distance*Math.min(distance,4.4*dt); moving = 1; }
     }
     const radius = Math.hypot(avatar.root.position.x, avatar.root.position.z); if (radius > 22.5) { avatar.root.position.x *= 22.5/radius; avatar.root.position.z *= 22.5/radius; }
@@ -171,11 +194,14 @@
   function stopMusic() { clearInterval(musicTimer); musicTimer = 0; }
 
   function announce(text, duration = 1350) {
-    clearTimeout(messageTimer); ui.message.textContent = text; ui.message.classList.remove('hidden');
-    messageTimer = setTimeout(() => ui.message.classList.add('hidden'), duration);
+    clearTimeout(messageTimer);
+    const target = mode === 'play' ? ui.tableMessage : ui.message;
+    target.textContent = text; target.classList.remove('hidden');
+    messageTimer = setTimeout(() => target.classList.add('hidden'), duration);
   }
   function updateHud() {
     ui.score.textContent = Math.floor(score).toString().padStart(7,'0'); ui.multiplier.textContent = `×${multiplier}`; ui.balls.textContent = ballsLeft; ui.mission.textContent = activeProfile?.mission || 'SELECT A MACHINE';
+    ui.tableScore.textContent = Math.floor(score).toString().padStart(7,'0'); ui.tableMultiplier.textContent = `×${multiplier}`; ui.tableBalls.textContent = ballsLeft; ui.tableMission.textContent = activeProfile?.mission || 'SELECT A MACHINE';
     if (score > highScore) { highScore = Math.floor(score); ui.high.textContent = highScore.toLocaleString(); localStorage.setItem('xenoPinballHigh', highScore); }
   }
   function addScore(points, label) {
@@ -252,9 +278,9 @@
     const trail=new BABYLON.TrailMesh('plasma ball trail',mesh,scene,.08,18,true);const trailMaterial=new BABYLON.StandardMaterial('trail glow',scene);trailMaterial.emissiveColor=machines[selected].accent.emissiveColor||new BABYLON.Color3(.2,1,.8);trailMaterial.alpha=.52;trail.material=trailMaterial;
     const ball={x,z,vx,vz,r:.18,mesh,trail,launched:!lane,alive:true,lastRail:0,lastHits:new Map(),rampPass:new Set(),rollover:false};balls.push(ball);return ball;
   }
-  function beginLaunch(){if(!gameActive||plunger?.charging)return;const ball=balls.find(item=>item.alive&&!item.launched);if(!ball){announce('BALL ALREADY IN PLAY');return}plunger.charging=true;plunger.started=performance.now();plunger.charge=0;$('launchBall').textContent='CHARGE 0%';tone(95,.24,.025,'sawtooth',0,1.8)}
-  function releaseLaunch(){if(!gameActive||!plunger?.charging)return;const ball=balls.find(item=>item.alive&&!item.launched);plunger.charge=Math.max(.24,Math.min(1,(performance.now()-plunger.started)/1150));plunger.charging=false;$('launchBall').textContent='LAUNCH';if(!ball)return;ball.launched=true;ball.vz=-(activeProfile.launch+plunger.charge*5.3);ball.vx=-.2-plunger.charge*.16;sound('launch');announce(`PLASMA LAUNCH  ${Math.round(plunger.charge*100)}%`);burst(ball.x,ball.z,machines[selected].accent);plunger.knob.position.z=4.2;setTimeout(()=>{if(plunger?.knob)plunger.knob.position.z=4.55},160)}
-  function setFlipper(side,pressed){const flipper=flippers.find(item=>item.side===side);if(!flipper||flipper.pressed===pressed)return;flipper.pressed=pressed;if(pressed)sound('flipper')}
+  function beginLaunch(){if(mode==='play'&&pinball2d.active){pinball2d.beginLaunch();return}if(!gameActive||plunger?.charging)return;const ball=balls.find(item=>item.alive&&!item.launched);if(!ball){announce('BALL ALREADY IN PLAY');return}plunger.charging=true;plunger.started=performance.now();plunger.charge=0;$('launchBall').textContent='CHARGE 0%';tone(95,.24,.025,'sawtooth',0,1.8)}
+  function releaseLaunch(){if(mode==='play'&&pinball2d.active){pinball2d.releaseLaunch();return}if(!gameActive||!plunger?.charging)return;const ball=balls.find(item=>item.alive&&!item.launched);plunger.charge=Math.max(.24,Math.min(1,(performance.now()-plunger.started)/1150));plunger.charging=false;$('launchBall').textContent='LAUNCH';if(!ball)return;ball.launched=true;ball.vz=-(activeProfile.launch+plunger.charge*5.3);ball.vx=-.2-plunger.charge*.16;sound('launch');announce(`PLASMA LAUNCH  ${Math.round(plunger.charge*100)}%`);burst(ball.x,ball.z,machines[selected].accent);plunger.knob.position.z=4.2;setTimeout(()=>{if(plunger?.knob)plunger.knob.position.z=4.55},160)}
+  function setFlipper(side,pressed){if(mode==='play'&&pinball2d.active){pinball2d.setFlipper(side,pressed);$(side==='left'?'tableLeft':'tableRight').classList.toggle('active',pressed);return}const flipper=flippers.find(item=>item.side===side);if(!flipper||flipper.pressed===pressed)return;flipper.pressed=pressed;if(pressed)sound('flipper')}
 
   function closestPoint(px,pz,ax,az,bx,bz){const dx=bx-ax,dz=bz-az,l2=dx*dx+dz*dz,t=l2?Math.max(0,Math.min(1,((px-ax)*dx+(pz-az)*dz)/l2)):0;return{x:ax+t*dx,z:az+t*dz,t}}
   function collideSegment(ball,segment,restitution=.78,boost=0) {
@@ -276,6 +302,8 @@
   function hitTargets(ball,now){targets.forEach(target=>{const distance=Math.hypot(ball.x-target.x,ball.z-target.z);if(distance<ball.r+target.r){const nx=(ball.x-target.x)/(distance||1),nz=(ball.z-target.z)/(distance||1);ball.vx+=nx*1.8;ball.vz+=nz*1.8;if(now-target.last>400){target.last=now;if(!target.lit){target.lit=true;target.lamp.material=mat.gold;targetBank++;addScore(750,'ALIEN SEAL');sound('target');burst(target.x,target.z,mat.gold)}if(targetBank>=targets.length){targetBank=0;multiplier=Math.min(8,multiplier+1);announce(`TARGET BANK COMPLETE  ×${multiplier}`,1700);sound('ramp');setTimeout(()=>targets.forEach(item=>{item.lit=false;item.lamp.material=machines[selected].accent}),800);updateHud()}}}})}
   function checkRamps(ball){rampSensors.forEach((sensor,index)=>{const keyName=`${index}`;if(ball.z>.85)ball.rampPass.delete(keyName);if(ball.prevZ>.45&&ball.z<=.45&&Math.abs(ball.x-sensor.x)<.72&&!ball.rampPass.has(keyName)){ball.rampPass.add(keyName);addScore(2500,index?'RIGHT ORBIT':'LEFT ORBIT');sound('ramp');burst(sensor.x,sensor.z,index?machines[selected].secondary:machines[selected].accent)}})}
   function startMultiball(){multiballStarted=true;multiplier=Math.min(8,multiplier+1);sound('multiball');announce(activeProfile.jackpot,2600);addScore(10000,'CORE CHARGED');spawnBall(false,-.5,-3.2,3.4,3.6);spawnBall(false,.5,-3.2,-3.4,3.6);updateHud()}
+  function activate2DMultiball(){if(multiballStarted)return;multiballStarted=true;multiplier=Math.min(8,multiplier+1);sound('multiball');announce(activeProfile.jackpot,2600);addScore(10000,'CORE CHARGED');pinball2d.addMultiball();updateHud()}
+  function handle2DDrain(remaining){sound('drain');if(remaining){announce('MULTIBALL LOST — KEEP FIGHTING',1400);return}ballsLeft--;updateHud();if(ballsLeft>0){announce(`BALL ${4-ballsLeft} READY`,1600);setTimeout(()=>{if(gameActive&&mode==='play')pinball2d.serveBall()},900)}else endGame()}
   function burst(x,z,material) {
     const pieces=[];for(let i=0;i<10;i++){const mesh=BABYLON.MeshBuilder.CreatePolyhedron('score spark',{type:1,size:.055+Math.random()*.075},scene);mesh.parent=gameRoot;mesh.position.set(x,2.63,z);mesh.material=material;pieces.push({mesh,vx:(Math.random()-.5)*.08,vy:.035+Math.random()*.07,vz:(Math.random()-.5)*.08})}
     let frames=0;const observer=scene.onBeforeRenderObservable.add(()=>{frames++;pieces.forEach(p=>{p.mesh.position.x+=p.vx;p.mesh.position.y+=p.vy;p.mesh.position.z+=p.vz;p.vy-=.002;p.mesh.rotation.y+=.15});if(frames>35){scene.onBeforeRenderObservable.remove(observer);pieces.forEach(p=>p.mesh.dispose())}})
@@ -296,25 +324,25 @@
   }
 
   function startGame(){
-    prepareAudio();buildPlayfield();mode='play';gameActive=true;score=0;multiplier=1;ballsLeft=3;targetBank=0;coreCharge=0;multiballStarted=false;extraBallAwarded=false;balls=[];leftPressed=false;rightPressed=false;
-    avatar.target=null;avatar.root.setEnabled(false);ui.lobby.classList.add('hidden');ui.walk.classList.add('hidden');ui.result.classList.add('hidden');ui.hud.classList.remove('hidden');ui.controls.classList.remove('hidden');ui.leave.classList.remove('hidden');camera.detachControl();
-    const machine=machines[selected];machines.forEach(item=>{item.root.scaling.setAll(1);item.previewMeshes.forEach(mesh=>mesh.setEnabled(item!==machine))});camera.setTarget(new BABYLON.Vector3(machine.x,2.15,machine.z));camera.alpha=Math.PI/2-machine.angle;camera.beta=.285;camera.radius=window.innerWidth<720?19.2:17.8;
-    spawnBall(true);updateHud();announce('BALL READY — HOLD THE LINE',1700);startMusic();
+    prepareAudio();mode='play';gameActive=true;activeProfile=profiles[selected];score=0;multiplier=1;ballsLeft=3;targetBank=0;coreCharge=0;multiballStarted=false;extraBallAwarded=false;balls=[];leftPressed=false;rightPressed=false;
+    avatar.target=null;avatar.root.setEnabled(false);ui.lobby.classList.add('hidden');ui.walk.classList.add('hidden');ui.result.classList.add('hidden');ui.hud.classList.add('hidden');ui.controls.classList.add('hidden');ui.leave.classList.add('hidden');ui.table.classList.remove('hidden');shell.classList.add('table-open');camera.detachControl();
+    pinball2d.start(selected,activeProfile);updateHud();startMusic();
   }
   function endGame(){gameActive=false;stopMusic();sound('gameover');updateHud();ui.final.textContent=Math.floor(score).toLocaleString();ui.resultTitle.textContent=machines[selected].name;ui.resultMessage.textContent=score===highScore&&score>0?'NEW ORBITAL HIGH SCORE!':'The arcade has recorded your signal.';setTimeout(()=>ui.result.classList.remove('hidden'),900)}
-  function returnLobby(){gameActive=false;mode='lobby';stopMusic();balls.forEach(ball=>{ball.trail?.dispose();ball.mesh?.dispose()});balls=[];if(gameRoot){gameRoot.dispose();gameRoot=null}machines.forEach(item=>item.previewMeshes.forEach(mesh=>mesh.setEnabled(true)));avatar.root.setEnabled(true);avatar.root.position.copyFrom(machineApproachPoint(selected));avatar.root.position.z+=2;avatar.yaw=Math.atan2(machines[selected].x-avatar.root.position.x,machines[selected].z-avatar.root.position.z);ui.result.classList.add('hidden');ui.hud.classList.add('hidden');ui.controls.classList.add('hidden');ui.leave.classList.add('hidden');ui.message.classList.add('hidden');ui.lobby.classList.remove('hidden');ui.walk.classList.remove('hidden');camera.detachControl();showMachine(selected,false)}
+  function returnLobby(){gameActive=false;mode='lobby';stopMusic();pinball2d.stop();balls.forEach(ball=>{ball.trail?.dispose();ball.mesh?.dispose()});balls=[];if(gameRoot){gameRoot.dispose();gameRoot=null}machines.forEach(item=>item.previewMeshes.forEach(mesh=>mesh.setEnabled(true)));avatar.root.setEnabled(true);const approach=machineApproachPoint(selected);avatar.root.position.copyFrom(approach);avatar.yaw=Math.atan2(machines[selected].x-approach.x,machines[selected].z-approach.z);avatar.root.rotation.y=avatar.yaw;ui.result.classList.add('hidden');ui.hud.classList.add('hidden');ui.controls.classList.add('hidden');ui.leave.classList.add('hidden');ui.table.classList.add('hidden');shell.classList.remove('table-open');ui.message.classList.add('hidden');ui.tableMessage.classList.add('hidden');ui.lobby.classList.remove('hidden');ui.walk.classList.remove('hidden');camera.detachControl();showMachine(selected,false)}
 
   function pressControl(element,side){element.addEventListener('pointerdown',event=>{event.preventDefault();element.setPointerCapture?.(event.pointerId);setFlipper(side,true)});['pointerup','pointercancel','pointerleave'].forEach(type=>element.addEventListener(type,event=>{event.preventDefault();setFlipper(side,false)}))}
   function holdWalk(element,key){element.addEventListener('pointerdown',event=>{event.preventDefault();avatar.target=null;element.setPointerCapture?.(event.pointerId);walkingInput[key]=true});['pointerup','pointercancel','pointerleave'].forEach(type=>element.addEventListener(type,event=>{event.preventDefault();walkingInput[key]=false}))}
   $('previousMachine').onclick=()=>walkToMachine(selected-1);$('nextMachine').onclick=()=>walkToMachine(selected+1);$('enterMachine').onclick=()=>walkToMachine(selected,true);
   $('startButton').onclick=()=>{prepareAudio();$('startScreen').classList.add('hidden');tone(110,.8,.05,'sine',0,4);mode='lobby';ui.walk.classList.remove('hidden');camera.detachControl();avatar.root.setEnabled(true);showMachine(0,false)};
   const launchButton=$('launchBall');launchButton.addEventListener('pointerdown',event=>{event.preventDefault();launchButton.setPointerCapture?.(event.pointerId);beginLaunch()});['pointerup','pointercancel','pointerleave'].forEach(type=>launchButton.addEventListener(type,event=>{event.preventDefault();releaseLaunch()}));
-  $('leaveMachine').onclick=returnLobby;$('replayButton').onclick=startGame;$('returnButton').onclick=returnLobby;pressControl($('leftFlipper'),'left');pressControl($('rightFlipper'),'right');holdWalk($('walkForward'),'forward');holdWalk($('walkBack'),'back');holdWalk($('turnLeft'),'left');holdWalk($('turnRight'),'right');
+  $('leaveMachine').onclick=returnLobby;$('tableLeave').onclick=returnLobby;$('replayButton').onclick=startGame;$('returnButton').onclick=returnLobby;pressControl($('leftFlipper'),'left');pressControl($('rightFlipper'),'right');pressControl($('tableLeft'),'left');pressControl($('tableRight'),'right');holdWalk($('walkForward'),'forward');holdWalk($('walkBack'),'back');holdWalk($('turnLeft'),'left');holdWalk($('turnRight'),'right');
+  const tableLaunch=$('tableLaunch');tableLaunch.addEventListener('pointerdown',event=>{event.preventDefault();tableLaunch.setPointerCapture?.(event.pointerId);beginLaunch()});['pointerup','pointercancel','pointerleave'].forEach(type=>tableLaunch.addEventListener(type,event=>{event.preventDefault();releaseLaunch()}));
   window.addEventListener('keydown',event=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','KeyW','KeyA','KeyS','KeyD','KeyZ','Slash'].includes(event.code))event.preventDefault();if(mode==='lobby'){if(event.code==='ArrowUp'||event.code==='KeyW')walkingInput.forward=true;if(event.code==='ArrowDown'||event.code==='KeyS')walkingInput.back=true;if(event.code==='ArrowLeft'||event.code==='KeyA')walkingInput.left=true;if(event.code==='ArrowRight'||event.code==='KeyD')walkingInput.right=true}else if(mode==='play'){if(event.code==='ArrowLeft'||event.code==='KeyZ')setFlipper('left',true);if(event.code==='ArrowRight'||event.code==='Slash')setFlipper('right',true);if(event.code==='Space'&&!event.repeat)beginLaunch()}});
   window.addEventListener('keyup',event=>{if(event.code==='ArrowUp'||event.code==='KeyW')walkingInput.forward=false;if(event.code==='ArrowDown'||event.code==='KeyS')walkingInput.back=false;if(event.code==='ArrowLeft'||event.code==='KeyA'){walkingInput.left=false;setFlipper('left',false)}if(event.code==='ArrowRight'||event.code==='KeyD'){walkingInput.right=false;setFlipper('right',false)}if(event.code==='KeyZ')setFlipper('left',false);if(event.code==='Slash')setFlipper('right',false);if(event.code==='Space')releaseLaunch()});
   window.addEventListener('blur',()=>{Object.keys(walkingInput).forEach(key=>walkingInput[key]=false);setFlipper('left',false);setFlipper('right',false);releaseLaunch()});
   scene.onPointerObservable.add(pointer=>{if(mode==='lobby'&&pointer.type===BABYLON.PointerEventTypes.POINTERPICK&&Number.isInteger(pointer.pickInfo?.pickedMesh?.metadata?.machineIndex))walkToMachine(pointer.pickInfo.pickedMesh.metadata.machineIndex)});
   showMachine(0);window.addEventListener('resize',()=>engine.resize());
   let lastFrame=performance.now();
-  engine.runRenderLoop(()=>{const now=performance.now(),frame=Math.min(.05,(now-lastFrame)/1000);lastFrame=now;updateAvatar(frame,now);if(gameActive){physicsAccumulator+=frame;while(physicsAccumulator>=1/120){physicsStep(1/120,now);physicsAccumulator-=1/120}decor.forEach((item,index)=>{item.mesh.rotation.y+=item.speed;item.mesh.position.y=item.baseY+Math.sin(now*.002+item.phase)*.025*(index%2)});if(tableCreature){tableCreature.root.rotation.y=Math.sin(now*.0017)*.28;tableCreature.head.rotation.z=Math.sin(now*.0021)*.11;tableCreature.arms[0].rotation.x=Math.sin(now*.003)*.42;tableCreature.arms[1].rotation.x=-Math.sin(now*.003)*.42}if(plunger?.charging){plunger.charge=Math.min(1,(now-plunger.started)/1150);plunger.knob.position.z=4.55+plunger.charge*.42;plunger.coil.scaling.z=1+plunger.charge*.65;$('launchBall').textContent=`POWER ${Math.round(plunger.charge*100)}%`}else if(plunger){plunger.coil.scaling.z+=(1-plunger.coil.scaling.z)*.22}}scene.render()});
+  engine.runRenderLoop(()=>{const now=performance.now(),frame=Math.min(.05,(now-lastFrame)/1000);lastFrame=now;updateAvatar(frame,now);if(gameActive&&mode==='play')pinball2d.update(frame,now);scene.render()});
 })();

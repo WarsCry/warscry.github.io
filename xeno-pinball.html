@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
   <meta name="theme-color" content="#05040d">
   <title>Xeno Pinball Arena | DanPC</title>
-  <meta name="description" content="Enter a circular 3D alien arcade and play a complete original pinball table.">
+  <meta name="description" content="Walk through a 3D alien arcade, choose a cabinet, and play a complete original 2D pinball table.">
   <link rel="icon" type="image/png" href="favicondanpc.png">
   <link rel="stylesheet" href="xeno-pinball.css?v=4">
   <link rel="stylesheet" href="premium-materials.css?v=1">
@@ -38,6 +38,28 @@
       <button id="turnLeft" aria-label="Turn left">◀</button><button id="walkBack" aria-label="Walk backward">▼</button><button id="turnRight" aria-label="Turn right">▶</button>
     </div>
 
+    <section class="table-mode hidden" id="tableMode" aria-label="Alien pinball machine">
+      <div class="table-cabinet">
+        <header class="table-scoreboard">
+          <button id="tableLeave" aria-label="Return to the 3D arcade">← ARCADE</button>
+          <div><small>SCORE</small><b id="tableScore">0000000</b></div>
+          <div><small>MULTIPLIER</small><b id="tableMultiplier">×1</b></div>
+          <div><small>BALLS</small><b id="tableBalls">3</b></div>
+          <div class="table-mission"><small>MISSION</small><b id="tableMission">AWAKEN THE HIVE</b></div>
+        </header>
+        <div class="pinball-window">
+          <canvas id="pinball2d" width="760" height="1120" aria-label="Playable top-down alien pinball table"></canvas>
+          <div class="table-message hidden" id="tableMessage">BALL READY</div>
+          <div class="glass-reflection" aria-hidden="true"></div>
+        </div>
+        <footer class="table-controls" aria-label="Pinball controls">
+          <button id="tableLeft">◢ LEFT FLIPPER</button>
+          <button class="table-launch" id="tableLaunch">HOLD TO LAUNCH</button>
+          <button id="tableRight">RIGHT FLIPPER ◣</button>
+        </footer>
+      </div>
+    </section>
+
     <section class="hud hidden" id="gameHud">
       <div><small>SCORE</small><b id="score">0000000</b></div>
       <div><small>MULTIPLIER</small><b id="multiplier">×1</b></div>
@@ -63,12 +85,13 @@
       <p>ORBITAL RECREATION DECK // ONLINE</p>
       <h2>XENO<br><span>PINBALL</span></h2>
       <div class="orb"><i></i><i></i><i></i></div>
-      <p>Walk into a circular alien arcade, choose a real table, and chase the high score through lights, ramps, bumpers, missions, and multiball.</p>
+      <p>Walk through the 3D alien arcade, choose a cabinet, then play a clear full-screen 2D table loaded with ramps, bumpers, missions, light effects, and multiball.</p>
       <button id="startButton">OPEN THE ARCADE</button>
       <small>Keyboard: Z / ← and / / → flippers · Space launches · Phone controls included</small>
     </section>
   </main>
   <script src="https://cdn.babylonjs.com/babylon.js"></script>
-  <script src="xeno-pinball.js?v=5"></script>
+  <script src="xeno-pinball-2d.js?v=1"></script>
+  <script src="xeno-pinball.js?v=6"></script>
 </body>
 </html>
