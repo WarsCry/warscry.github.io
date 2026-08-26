@@ -7,7 +7,7 @@
   <title>Xeno Pinball Arena | DanPC</title>
   <meta name="description" content="Enter a circular 3D alien arcade and play a complete original pinball table.">
   <link rel="icon" type="image/png" href="favicondanpc.png">
-  <link rel="stylesheet" href="xeno-pinball.css?v=2">
+  <link rel="stylesheet" href="xeno-pinball.css?v=3">
 </head>
 <body>
   <main class="shell">
@@ -29,8 +29,13 @@
         <button id="nextMachine" aria-label="Next machine">›</button>
       </div>
       <button class="primary" id="enterMachine">APPROACH MACHINE</button>
-      <small>Choose with the arrows or click a cabinet · drag to look around</small>
+      <small>Walk with WASD / arrows or use the movement pad · selecting a cabinet walks you toward it</small>
     </section>
+
+    <div class="walk-controls hidden" id="walkControls" aria-label="Walk around the arcade">
+      <span>WALK</span><button id="walkForward" aria-label="Walk forward">▲</button>
+      <button id="turnLeft" aria-label="Turn left">◀</button><button id="walkBack" aria-label="Walk backward">▼</button><button id="turnRight" aria-label="Turn right">▶</button>
+    </div>
 
     <section class="hud hidden" id="gameHud">
       <div><small>SCORE</small><b id="score">0000000</b></div>
@@ -63,6 +68,6 @@
     </section>
   </main>
   <script src="https://cdn.babylonjs.com/babylon.js"></script>
-  <script src="xeno-pinball.js?v=2"></script>
+  <script src="xeno-pinball.js?v=3"></script>
 </body>
 </html>
