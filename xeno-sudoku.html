@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#030a0d">
+  <title>Xeno Sudoku: Overmind Grid | DanPC Arcade</title>
+  <meta name="description" content="Solve 36 alien Sudoku missions across four increasingly difficult sectors.">
+  <link rel="icon" type="image/png" href="favicondanpc.png">
+  <link rel="stylesheet" href="xeno-sudoku.css?v=1">
+</head>
+<body>
+  <div class="space-dust" aria-hidden="true"></div>
+  <main class="shell">
+    <header class="topbar">
+      <a class="back" href="arcade.html">← DANPC ARCADE</a>
+      <div class="identity"><span>HIVE INTELLIGENCE // LOGIC CHAMBER</span><strong>XENO SUDOKU</strong></div>
+      <button id="soundButton" class="sound" aria-pressed="true">◖)) SOUND</button>
+    </header>
+
+    <section class="game-layout" aria-label="Alien Sudoku game">
+      <aside class="mission-panel panel">
+        <p class="eyebrow">CURRENT TRANSMISSION</p>
+        <strong id="missionLabel">MISSION 01 / 36</strong>
+        <h1 id="missionTitle">AWAKENING BEACON</h1>
+        <div class="sector-badge" id="sectorBadge">SCOUT SIGNALS · EASY</div>
+        <div class="campaign-meter"><i id="campaignFill"></i></div>
+        <div class="mission-stats"><div><small>TIME</small><b id="timer">00:00</b></div><div><small>BIO-SHIELD</small><b id="shield">● ● ●</b></div><div><small>HINTS</small><b id="hintCount">3</b></div></div>
+        <button id="missionsButton" class="secondary">▦ 36-MISSION MAP</button>
+        <button id="newMissionButton" class="secondary">↻ RESTART MISSION</button>
+      </aside>
+
+      <section class="board-console">
+        <div class="reactor-ring" aria-hidden="true"><i></i><i></i><i></i></div>
+        <div id="message" class="message">SELECT AN EMPTY GLYPH CELL</div>
+        <div id="board" class="sudoku-board" role="grid" aria-label="Sudoku grid"></div>
+        <div class="tool-row">
+          <button id="undoButton" aria-label="Undo last move">↶ <span>UNDO</span></button>
+          <button id="notesButton" aria-pressed="false">✦ <span>NOTES OFF</span></button>
+          <button id="eraseButton">⌫ <span>ERASE</span></button>
+          <button id="hintButton">⌁ <span>HINT</span></button>
+        </div>
+        <div id="numberPad" class="number-pad" aria-label="Number pad"></div>
+      </section>
+
+      <aside class="scan-panel panel">
+        <p class="eyebrow">OVERMIND ANALYSIS</p>
+        <div class="alien-eye" aria-hidden="true"><i></i></div>
+        <div class="readout"><small>FILLED CELLS</small><b id="filledCount">0 / 81</b></div>
+        <div class="readout"><small>GRID INTEGRITY</small><b id="integrity">100%</b></div>
+        <div class="readout"><small>BEST SIGNAL</small><b id="bestTime">—</b></div>
+        <p class="tip" id="tip">Every row, column and 3×3 chamber must contain the glyphs 1 through 9 exactly once.</p>
+        <div class="keyboard"><span>PC</span><b>1–9 · ARROWS · N · H</b></div>
+      </aside>
+    </section>
+  </main>
+
+  <section id="launchScreen" class="overlay show" aria-modal="true" role="dialog">
+    <div class="modal launch-modal">
+      <p class="eyebrow">36 UNIQUE LOGIC TRANSMISSIONS</p>
+      <h2>XENO SUDOKU<br><span>OVERMIND GRID</span></h2>
+      <p>Decode four alien sectors—from gentle Scout signals to the ruthless Overmind protocol. Every mission is uniquely solvable, saved automatically and completely free.</p>
+      <div id="sectorChoices" class="sector-choices"></div>
+      <div class="launch-actions"><button id="continueButton" class="primary">CONTINUE MISSION</button><button id="mapFromLaunch" class="secondary">CHOOSE A MISSION</button></div>
+      <small>PHONE · TABLET · PC &nbsp; // &nbsp; NOTES · HINTS · SAVED PROGRESS</small>
+    </div>
+  </section>
+
+  <section id="missionMap" class="overlay" aria-modal="true" role="dialog" aria-labelledby="mapTitle">
+    <div class="modal map-modal">
+      <div class="modal-head"><div><p class="eyebrow">HIVE CAMPAIGN</p><h2 id="mapTitle">SELECT TRANSMISSION</h2></div><button id="closeMap" class="close">×</button></div>
+      <div id="missionGrid" class="mission-grid"></div>
+    </div>
+  </section>
+
+  <section id="repairScreen" class="overlay" aria-modal="true" role="dialog">
+    <div class="modal compact-modal"><div class="warning-symbol">!</div><p class="eyebrow">BIO-SHIELD DEPLETED</p><h2>THE GRID REJECTED<br>THREE SIGNALS</h2><p>No payment, no advertisement and no waiting. Repair the shield, erase the incorrect signals and keep solving.</p><button id="repairButton" class="primary">REPAIR AND CONTINUE</button></div>
+  </section>
+
+  <section id="victoryScreen" class="overlay" aria-modal="true" role="dialog">
+    <div class="modal victory-modal"><div class="victory-alien">👽</div><p class="eyebrow">TRANSMISSION DECODED</p><h2>GRID<br><span>COMPLETE!</span></h2><p id="victoryStats"></p><div class="launch-actions"><button id="nextMissionButton" class="primary">NEXT MISSION</button><button id="victoryMapButton" class="secondary">MISSION MAP</button></div></div>
+  </section>
+
+  <script src="arcade-fx.js?v=1"></script>
+  <script src="xeno-sudoku-core.js?v=1"></script>
+  <script src="xeno-sudoku.js?v=1"></script>
+</body>
+</html>
