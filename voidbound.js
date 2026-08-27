@@ -1,6 +1,6 @@
 (()=>{
 const canvas=document.querySelector('#game'),menu=document.querySelector('#menu'),squadEl=document.querySelector('#squad'),phaseEl=document.querySelector('#phase'),roundEl=document.querySelector('#round'),hostilesEl=document.querySelector('#hostiles');
-const unitRole=document.querySelector('#unitRole'),unitName=document.querySelector('#unitName'),unitStats=document.querySelector('#unitStats'),abilityButton=document.querySelector('#ability'),endTurnButton=document.querySelector('#endTurn'),hintEl=document.querySelector('#hint'),toastEl=document.querySelector('#toast'),dieEl=document.querySelector('#die'),rollText=document.querySelector('#rollText');
+const unitRole=document.querySelector('#unitRole'),unitName=document.querySelector('#unitName'),unitStats=document.querySelector('#unitStats'),abilityButton=document.querySelector('#ability'),endTurnButton=document.querySelector('#endTurn'),hintEl=document.querySelector('#hint'),toastEl=document.querySelector('#toast'),dieEl=document.querySelector('#die'),rollText=document.querySelector('#rollText'),enemyIntentsEl=document.querySelector('#enemyIntents');
 if(!window.BABYLON){menu.querySelector('p').textContent='The 3D table could not load. Check your connection and reload the mission.';return}
 
 const B=BABYLON,V=B.Vector3,C=B.Color3,CELL=1.42;
@@ -30,10 +30,12 @@ const ENEMY_DEFS=[
   {id:'fieldmedic',name:'FIELD MEDIC',role:'COMBAT SUPPORT',color:'#8fd9ff',hp:7,move:3,range:3,damage:1,x:10,z:6,type:'fieldmedic'},
   {id:'commander',name:'COMMANDER',role:'DOMINION OFFICER',color:'#ff6eb3',hp:13,move:3,range:4,damage:2,x:11,z:7,type:'commander'}
 ];
+const DIFFICULTIES={cadet:{label:'CADET',hp:.82,damage:0,score:.8},standard:{label:'VETERAN',hp:1,damage:0,score:1},overmind:{label:'OVERMIND',hp:1.28,damage:1,score:1.4}};
+const MISSIONS={assault:{label:'TOTAL ASSAULT',objective:'Defeat all five Dominion defenders.'},commander:{label:'HEADHUNTER',objective:'Eliminate the Dominion Commander.'},survival:{label:'HOLD THE BREACH',objective:'Keep at least one alien alive through round 6.'}};
 
 const engine=new B.Engine(canvas,true,{stencil:true,adaptToDeviceRatio:true});
-if(matchMedia('(pointer:coarse)').matches)engine.setHardwareScalingLevel(Math.max(1,devicePixelRatio*.8));
-let scene,camera,heroes=[],enemies=[],selected=null,selectionRing,turn='player',round=1,busy=false,started=false,abilityMode=false,pointerStart=null;
+if(matchMedia('(pointer:coarse)').matches)engine.setHardwareScalingLevel(1/Math.min(devicePixelRatio||1,1.3));
+let scene,camera,heroes=[],enemies=[],selected=null,selectionRing,turn='player',round=1,busy=false,started=false,abilityMode=false,pointerStart=null,selectedMission='assault',selectedDifficulty='standard';
 const tiles=new Map(),materials={};
 const arcadeFx=()=>window.DanArcadeFX;
 
@@ -45,10 +47,16 @@ const occupied=(ignore=null)=>new Set(aliveUnits().filter(unit=>unit!==ignore).m
 const isFloor=(x,z)=>z>=0&&z<HEIGHT&&x>=0&&x<WIDTH&&MAP[z][x]==='.';
 const neighbours=(x,z)=>[[x+1,z],[x-1,z],[x,z+1],[x,z-1]].filter(([nx,nz])=>isFloor(nx,nz));
 
-function standard(name,color,emissive=null,alpha=1){const mat=new B.StandardMaterial(name,scene);mat.diffuseColor=C.FromHexString(color);mat.specularColor=new C(.35,.48,.5);mat.specularPower=96;mat.alpha=alpha;if(emissive)mat.emissiveColor=C.FromHexString(emissive);return mat}
+function standard(name,color,emissive=null,alpha=1){const mat=new B.StandardMaterial(name,scene);mat.diffuseColor=C.FromHexString(color);mat.specularColor=new C(.24,.3,.32);mat.specularPower=72;mat.alpha=alpha;if(emissive)mat.emissiveColor=C.FromHexString(emissive).scale(.18);return mat}
 function textureMaterial(mat,url,scale,tint){const texture=new B.Texture(url,scene,false,false,B.Texture.TRILINEAR_SAMPLINGMODE);texture.uScale=scale;texture.vScale=scale;texture.anisotropicFilteringLevel=16;mat.diffuseTexture=texture;mat.diffuseColor=C.FromHexString(tint);return mat}
 function box(name,options,position,material){const mesh=B.MeshBuilder.CreateBox(name,options,scene);mesh.position.copyFrom(position);mesh.material=material;return mesh}
 function part(unit,mesh,material){mesh.parent=unit.root;mesh.material=material;mesh.metadata={unit};unit.meshes.push(mesh);return mesh}
+function createHealthBar(unit){
+  const root=new B.TransformNode(`${unit.name} health`,scene);root.parent=unit.root;root.position.y=1.82;root.billboardMode=B.TransformNode.BILLBOARDMODE_ALL;
+  const back=B.MeshBuilder.CreatePlane('health back',{width:.86,height:.11},scene);back.parent=root;back.material=standard('health background','#071014');back.isPickable=false;
+  const fill=B.MeshBuilder.CreatePlane('health fill',{width:.8,height:.065},scene);fill.parent=root;fill.position.z=-.006;fill.material=standard(`${unit.name} health colour`,unit.team==='hero'?'#67ffe0':'#ff536a',unit.team==='hero'?'#67ffe0':'#ff536a');fill.isPickable=false;unit.healthFill=fill;updateHealthBar(unit);
+}
+function updateHealthBar(unit){if(!unit.healthFill)return;const ratio=Math.max(0,unit.hp/unit.maxHp);unit.healthFill.scaling.x=Math.max(.001,ratio);unit.healthFill.position.x=-(1-ratio)*.4;unit.healthFill.parent.setEnabled(unit.alive)}
 
 function buildScene(){
   scene=new B.Scene(engine);scene.clearColor=new B.Color4(.008,.016,.02,1);scene.fogMode=B.Scene.FOGMODE_EXP2;scene.fogDensity=.014;scene.fogColor=new C(.025,.055,.06);
@@ -57,9 +65,9 @@ function buildScene(){
   const keyLight=new B.DirectionalLight('table key light',new V(-.45,-1,.35),scene);keyLight.position=new V(9,16,-9);keyLight.intensity=1.05;
   const rim=new B.PointLight('breach glow',new V(-6,5,0),scene);rim.diffuse=new C(.2,1,.78);rim.intensity=1.6;rim.range=19;
   const enemyLight=new B.PointLight('dominion glow',new V(7,4,0),scene);enemyLight.diffuse=new C(1,.2,.25);enemyLight.intensity=1.25;enemyLight.range=17;
-  const shadows=new B.ShadowGenerator(1024,keyLight);shadows.useBlurExponentialShadowMap=true;shadows.blurKernel=24;
-  const glow=new B.GlowLayer('tabletop bloom',scene,{blurKernelSize:40});glow.intensity=.42;
-  const pipeline=new B.DefaultRenderingPipeline('tabletop finish',true,scene,[camera]);pipeline.fxaaEnabled=true;pipeline.samples=matchMedia('(pointer:coarse)').matches?1:4;pipeline.imageProcessing.contrast=1.16;pipeline.imageProcessing.exposure=1.08;pipeline.bloomEnabled=!matchMedia('(pointer:coarse)').matches;pipeline.bloomThreshold=.86;pipeline.bloomWeight=.1;
+  const shadows=new B.ShadowGenerator(matchMedia('(pointer:coarse)').matches?1024:2048,keyLight);shadows.usePercentageCloserFiltering=true;shadows.filteringQuality=B.ShadowGenerator.QUALITY_MEDIUM;
+  const glow=new B.GlowLayer('tabletop bloom',scene,{blurKernelSize:14});glow.intensity=.14;
+  const pipeline=new B.DefaultRenderingPipeline('tabletop finish',true,scene,[camera]);pipeline.fxaaEnabled=true;pipeline.samples=matchMedia('(pointer:coarse)').matches?1:4;pipeline.imageProcessing.contrast=1.2;pipeline.imageProcessing.exposure=1.02;pipeline.bloomEnabled=false;
 
   materials.floorA=standard('graphite deck','#16282b');materials.floorB=standard('alloy deck','#203438');materials.floorC=standard('worn deck','#172329');materials.wall=standard('outpost wall','#26343d');materials.wallInset=standard('wall armour inset','#0c171e');materials.mint=standard('alien route','#14564f','#17ae92');materials.red=standard('dominion route','#69202c','#d52645');materials.void=standard('void table edge','#05080d');materials.move=standard('move highlight','#174f48','#39e5c5',.58);materials.selection=standard('selection ring','#173f39','#67ffe2',.78);
   textureMaterial(materials.floorA,'assets/textures/alien-hull-v1.webp',1.15,'#7b898c');textureMaterial(materials.floorB,'assets/textures/alien-circuit-v1.webp',1.05,'#667d7e');textureMaterial(materials.floorC,'assets/textures/alien-biomech-v1.webp',1.2,'#5d746d');textureMaterial(materials.wall,'assets/textures/alien-hull-v1.webp',1.5,'#68777c');textureMaterial(materials.wallInset,'assets/textures/alien-circuit-v1.webp',1.25,'#53696b');textureMaterial(materials.void,'assets/textures/alien-biomech-v1.webp',2.8,'#374842');
@@ -95,6 +103,7 @@ function createUnit(def,team,shadows){
   const base=part(unit,B.MeshBuilder.CreateCylinder(`${def.name} miniature base`,{height:.13,diameter:.94,tessellation:28},scene),team==='hero'?materials.mint:materials.red);base.position.y=.03;
   if(team==='hero')buildAlienMini(unit,primary,dark,glowMat);else buildHumanMini(unit,primary,dark,skin,glowMat);
   unit.root.getChildMeshes().forEach(mesh=>{mesh.metadata={unit};mesh.isPickable=true;mesh.receiveShadows=true;shadows.addShadowCaster(mesh)});
+  createHealthBar(unit);
   return unit;
 }
 
@@ -131,6 +140,14 @@ function flood(unit,steps){
 function pathFromMap(map,goalKey){const path=[];let cursor=goalKey;while(map.get(cursor)?.parent){const node=map.get(cursor);path.unshift([node.x,node.z]);cursor=node.parent}return path}
 function hasLineOfSight(a,b){const steps=Math.max(Math.abs(b.x-a.x),Math.abs(b.z-a.z))*3;for(let i=1;i<steps;i++){const t=i/steps,x=Math.round(a.x+(b.x-a.x)*t),z=Math.round(a.z+(b.z-a.z)*t);if(MAP[z]?.[x]==='#')return false}return true}
 function canAttack(attacker,target,range=attacker.range){return target.alive&&distance(attacker,target)<=range&&(range<=1||hasLineOfSight(attacker,target))}
+function inCover(unit){return [[1,0],[-1,0],[0,1],[0,-1]].some(([dx,dz])=>MAP[unit.z+dz]?.[unit.x+dx]==='#')}
+function enemyIntent(enemy){
+  if(enemy.stunned)return 'STUNNED · SKIPS TURN';
+  if(enemy.type==='fieldmedic'&&enemies.some(unit=>unit.alive&&unit.hp<unit.maxHp&&distance(enemy,unit)<=4))return 'RESTORE WOUNDED ALLY';
+  const target=heroes.filter(hero=>hero.alive).sort((a,b)=>distance(enemy,a)-distance(enemy,b))[0];
+  if(!target)return 'NO TARGET';
+  return canAttack(enemy,target)?`ATTACK ${target.name} · ${enemy.damage} DMG`:`ADVANCE TOWARD ${target.name}`;
+}
 
 function clearOutlines(){for(const unit of aliveUnits())for(const mesh of unit.meshes){mesh.renderOutline=false;mesh.outlineWidth=.04}}
 function outline(unit,color,width=.04){for(const mesh of unit.meshes){mesh.renderOutline=true;mesh.outlineColor=C.FromHexString(color);mesh.outlineWidth=width}}
@@ -162,7 +179,7 @@ function commanderBonus(attacker){return attacker.team==='enemy'&&enemies.some(e
 async function attack(attacker,target,{free=false,ability=false}={}){
   const roll=rollFlux();setRoll(`${attacker.name} ROLLED ${roll}`);tone(attacker.team==='hero'?620:210,.1,'sawtooth');arcadeFx()?.play(ability?'magic':'laser',{volume:ability ? .24 : .2,rate:attacker.team==='hero'?1.08:.82,cooldown:80});await launchEffect(attacker,target,attacker.color);
   if(roll===1&&!ability){showToast(`${attacker.name} MISSED`);setRoll('MISS · FLUX COLLAPSE');tone(90,.16,'square')}else{
-    let amount=attacker.damage+commanderBonus(attacker);if(roll===6)amount+=2;if(ability)amount=ability;
+    let amount=attacker.damage+commanderBonus(attacker);if(roll===6)amount+=2;if(ability)amount=ability;else if(attacker.range>1&&inCover(target)){amount=Math.max(0,amount-1);showToast(`${target.name} COVER REDUCED DAMAGE`)}
     await damageUnit(target,amount);setRoll(roll===6?`CRITICAL · ${amount} DAMAGE`:`${amount} DAMAGE`);
   }
   if(attacker.team==='hero'&&!free)attacker.acted=true;renderUI();refreshHighlights();checkBattle();
@@ -173,6 +190,7 @@ async function damageUnit(target,amount){
   if(amount>0){target.hp=Math.max(0,target.hp-amount);showToast(`${target.name} TOOK ${amount} DAMAGE`);tone(target.team==='hero'?110:175,.13,'square');arcadeFx()?.play('metal',{volume:.24,rate:target.team==='hero' ? .82 : 1.2,cooldown:70});arcadeFx()?.hit(canvas,target.team==='hero'?'#ff526d':'#72ffe0',.45)}
   target.root.scaling=new V(1.18,.76,1.18);await wait(120);target.root.scaling.setAll(1);
   if(target.hp<=0){target.alive=false;target.meshes.forEach(mesh=>mesh.isPickable=false);showToast(`${target.name} ELIMINATED`);B.Animation.CreateAndStartAnimation('miniature defeated',target.root,'scaling',60,28,new V(1,1,1),new V(.02,.02,.02),B.Animation.ANIMATIONLOOPMODE_CONSTANT,null,()=>target.root.setEnabled(false))}
+  updateHealthBar(target);
   renderUI();refreshHighlights();
 }
 
@@ -224,23 +242,25 @@ async function enemyTurn(){
   if(!checkBattle())startPlayerRound();busy=false;
 }
 
-function startPlayerRound(){turn='player';round++;for(const hero of heroes.filter(unit=>unit.alive)){hero.moveLeft=hero.move;hero.acted=false;hero.abilityUsed=false;hero.shield=0}selected=heroes.find(hero=>hero.alive)||null;showToast(`ALIEN TURN · ROUND ${round}`);setRoll('FLUX DIE READY');renderUI();refreshHighlights()}
+function startPlayerRound(){turn='player';round++;if(selectedMission==='survival'&&round>6){finish(true);return}for(const hero of heroes.filter(unit=>unit.alive)){hero.moveLeft=hero.move;hero.acted=false;hero.abilityUsed=false;hero.shield=0}selected=heroes.find(hero=>hero.alive)||null;showToast(`ALIEN TURN · ROUND ${round}`);setRoll('FLUX DIE READY');renderUI();refreshHighlights()}
 
 function checkBattle(){
   if(turn==='ended')return true;
-  if(started&&!enemies.some(unit=>unit.alive)){const survivors=heroes.filter(hero=>hero.alive).length;window.DanArcadeScores?.record('voidbound.html',100000-round*1000+survivors*5000,`ROUND ${round} · ${survivors}/5 survived`);finish(true);return true}
+  const missionWon=selectedMission==='commander'?!enemies.find(unit=>unit.type==='commander')?.alive:selectedMission==='survival'?round>6:!enemies.some(unit=>unit.alive);
+  if(started&&missionWon){finish(true);return true}
   if(started&&!heroes.some(unit=>unit.alive)){finish(false);return true}
   return false;
 }
-function finish(win){started=false;turn='ended';busy=false;clearOutlines();selectionRing.setEnabled(false);if(win){arcadeFx()?.play('cheer',{volume:.32,duration:2.8});arcadeFx()?.hit(canvas,'#caff68',1)}else{arcadeFx()?.play('metal',{volume:.34,rate:.58});arcadeFx()?.shake(canvas,.8)}menu.querySelector('h1').innerHTML=win?'OUTPOST SECURED<br><span>ALIENS VICTORIOUS</span>':'SQUAD LOST<br><span>THE BREACH FAILED</span>';menu.querySelector('p').textContent=win?'All five Solar Dominion defenders have fallen. The alien squad now controls Outpost K-17.':'The Solar Dominion eliminated the alien squad. Rebuild your tactics and try the breach again.';document.querySelector('#start').textContent=win?'PLAY AGAIN':'RETRY MISSION';document.querySelector('#start').onclick=()=>location.reload();menu.classList.remove('hidden');renderUI()}
+function finish(win){started=false;turn='ended';busy=false;clearOutlines();selectionRing.setEnabled(false);const survivors=heroes.filter(hero=>hero.alive).length;if(win){const base=selectedMission==='survival'?130000:selectedMission==='commander'?115000:100000,score=Math.round((base-round*1000+survivors*5000)*DIFFICULTIES[selectedDifficulty].score);window.DanArcadeScores?.record('voidbound.html',score,`${MISSIONS[selectedMission].label} · ROUND ${round} · ${survivors}/5`,DIFFICULTIES[selectedDifficulty].label);arcadeFx()?.play('cheer',{volume:.32,duration:2.8});arcadeFx()?.hit(canvas,'#caff68',1)}else{arcadeFx()?.play('metal',{volume:.34,rate:.58});arcadeFx()?.shake(canvas,.8)}menu.querySelector('h1').innerHTML=win?'MISSION COMPLETE<br><span>ALIENS VICTORIOUS</span>':'SQUAD LOST<br><span>THE BREACH FAILED</span>';menu.querySelector('p').textContent=win?`${MISSIONS[selectedMission].label} complete. ${survivors} alien specialists survived the operation.`:'The Solar Dominion eliminated the alien squad. Rebuild your tactics and try the breach again.';document.querySelector('#start').textContent=win?'PLAY AGAIN':'RETRY MISSION';document.querySelector('#start').onclick=()=>location.reload();menu.classList.remove('hidden');renderUI()}
 
 function renderUI(){
-  phaseEl.textContent=turn==='player'?'ALIEN TURN':turn==='enemy'?'HUMAN TURN':'MISSION COMPLETE';roundEl.textContent=`ROUND ${round}`;hostilesEl.textContent=`${enemies.filter(unit=>unit.alive).length} HOSTILES`;
+  phaseEl.textContent=turn==='player'?'ALIEN TURN':turn==='enemy'?'HUMAN TURN':'MISSION COMPLETE';roundEl.textContent=`ROUND ${round}`;hostilesEl.textContent=selectedMission==='survival'?`${Math.max(0,7-round)} ROUNDS TO HOLD`:selectedMission==='commander'?(enemies.find(unit=>unit.type==='commander')?.alive?'COMMANDER ACTIVE':'COMMANDER DOWN'):`${enemies.filter(unit=>unit.alive).length} HOSTILES`;
   squadEl.innerHTML=heroes.map(hero=>`<button class="hero-card${selected===hero?' selected':''}${hero.acted&&hero.moveLeft===0?' done':''}${!hero.alive?' dead':''}" data-hero="${hero.id}" style="--hero:${hero.color}" ${!hero.alive?'disabled':''}><span class="portrait">${hero.name[0]}</span><span><b>${hero.name}</b><small>${hero.role}</small></span><em>${hero.hp}/${hero.maxHp}${hero.shield?` +${hero.shield}`:''}</em></button>`).join('');
   squadEl.querySelectorAll('[data-hero]').forEach(button=>button.onclick=()=>selectHero(heroes.find(hero=>hero.id===button.dataset.hero)));
-  if(selected?.alive){unitRole.textContent=selected.role;unitName.textContent=selected.name;unitStats.textContent=`HP ${selected.hp}/${selected.maxHp}${selected.shield?` · SHIELD ${selected.shield}`:''} · MOVE ${selected.moveLeft} · RANGE ${selected.range} · ${selected.acted?'ATTACK USED':'ATTACK READY'}`;abilityButton.textContent=abilityMode?`CANCEL ${selected.ability}`:selected.ability;abilityButton.disabled=turn!=='player'||busy||selected.abilityUsed;abilityButton.classList.toggle('targeting',abilityMode)}else{unitRole.textContent='SELECT A HERO';unitName.textContent='YOUR SQUAD IS READY';unitStats.textContent='Tap a miniature or character card.';abilityButton.textContent='SPECIAL ABILITY';abilityButton.disabled=true;abilityButton.classList.remove('targeting')}
+  if(selected?.alive){unitRole.textContent=selected.role;unitName.textContent=selected.name;unitStats.textContent=`HP ${selected.hp}/${selected.maxHp}${selected.shield?` · SHIELD ${selected.shield}`:''}${inCover(selected)?' · COVER':''} · MOVE ${selected.moveLeft} · RANGE ${selected.range} · ${selected.acted?'ATTACK USED':'ATTACK READY'}`;abilityButton.textContent=abilityMode?`CANCEL ${selected.ability}`:selected.ability;abilityButton.disabled=turn!=='player'||busy||selected.abilityUsed;abilityButton.classList.toggle('targeting',abilityMode)}else{unitRole.textContent='SELECT A HERO';unitName.textContent='YOUR SQUAD IS READY';unitStats.textContent='Tap a miniature or character card.';abilityButton.textContent='SPECIAL ABILITY';abilityButton.disabled=true;abilityButton.classList.remove('targeting')}
   endTurnButton.disabled=turn!=='player'||busy||!started;
   hintEl.textContent=turn==='enemy'?'The Solar Dominion is moving its miniatures.':abilityMode?`Choose a glowing enemy for ${selected.ability}.`:selected?'Green signals show movement. Red outlines show attackable enemies.':'Select an alien hero, then choose a glowing tile or enemy.';
+  enemyIntentsEl.innerHTML=enemies.filter(enemy=>enemy.alive).map(enemy=>`<div class="enemy-intent" style="--intent:${enemy.color}"><i></i><div><b>${enemy.name}</b><span>${enemyIntent(enemy)}</span></div></div>`).join('')||'<div class="enemy-intent" style="--intent:#72ffe0"><i></i><div><b>SECTOR CLEAR</b></div></div>';
 }
 
 function showToast(text){toastEl.textContent=text;toastEl.classList.add('show');clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>toastEl.classList.remove('show'),1200)}
@@ -251,10 +271,18 @@ function handlePick(clientX,clientY){
   if(!started||busy)return;const pick=scene.pick(clientX,clientY);if(!pick?.hit)return;const unit=pick.pickedMesh.metadata?.unit,tile=pick.pickedMesh.metadata?.tile;
   if(unit?.team==='hero')selectHero(unit);else if(unit?.team==='enemy'){if(abilityMode)useTargetAbility(unit);else basicHeroAttack(unit)}else if(tile)moveSelected(tile.x,tile.z);
 }
+function chooseOption(attribute,value){document.querySelectorAll(`[data-${attribute}]`).forEach(button=>{const active=button.dataset[attribute]===value;button.classList.toggle('selected',active);button.setAttribute('aria-pressed',String(active))})}
+function prepareMission(){
+  const difficulty=DIFFICULTIES[selectedDifficulty];
+  enemies.forEach(enemy=>{const base=ENEMY_DEFS.find(def=>def.id===enemy.id);enemy.maxHp=Math.max(1,Math.round(base.hp*difficulty.hp));enemy.hp=enemy.maxHp;enemy.damage=base.damage+difficulty.damage;enemy.shield=base.shield||0;updateHealthBar(enemy)});
+  hintEl.textContent=MISSIONS[selectedMission].objective;hostilesEl.textContent=selectedMission==='survival'?'SURVIVE 6 ROUNDS':selectedMission==='commander'?'COMMANDER TARGET':'5 HOSTILES';
+}
 
 buildScene();renderUI();refreshHighlights();engine.runRenderLoop(()=>scene.render());addEventListener('resize',()=>engine.resize());
 canvas.addEventListener('pointerdown',event=>pointerStart={x:event.clientX,y:event.clientY,time:performance.now()});
 canvas.addEventListener('pointerup',event=>{if(pointerStart&&Math.hypot(event.clientX-pointerStart.x,event.clientY-pointerStart.y)<7&&performance.now()-pointerStart.time<520)handlePick(event.clientX,event.clientY);pointerStart=null});
 abilityButton.onclick=useAbility;endTurnButton.onclick=enemyTurn;
-document.querySelector('#start').onclick=()=>{started=true;menu.classList.add('hidden');selected=heroes[0];showToast('ALIEN TURN · SELECT A MOVE');setRoll('FLUX DIE READY');tone(520,.2,'sine');renderUI();refreshHighlights()};
+document.querySelectorAll('[data-mission]').forEach(button=>button.onclick=()=>{selectedMission=button.dataset.mission;chooseOption('mission',selectedMission)});
+document.querySelectorAll('[data-difficulty]').forEach(button=>button.onclick=()=>{selectedDifficulty=button.dataset.difficulty;chooseOption('difficulty',selectedDifficulty)});
+document.querySelector('#start').onclick=()=>{prepareMission();started=true;menu.classList.add('hidden');selected=heroes[0];showToast(`${MISSIONS[selectedMission].label} · ${DIFFICULTIES[selectedDifficulty].label}`);setRoll(MISSIONS[selectedMission].objective.toUpperCase());tone(520,.2,'sine');renderUI();refreshHighlights()};
 })();

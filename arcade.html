@@ -84,6 +84,6 @@
     function setLanguage(language){const lang=language==='en'?'en':'fr';document.documentElement.lang=lang;document.querySelectorAll('[data-fr][data-en]').forEach(element=>element.textContent=element.dataset[lang]);buttons.fr.classList.toggle('active',lang==='fr');buttons.en.classList.toggle('active',lang==='en');localStorage.setItem('siteLang',lang)}
     buttons.fr.onclick=()=>setLanguage('fr');buttons.en.onclick=()=>setLanguage('en');document.querySelector('#year').textContent=new Date().getFullYear();setLanguage(localStorage.getItem('siteLang')||'fr');
   </script>
-  <script src="arcade-launcher.js?v=1"></script>
+  <script src="arcade-launcher.js?v=2"></script>
 </body>
 </html>

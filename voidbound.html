@@ -34,6 +34,11 @@
     <div><small>FLUX DIE</small><b id="rollText">AWAITING ACTION</b></div>
   </section>
 
+  <aside class="intent-panel" aria-label="Enemy intentions">
+    <div class="panel-title">DOMINION INTEL</div>
+    <div id="enemyIntents"></div>
+  </aside>
+
   <div class="actionbar">
     <div id="hint">Select an alien hero, then choose a glowing tile or enemy.</div>
     <button id="endTurn">END ALIEN TURN</button>
@@ -47,6 +52,12 @@
       <h1>VOIDBOUND<br><span>BREACH TACTICS</span></h1>
       <p>Five alien specialists have boarded Solar Outpost K-17. Command every miniature, use cover and unique abilities, then defeat all five human defenders before your squad is eliminated.</p>
       <div class="roster"><span>5 ALIEN HEROES</span><i>VS</i><span>5 HUMAN CLASSES</span></div>
+      <div class="protocol-select">
+        <p>MISSION PROTOCOL</p>
+        <div><button type="button" data-mission="assault" class="selected">TOTAL ASSAULT<small>Defeat all defenders</small></button><button type="button" data-mission="commander">HEADHUNTER<small>Eliminate the Commander</small></button><button type="button" data-mission="survival">HOLD THE BREACH<small>Survive 6 rounds</small></button></div>
+        <p>THREAT LEVEL</p>
+        <div class="difficulty-select"><button type="button" data-difficulty="cadet">CADET</button><button type="button" data-difficulty="standard" class="selected">VETERAN</button><button type="button" data-difficulty="overmind">OVERMIND</button></div>
+      </div>
       <p class="controls"><b>Click or tap</b> to select, move and attack · <b>Drag</b> to rotate the table · <b>Wheel or pinch</b> to zoom</p>
       <button id="start">BEGIN THE BREACH</button>
       <a href="index.html">← Return to DanPC</a>
@@ -56,6 +67,6 @@
   <script src="https://cdn.babylonjs.com/babylon.js"></script>
   <script src="arcade-fx.js?v=1"></script>
   <script src="danpc-scores.js?v=1"></script>
-  <script src="voidbound.js?v=5"></script>
+  <script src="voidbound.js?v=6"></script>
 </body>
 </html>
