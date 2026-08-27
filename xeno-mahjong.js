@@ -56,10 +56,12 @@
   const highlight = new BABYLON.HighlightLayer('tile glow', scene);
   highlight.blurHorizontalSize = .55;
   highlight.blurVerticalSize = .55;
-  const glyphs = ['◉', '✦', '⌁', '☽', '△', '⊕', '◇', '☄', '♆', '♁', '☼', '∞', '⌬', '⟁', '☯', '♢', '☊', '⌖', '✧', '⟡', '◈', '⏣', '⍟', '⌾', '☿', '⚶', '⧫', '⦿', '✺', '⟟', '⸙', '☍'];
+  const baseGlyphs = ['◉', '✦', '⌁', '☽', '△', '⊕', '◇', '☄', '♆', '♁', '☼', '∞', '⌬', '⟁', '☯', '♢', '☊', '⌖', '✧', '⟡', '◈', '⏣', '⍟', '⌾', '☿', '⚶', '⧫', '⦿', '✺', '⟟', '⸙', '☍'];
+  const glyphs = baseGlyphs.flatMap((symbol) => [`${symbol}¹`, `${symbol}²`]);
   const glyphMaterials = new Map();
   const ui = { remaining: $('tilesRemaining'), moves: $('movesAvailable'), timer: $('timer'), matches: $('matches'), message: $('selectionText'), start: $('startScreen'), victory: $('victoryScreen'), victoryStats: $('victoryStats'), hint: $('hintButton'), shuffle: $('shuffleButton'), undo: $('undoButton'), sound: $('soundButton'), event: $('templeEvent') };
   let tiles = [], selected = null, locked = false, history = [], matchCount = 0;
+  let hintedIds = new Set(), hintTargetTimer = 0;
   let gameActive = false, victoryMode = false, startedAt = 0, timerHandle = 0;
   let soundOn = true, audioCtx = null, masterGain = null, effectsGain = null, ambienceGain = null, ambienceTimer = 0;
   let guardianRoot = null, guardianEyes = [], templeEventPlayed = false, nextTempleEvent = 8;
@@ -199,7 +201,7 @@
   function assignSolvable(all, ids = all.map((tile) => tile.id)) {
     const pairs = removalPairs(all, ids);
     if (!pairs) return false;
-    const symbols = shuffle(pairs.map((_, i) => glyphs[Math.floor(i / 2) % glyphs.length]));
+    const symbols = shuffle(pairs.map((_, i) => glyphs[i % glyphs.length]));
     pairs.forEach((pair, index) => pair.forEach((id) => { all.find((tile) => tile.id === id).symbol = symbols[index]; }));
     return true;
   }
@@ -239,6 +241,9 @@
     if (selected) { highlight.removeMesh(selected.base); highlight.removeMesh(selected.face); selected.root.position.y = selected.homeY; }
     selected = null;
   }
+  function clearHintTargets() {
+    clearTimeout(hintTargetTimer); hintedIds.clear();
+  }
   function flash(tile, color, duration = 500) {
     highlight.addMesh(tile.base, color); highlight.addMesh(tile.face, color);
     setTimeout(() => { if (tile !== selected) { highlight.removeMesh(tile.base); highlight.removeMesh(tile.face); } }, duration);
@@ -270,7 +275,7 @@
       const first = selected; flash(tile, new BABYLON.Color3(1, .2, .15), 450); flash(first, new BABYLON.Color3(1, .2, .15), 450);
       message('THE GLYPHS DO NOT MATCH', 'error'); sound('blocked',tile); clearSelection(); return;
     }
-    const first = selected; clearSelection(); locked = true; first.alive = false; tile.alive = false; history.push([first.id, tile.id]); matchCount++;
+    const first = selected; clearSelection(); clearHintTargets(); locked = true; first.alive = false; tile.alive = false; history.push([first.id, tile.id]); matchCount++;
     message('GLYPH PAIR RELEASED', 'good'); sound('match',{x:(first.x+tile.x)/2}); animateMatch(first, tile);
     if(!templeEventPlayed&&matchCount>=nextTempleEvent)setTimeout(triggerTempleEvent,620);
   }
@@ -278,12 +283,14 @@
   function hint() {
     if (locked) return;
     clearSelection(); const pair = availablePairs()[0]; if (!pair) return;
-    pair.forEach((tile, index) => { flash(tile, new BABYLON.Color3(1, .72, .18), 1250 + index * 100); });
+    clearHintTargets(); hintedIds = new Set(pair.map((tile) => tile.id));
+    pair.forEach((tile, index) => { flash(tile, new BABYLON.Color3(1, .72, .18), 3600 + index * 100); });
+    hintTargetTimer = setTimeout(() => hintedIds.clear(), 4300);
     message('THE TEMPLE REVEALS A PAIR', 'good'); sound('hint',{x:(pair[0].x+pair[1].x)/2});
   }
   function hiveShuffle() {
     if (locked) return;
-    clearSelection(); const alive = tiles.filter((tile) => tile.alive);
+    clearSelection(); clearHintTargets(); const alive = tiles.filter((tile) => tile.alive);
     if (!alive.length || !assignSolvable(tiles, alive.map((tile) => tile.id))) return;
     alive.forEach((tile, index) => {
       tile.face.material = glyphMaterial(tile.symbol);
@@ -294,7 +301,7 @@
   }
   function undo() {
     if (locked || !history.length) return;
-    clearSelection(); const ids = history.pop();
+    clearSelection(); clearHintTargets(); const ids = history.pop();
     ids.forEach((id) => {
       const tile = tiles.find((item) => item.id === id); tile.alive = true; tile.root.setEnabled(true); tile.root.scaling.copyFromFloats(.15, .15, .15);
       const grow = new BABYLON.Animation('restore', 'scaling', 60, BABYLON.Animation.ANIMATIONTYPE_VECTOR3);
@@ -383,17 +390,29 @@
     ui.start.classList.add('hidden'); ui.victory.classList.add('hidden'); ui.event.classList.remove('show'); gameActive = true; victoryMode = false; locked = false; history = []; matchCount = 0; key.intensity = 38;templeEventPlayed=false;nextTempleEvent=6+Math.floor(Math.random()*7);guardianRoot?.setEnabled(false);
     startTimer(); startAmbience(); updateHud(); message('SELECT A FREE TILE'); sound('hint');
   }
-  function replay() { clearSelection(); buildBoard(); startGame(); }
+  function replay() { clearSelection(); clearHintTargets(); buildBoard(); startGame(); }
+
+  function pickTileAt(x, y, allowedIds) {
+    if (!allowedIds.size) return null;
+    const pick = scene.pick(x, y, (mesh) => Number.isInteger(mesh.metadata?.tileId) && allowedIds.has(mesh.metadata.tileId));
+    return pick?.hit ? tiles.find((tile) => tile.id === pick.pickedMesh.metadata.tileId) : null;
+  }
 
   let pointerStart = null;
-  canvas.addEventListener('pointerdown', (event) => { pointerStart = { x: event.clientX, y: event.clientY, at: performance.now() }; });
+  canvas.addEventListener('pointerdown', (event) => { pointerStart = { x: event.clientX, y: event.clientY, at: performance.now(), type: event.pointerType }; });
   canvas.addEventListener('pointerup', (event) => {
     if (!pointerStart) return;
     const distance = Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y), elapsed = performance.now() - pointerStart.at; pointerStart = null;
-    if (distance > 9 || elapsed > 650) return;
-    const rect = canvas.getBoundingClientRect(), pick = scene.pick(event.clientX - rect.left, event.clientY - rect.top, (mesh) => Number.isInteger(mesh.metadata?.tileId));
-    if (pick?.hit) choose(tiles.find((tile) => tile.id === pick.pickedMesh.metadata.tileId));
+    const touch = event.pointerType === 'touch', movementLimit = touch ? 24 : 12, timeLimit = touch ? 1400 : 900;
+    if (distance > movementLimit || elapsed > timeLimit) return;
+    const rect = canvas.getBoundingClientRect(), x = event.clientX - rect.left, y = event.clientY - rect.top;
+    const freeIds = new Set(tiles.filter(isFree).map((tile) => tile.id));
+    const hintedFreeIds = new Set([...hintedIds].filter((id) => freeIds.has(id)));
+    const aliveIds = new Set(tiles.filter((tile) => tile.alive).map((tile) => tile.id));
+    const tile = pickTileAt(x, y, hintedFreeIds) || pickTileAt(x, y, aliveIds);
+    if (tile) choose(tile);
   });
+  canvas.addEventListener('pointercancel', () => { pointerStart = null; });
   $('startButton').addEventListener('click', startGame); $('replayButton').addEventListener('click', replay);
   ui.hint.addEventListener('click', hint); ui.shuffle.addEventListener('click', hiveShuffle); ui.undo.addEventListener('click', undo); ui.sound.addEventListener('click', toggleSound);
   window.addEventListener('resize', () => engine.resize());
