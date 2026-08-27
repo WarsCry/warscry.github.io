@@ -35,7 +35,7 @@ const MISSIONS={assault:{label:'TOTAL ASSAULT',objective:'Defeat all five Domini
 
 const engine=new B.Engine(canvas,true,{stencil:true,adaptToDeviceRatio:true});
 if(matchMedia('(pointer:coarse)').matches)engine.setHardwareScalingLevel(1/Math.min(devicePixelRatio||1,1.3));
-let scene,camera,heroes=[],enemies=[],selected=null,selectionRing,turn='player',round=1,busy=false,started=false,abilityMode=false,pointerStart=null,selectedMission='assault',selectedDifficulty='standard';
+let scene,camera,heroes=[],enemies=[],selected=null,selectionRing,turn='player',round=1,busy=false,started=false,abilityMode=false,pointerStart=null,selectedMission='assault',selectedDifficulty='standard',autoTurnTimer=0;
 const tiles=new Map(),materials={};
 const arcadeFx=()=>window.DanArcadeFX;
 
@@ -194,7 +194,16 @@ async function damageUnit(target,amount){
   renderUI();refreshHighlights();
 }
 
-async function basicHeroAttack(target){if(busy||turn!=='player'||!selected||selected.acted||!canAttack(selected,target))return;busy=true;refreshHighlights();await attack(selected,target);busy=false;renderUI();refreshHighlights()}
+async function basicHeroAttack(target){if(busy||turn!=='player'||!selected||selected.acted||!canAttack(selected,target))return;busy=true;refreshHighlights();await attack(selected,target);busy=false;renderUI();refreshHighlights();maybeAutoEndTurn()}
+
+function maybeAutoEndTurn(){
+  clearTimeout(autoTurnTimer);
+  if(!started||busy||turn!=='player')return;
+  const remaining=heroes.filter(hero=>hero.alive&&!hero.acted);
+  if(remaining.length){if(selected?.acted){selected=remaining[0];showToast(`${selected.name} READY · NEXT HERO`);renderUI();refreshHighlights()}return}
+  showToast('SQUAD ACTIONS COMPLETE · DOMINION TURN');setRoll('AUTO-ADVANCING TURN');endTurnButton.disabled=true;
+  autoTurnTimer=setTimeout(()=>{if(started&&turn==='player'&&!busy)enemyTurn()},850);
+}
 
 async function useAbility(){
   if(!selected||busy||turn!=='player'||selected.abilityUsed)return;
@@ -205,7 +214,7 @@ async function useAbility(){
     const wounded=heroes.filter(hero=>hero.alive&&hero.hp<hero.maxHp).sort((a,b)=>a.hp/a.maxHp-b.hp/b.maxHp)[0];if(!wounded){showToast('ALL ALIENS ARE AT FULL HEALTH');return}
     wounded.hp=Math.min(wounded.maxHp,wounded.hp+4);selected.abilityUsed=true;selected.acted=true;showToast(`MEND SPORES · ${wounded.name} RESTORED`);setRoll('+4 HEALTH');tone(520,.22,'sine');pulseUnit(wounded,'#ff8bdc');
   }else{abilityMode=true;showToast(`SELECT A TARGET FOR ${selected.ability}`)}
-  renderUI();refreshHighlights();
+  renderUI();refreshHighlights();maybeAutoEndTurn();
 }
 
 async function useTargetAbility(target){
@@ -215,7 +224,7 @@ async function useTargetAbility(target){
   }else{
     await launchEffect(selected,target,selected.color);await damageUnit(target,2);if(target.alive)target.stunned=1;setRoll('MIND RIFT · ENEMY STUNNED');showToast(`${target.name} WILL MISS ITS NEXT TURN`);tone(240,.3,'sine');
   }
-  busy=false;renderUI();refreshHighlights();checkBattle();
+  busy=false;renderUI();refreshHighlights();if(!checkBattle())maybeAutoEndTurn();
 }
 
 function pulseUnit(unit,color){const ring=B.MeshBuilder.CreateTorus('ability pulse',{diameter:.9,thickness:.05,tessellation:24},scene);ring.position=unit.root.position.add(new V(0,.3,0));ring.material=standard(`ability pulse ${Math.random()}`,color,color);ring.isPickable=false;const start=performance.now(),observer=scene.onBeforeRenderObservable.add(()=>{const t=(performance.now()-start)/600;ring.scaling.setAll(1+t*2);ring.visibility=1-t;if(t>=1){scene.onBeforeRenderObservable.remove(observer);ring.dispose()}})}
@@ -227,7 +236,7 @@ function findEnemyPath(unit,target){
 }
 
 async function enemyTurn(){
-  if(busy||turn!=='player'||!started)return;busy=true;turn='enemy';selected=null;abilityMode=false;renderUI();refreshHighlights();showToast('SOLAR DOMINION TURN');await wait(500);
+  if(busy||turn!=='player'||!started)return;clearTimeout(autoTurnTimer);busy=true;turn='enemy';selected=null;abilityMode=false;renderUI();refreshHighlights();showToast('SOLAR DOMINION TURN');await wait(500);
   for(const enemy of enemies.filter(unit=>unit.alive)){
     if(!heroes.some(hero=>hero.alive))break;outline(enemy,'#ff536a',.07);
     if(enemy.stunned){enemy.stunned=0;showToast(`${enemy.name} IS STUNNED`);setRoll('MIND RIFT CANCELLED ACTION');await wait(650);clearOutlines();continue}
