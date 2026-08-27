@@ -694,6 +694,7 @@
     pulseTable(outcome);
     if (outcome === 'win') { sparks(true); payoutOrbit(); }
     if (outcome === 'loss') sparks(false);
+    window.DanArcadeScores?.record('cosmo-casino.html', balance, `${balance.toLocaleString()} CC`, `${game} · ${outcome}`);
     render();
   }
 
@@ -845,5 +846,5 @@
   window.addEventListener('pointerdown', () => { ensureAudio(); }, { once: true });
 
   updateAudioButtons();
-  setGame('blackjack');
+  setGame(new URLSearchParams(location.search).get('game') === 'poker' ? 'poker' : 'blackjack');
 })();

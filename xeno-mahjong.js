@@ -61,6 +61,7 @@
   const glyphMaterials = new Map();
   const ui = { remaining: $('tilesRemaining'), moves: $('movesAvailable'), timer: $('timer'), matches: $('matches'), message: $('selectionText'), start: $('startScreen'), victory: $('victoryScreen'), victoryStats: $('victoryStats'), hint: $('hintButton'), shuffle: $('shuffleButton'), undo: $('undoButton'), sound: $('soundButton'), event: $('templeEvent') };
   let tiles = [], selected = null, locked = false, history = [], matchCount = 0;
+  let selectedTileCount = Number(new URLSearchParams(location.search).get('tiles')) === 64 ? 64 : 128;
   let hintedIds = new Set(), hintTargetTimer = 0;
   let gameActive = false, victoryMode = false, startedAt = 0, timerHandle = 0;
   let soundOn = true, audioCtx = null, masterGain = null, effectsGain = null, ambienceGain = null, ambienceTimer = 0;
@@ -157,7 +158,11 @@
     const layer = (cols, rows, level) => {
       for (let row = 0; row < rows; row++) for (let col = 0; col < cols; col++) slots.push({ id: id++, x: (col - (cols - 1) / 2) * 1.58, z: (row - (rows - 1) / 2) * 2.02, layer: level, alive: true });
     };
-    layer(12, 6, 0); layer(10, 4, 1); layer(6, 2, 2); layer(4, 1, 3);
+    if (selectedTileCount === 64) {
+      layer(8, 4, 0); layer(6, 4, 1); layer(4, 2, 2);
+    } else {
+      layer(12, 6, 0); layer(10, 4, 1); layer(6, 2, 2); layer(4, 1, 3);
+    }
     return slots;
   }
 
@@ -382,7 +387,9 @@
   }
   function win() {
     gameActive = false; victoryMode = true; clearInterval(timerHandle); const elapsed = formatTime((performance.now() - startedAt) / 1000);
-    ui.victoryStats.textContent = `${matchCount} pairs released · ${elapsed}`; message('THE STAR GATE IS OPEN', 'good'); sound('victory'); victoryBurst(); key.intensity = 64;
+    const elapsedSeconds = (performance.now() - startedAt) / 1000;
+    window.DanArcadeScores?.record('xeno-mahjong.html', Math.max(1, selectedTileCount * 100000 - Math.round(elapsedSeconds * 100)), `${selectedTileCount} tiles · ${elapsed}`, `${matchCount} pairs`);
+    ui.victoryStats.textContent = `${selectedTileCount} tiles · ${matchCount} pairs released · ${elapsed}`; message('THE STAR GATE IS OPEN', 'good'); sound('victory'); victoryBurst(); key.intensity = 64;
     setTimeout(() => ui.victory.classList.remove('hidden'), 1250);
   }
   function startGame() {
@@ -413,6 +420,19 @@
     if (tile) choose(tile);
   });
   canvas.addEventListener('pointercancel', () => { pointerStart = null; });
+  document.querySelectorAll('[data-tile-count]').forEach((button) => {
+    const count = Number(button.dataset.tileCount);
+    const selectMode = () => {
+      selectedTileCount = count;
+      document.querySelectorAll('[data-tile-count]').forEach((option) => {
+        const active = Number(option.dataset.tileCount) === count;
+        option.classList.toggle('selected', active); option.setAttribute('aria-pressed', String(active));
+      });
+      buildBoard(); updateHud();
+    };
+    if (count === selectedTileCount) selectMode();
+    button.addEventListener('click', selectMode);
+  });
   $('startButton').addEventListener('click', startGame); $('replayButton').addEventListener('click', replay);
   ui.hint.addEventListener('click', hint); ui.shuffle.addEventListener('click', hiveShuffle); ui.undo.addEventListener('click', undo); ui.sound.addEventListener('click', toggleSound);
   window.addEventListener('resize', () => engine.resize());

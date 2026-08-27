@@ -7,7 +7,7 @@
   <title>Xeno Mahjong: Temple of the Stars | DanPC</title>
   <meta name="description" content="Play a fully 3D alien Mahjong Solitaire puzzle on a Maya-inspired temple table.">
   <link rel="icon" type="image/png" href="favicondanpc.png">
-  <link rel="stylesheet" href="xeno-mahjong.css?v=3">
+  <link rel="stylesheet" href="xeno-mahjong.css?v=4">
   <link rel="stylesheet" href="premium-materials.css?v=1">
 </head>
 <body class="premium-mahjong">
@@ -42,8 +42,12 @@
         <p>RECOVERED GAME PROTOCOL</p>
         <h1>XENO MAHJONG<br><span>TEMPLE OF THE STARS</span></h1>
         <div class="temple-mark"><i></i><i></i><i></i><b>◉</b></div>
-        <p class="intro">A complete alien tile puzzle rests above a forgotten stepped temple. Match identical free glyphs until the table is empty.</p>
+        <p class="intro">Choose a quick 64-tile expedition or awaken the complete 128-tile temple. Match identical free glyphs until the table is empty.</p>
         <div class="rules"><span><b>1</b> A tile must have no tile covering it.</span><span><b>2</b> Its left or right side must be open.</span><span><b>3</b> Match two identical alien symbols.</span></div>
+        <div class="temple-size" role="group" aria-label="Temple size">
+          <button type="button" data-tile-count="64"><strong>64 TILES</strong><span>QUICK EXPEDITION</span></button>
+          <button type="button" data-tile-count="128" class="selected" aria-pressed="true"><strong>128 TILES</strong><span>FULL TEMPLE</span></button>
+        </div>
         <button id="startButton">AWAKEN THE TEMPLE</button>
         <small>Tap tiles on mobile · Click on PC · Drag to orbit · Pinch or wheel to zoom</small>
       </div>
@@ -56,6 +60,7 @@
   </main>
   <script src="https://cdn.babylonjs.com/babylon.js"></script>
   <script src="arcade-fx.js?v=1"></script>
-  <script src="xeno-mahjong.js?v=6"></script>
+  <script src="danpc-scores.js?v=1"></script>
+  <script src="xeno-mahjong.js?v=7"></script>
 </body>
 </html>

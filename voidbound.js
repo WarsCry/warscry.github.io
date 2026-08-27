@@ -228,7 +228,7 @@ function startPlayerRound(){turn='player';round++;for(const hero of heroes.filte
 
 function checkBattle(){
   if(turn==='ended')return true;
-  if(started&&!enemies.some(unit=>unit.alive)){finish(true);return true}
+  if(started&&!enemies.some(unit=>unit.alive)){const survivors=heroes.filter(hero=>hero.alive).length;window.DanArcadeScores?.record('voidbound.html',100000-round*1000+survivors*5000,`ROUND ${round} · ${survivors}/5 survived`);finish(true);return true}
   if(started&&!heroes.some(unit=>unit.alive)){finish(false);return true}
   return false;
 }
