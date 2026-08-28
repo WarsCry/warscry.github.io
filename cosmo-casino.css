@@ -45,4 +45,24 @@ footer{display:flex;align-items:center;justify-content:center;gap:12px;min-heigh
 @keyframes holoScan{to{transform:translateY(850%)}}@keyframes consoleScan{to{top:84%;background:var(--pink);box-shadow:0 0 10px var(--pink)}}@keyframes signalFlash{50%{color:var(--cyan);text-shadow:0 0 20px var(--cyan);transform:scale(1.02)}}@keyframes dealerDeal{from{opacity:0;transform:translateY(-70px) scale(.78) rotate(-8deg);filter:blur(4px)}to{opacity:1;filter:none}}@keyframes playerDeal{from{opacity:0;transform:translateY(70px) scale(.78) rotate(8deg);filter:blur(4px)}to{opacity:1;filter:none}}@keyframes cardSheen{0%,72%{transform:translateX(-130%)}88%,100%{transform:translateX(130%)}}@keyframes chipLock{40%{transform:translateY(-13px) scale(1.18) rotate(8deg)}}@keyframes buttonSweep{0%,65%{left:-30%}90%,100%{left:130%}}@keyframes payoutOrbit{50%{transform:translateY(-80px) scale(1.15) rotate(220deg);opacity:1}to{left:50%;top:7%;transform:scale(.45) rotate(620deg);opacity:0}}@keyframes winPulseDeluxe{35%{box-shadow:inset 0 0 100px rgba(199,255,104,.3),0 0 95px rgba(199,255,104,.62),0 38px 110px #000;filter:brightness(1.2)}70%{box-shadow:inset 0 0 70px rgba(106,255,239,.22),0 0 80px rgba(106,255,239,.48),0 38px 110px #000}}@keyframes lossPulseDeluxe{45%{transform:rotateX(1deg) translateX(-4px);box-shadow:inset 0 0 90px rgba(255,96,125,.3),0 0 70px rgba(255,96,125,.45),0 38px 110px #000}65%{transform:rotateX(1deg) translateX(4px)}}
 @media(max-width:1450px){.ship-console{display:none}}
 @media(max-height:780px) and (min-width:701px){.game-stage{padding-top:15px}.dealer-sign{margin-bottom:7px}.table-console{height:calc(100svh - 150px);min-height:520px;padding-top:14px}.hand{min-height:125px}.card{width:clamp(68px,6.5vw,84px)}.table-readout{margin-top:8px}.actions{margin-top:9px}.bet-console{margin-top:2px}}
-@media(max-width:700px){.game-stage{padding-top:18px}.dealer-sign{font-size:8px}.table-console{width:100%;height:auto;min-height:630px;padding:17px 9px 34px;border-radius:70px 70px 25px 25px}.game-tabs{gap:6px}.tab{padding:9px 12px;font-size:9px}.table-readout{margin-top:10px}.table-readout strong{font-size:16px}.hand{min-height:126px;padding-inline:2px;gap:0}.hand:before{font-size:6px}.card{width:clamp(53px,16.5vw,75px);margin:0 -2px;border-radius:9px}.bet-console{gap:7px;margin-top:4px}.chip-row{gap:7px}.chip{width:45px}.chip span{font-size:13px}.actions{margin-top:12px;gap:7px}.action{min-width:84px;padding:11px 12px;font-size:9px}.rail-left,.rail-right{display:none}.pot-display{padding:5px 9px}.table-console:after{font-size:6px;width:80%}}
+@media(max-width:700px){.game-stage{padding-top:18px}.dealer-sign{font-size:8px}.table-console{width:100%;height:auto;min-height:650px;padding:17px 9px 34px;border-radius:70px 70px 25px 25px}.game-tabs{gap:6px}.tab{padding:9px 12px;font-size:9px}.table-readout{margin-top:10px}.table-readout strong{font-size:16px}.hand{min-height:126px;padding-inline:2px;gap:0}.hand:before{font-size:6px}.card{width:clamp(53px,16.5vw,75px);margin:0 -2px;border-radius:9px}.bet-console{gap:7px;margin-top:4px}.chip-row{gap:7px}.chip{width:45px}.chip span{font-size:13px}.actions{margin-top:12px;gap:7px}.action{min-width:84px;padding:11px 12px;font-size:9px}.rail-left,.rail-right{display:none}.pot-display{padding:5px 9px}.table-console:after{font-size:6px;width:80%}}
+
+/* Roomier card table: the pot owns a real center lane instead of floating over cards. */
+@media(min-width:1025px){
+  .game-stage{width:min(1640px,100%)}
+  .table-console{width:min(1420px,97vw);height:min(780px,calc(100svh - 175px));min-height:650px;padding-inline:clamp(58px,6vw,104px)}
+  .hand{min-height:168px;gap:clamp(12px,1.25vw,22px);padding-block:23px 10px}
+  .card{width:clamp(82px,6.7vw,108px)}
+}
+.pot-display{position:relative;left:auto;top:auto;width:max-content;margin:-3px auto 1px;transform:none}
+@media(min-width:701px) and (max-width:1024px){
+  .table-console{width:97vw;min-height:610px;padding-inline:clamp(24px,4vw,44px)}
+  .hand{min-height:142px;gap:clamp(5px,1vw,11px)}
+  .card{width:clamp(68px,8.2vw,84px)}
+}
+@media(max-height:780px) and (min-width:701px){
+  .table-console{height:calc(100svh - 145px);min-height:545px}
+  .hand{min-height:126px;gap:clamp(5px,.8vw,10px);padding-block:17px 5px}
+  .card{width:clamp(66px,6.2vw,82px)}
+  .pot-display{margin:-4px auto}
+}
