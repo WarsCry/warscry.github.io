@@ -58,8 +58,8 @@
       ].map((s, i) => ({ ax:s[0], ay:s[1], bx:s[2], by:s[3], width:i < 5 ? 8 : 6 }));
       this.slings = [{ x:216,y:820,r:39,index:20,last:0 },{ x:544,y:820,r:39,index:21,last:0 }];
       this.flippers = [
-        { side:'left', x:272, y:966, length:132, radius:18, rest:.27, active:-.62, angle:.27, previous:.27, angular:0, pressed:false },
-        { side:'right', x:488, y:966, length:132, radius:18, rest:Math.PI-.27, active:Math.PI+.62, angle:Math.PI-.27, previous:Math.PI-.27, angular:0, pressed:false },
+        { side:'left', x:255, y:966, length:105, radius:18, rest:.27, active:-.62, angle:.27, previous:.27, angular:0, pressed:false },
+        { side:'right', x:505, y:966, length:105, radius:18, rest:Math.PI-.27, active:Math.PI+.62, angle:Math.PI-.27, previous:Math.PI-.27, angular:0, pressed:false },
       ];
     }
 
@@ -117,7 +117,7 @@
       this.charge = clamp((performance.now() - this.chargeStarted) / 1050, .22, 1);
       ball.ready = false;
       ball.vx = 0;
-      ball.vy = -(920 + this.charge * 520);
+      ball.vy = -(700 + this.charge * 360);
       ball.thrust = 1;
       this.callbacks.onCharge?.(null);
       this.callbacks.onLaunch?.(Math.round(this.charge * 100));
@@ -144,7 +144,7 @@
     }
 
     makeLiveBall(x,y,vx,vy) {
-      return { x,y,vx,vy,r:15,ready:false,alive:true,entered:true,trail:[],lastRail:0,lastRamp:0,lastLane:0,lastRicochet:0,rotation:0,bank:0,flash:0,thrust:.72,impactSide:0,impactPower:0 };
+      return { x,y,vx,vy,r:15,ready:false,alive:true,entered:true,trail:[],lastRail:0,lastRamp:0,lastLane:0,lastRicochet:0,rotation:0,bank:0,flash:0,thrust:.72,impactSide:0,impactPower:0,stuckFor:0 };
     }
 
     update(frame, now) {
@@ -167,7 +167,7 @@
       for (const flipper of this.flippers) {
         flipper.previous = flipper.angle;
         const target = flipper.pressed ? flipper.active : flipper.rest;
-        const max = 18.5 * dt;
+        const max = 16 * dt;
         flipper.angle += clamp(target - flipper.angle, -max, max);
         flipper.angular = (flipper.angle - flipper.previous) / dt;
       }
@@ -175,12 +175,12 @@
         if (!ball.alive || ball.ready) continue;
         const previousVx = ball.vx, previousVy = ball.vy;
         ball.trail.unshift({x:ball.x,y:ball.y,rotation:ball.rotation});
-        if (ball.trail.length > 18) ball.trail.pop();
+        if (ball.trail.length > 11) ball.trail.pop();
         ball.vy += (315 + this.machineIndex * 18) * dt;
         const drag = Math.pow(.9982, dt * 60);
         ball.vx *= drag; ball.vy *= drag;
         const speed = Math.hypot(ball.vx, ball.vy);
-        if (speed > 1550) { ball.vx *= 1550/speed; ball.vy *= 1550/speed; }
+        if (speed > 1080) { ball.vx *= 1080/speed; ball.vy *= 1080/speed; }
         ball.x += ball.vx * dt; ball.y += ball.vy * dt;
 
         if (!ball.entered && ball.x > 625 && ball.y < 320) {
@@ -201,12 +201,16 @@
         if (railHit && now - ball.lastRail > 90) {
           ball.lastRail = now; this.callbacks.onRail?.();
           if (ball.impactPower > 260) { this.burst(ball.x,ball.y,ball.impactSide>0?this.theme.secondary:this.theme.accent,8+Math.min(16,Math.floor(ball.impactPower/55)),.75); this.shake=Math.max(this.shake,Math.min(8,ball.impactPower/90)); }
-          if (ball.impactPower > 560 && now - ball.lastRicochet > 650) { ball.lastRicochet=now; this.award(350,'ROCKET RICOCHET',now); }
+          if (ball.impactPower > 560 && now - ball.lastRicochet > 650) { ball.lastRicochet=now; this.award(350,'SAUCER RICOCHET',now); }
         }
         for (const bumper of this.bumpers) this.collideCircle(ball, bumper, now, false);
         for (const sling of this.slings) this.collideCircle(ball, sling, now, true);
         for (const target of this.targets) this.collideTarget(ball, target, now);
         for (const flipper of this.flippers) this.collideFlipper(ball, flipper);
+
+        const movingSpeed=Math.hypot(ball.vx,ball.vy);
+        ball.stuckFor=movingSpeed<42&&ball.y>760?ball.stuckFor+dt:0;
+        if(ball.stuckFor>.8){ball.vx+=(ball.x<380?95:-95);ball.vy=Math.max(ball.vy,175);ball.stuckFor=0;this.callbacks.onUnstuck?.()}
 
         if (ball.y < 205 && ball.entered && now - ball.lastLane > 900) {
           ball.lastLane = now;
@@ -257,7 +261,7 @@
       ball.x+=nx*push;ball.y+=ny*push;
       const dot=ball.vx*nx+ball.vy*ny;
       if(dot<0){ball.vx-=1.9*dot*nx;ball.vy-=1.9*dot*ny}
-      const kick=sling?430:505;ball.vx+=nx*kick;ball.vy+=ny*kick;
+      const kick=sling?350:410;ball.vx+=nx*kick;ball.vy+=ny*kick;
       if(now-object.last>150){object.last=now;object.flash=1;this.callbacks.onBumper?.(sling);this.award(sling?650:1000,sling?'PLASMA SLING':'BIO BUMPER',now);this.burst(object.x,object.y,object.index%2?this.theme.secondary:this.theme.accent,sling?16:24,sling?1.1:1.5);this.pulses.push({x:object.x,y:object.y,r:object.r,life:1,color:object.index%2?this.theme.secondary:this.theme.accent});this.shake=Math.max(this.shake,sling?4:8);if(!sling&&++this.coreHits>=8){this.coreHits=0;this.callbacks.onCoreCharged?.()}}
     }
 
@@ -277,7 +281,7 @@
       const nx=distance>.001?ox/distance:0,ny=distance>.001?oy/distance:-1,push=limit-distance;ball.x+=nx*push;ball.y+=ny*push;
       const rx=px-flipper.x,ry=py-flipper.y,svx=-flipper.angular*ry,svy=flipper.angular*rx,rvx=ball.vx-svx,rvy=ball.vy-svy,dot=rvx*nx+rvy*ny;
       if(dot<0){ball.vx=rvx-1.88*dot*nx+svx;ball.vy=rvy-1.88*dot*ny+svy}
-      if(flipper.pressed){ball.vy-=260;ball.vx+=flipper.side==='left'?85:-85}
+      if(flipper.pressed){ball.vy-=220;ball.vx+=flipper.side==='left'?72:-72}
     }
 
     drain(ball){
@@ -369,12 +373,11 @@
 
     drawBalls(c){
       for(const ball of this.balls){
-        for(let i=ball.trail.length-1;i>=0;i--){const point=ball.trail[i],life=1-i/ball.trail.length;c.save();c.translate(point.x,point.y);c.rotate(point.rotation);c.globalAlpha=life*.3;c.fillStyle=i%2?this.theme.accent:this.theme.secondary;c.shadowColor=c.fillStyle;c.shadowBlur=12;c.beginPath();c.moveTo(0,10);c.lineTo(4+life*3,22+life*14);c.lineTo(-4-life*3,22+life*14);c.closePath();c.fill();c.restore()}
-        c.save();c.translate(ball.x,ball.y);c.rotate(ball.rotation+ball.bank*.14);c.shadowColor=this.theme.accent;c.shadowBlur=15+ball.flash*18;
-        if(!ball.ready){const flame=18+Math.random()*15*ball.thrust,flameGradient=c.createLinearGradient(0,12,0,36);flameGradient.addColorStop(0,'#ffffff');flameGradient.addColorStop(.3,this.theme.secondary);flameGradient.addColorStop(1,'rgba(255,79,154,0)');c.fillStyle=flameGradient;c.beginPath();c.moveTo(-6,11);c.quadraticCurveTo(0,flame,0,34+Math.random()*10);c.quadraticCurveTo(0,flame,6,11);c.closePath();c.fill()}
-        c.fillStyle='#091220';c.strokeStyle='#dcfff8';c.lineWidth=2.2;c.beginPath();c.moveTo(0,-24);c.quadraticCurveTo(12,-9,11,14);c.lineTo(0,9);c.lineTo(-11,14);c.quadraticCurveTo(-12,-9,0,-24);c.closePath();c.fill();c.stroke();
-        c.fillStyle=this.theme.accent;c.beginPath();c.moveTo(-8,-2);c.lineTo(-22,15);c.lineTo(-8,11);c.closePath();c.moveTo(8,-2);c.lineTo(22,15);c.lineTo(8,11);c.closePath();c.fill();
-        c.fillStyle=ball.flash?'#ffffff':this.theme.secondary;c.shadowColor=c.fillStyle;c.shadowBlur=16;c.beginPath();c.ellipse(0,-5,4,9,0,0,TAU);c.fill();
+        for(let i=ball.trail.length-1;i>=0;i--){const point=ball.trail[i],life=1-i/ball.trail.length;c.save();c.translate(point.x,point.y);c.globalAlpha=life*.2;c.strokeStyle=i%2?this.theme.accent:this.theme.secondary;c.lineWidth=2;c.shadowColor=c.strokeStyle;c.shadowBlur=9;c.beginPath();c.ellipse(0,0,15+life*5,5+life*2,0,0,TAU);c.stroke();c.restore()}
+        c.save();c.translate(ball.x,ball.y);c.rotate(ball.rotation+ball.bank*.08);c.shadowColor=this.theme.accent;c.shadowBlur=15+ball.flash*18;
+        const hull=c.createLinearGradient(0,-12,0,12);hull.addColorStop(0,'#f5ffff');hull.addColorStop(.28,'#8fa6b2');hull.addColorStop(.58,'#263845');hull.addColorStop(1,'#090f18');c.fillStyle=hull;c.strokeStyle='#e8ffff';c.lineWidth=2.2;c.beginPath();c.ellipse(0,2,25,9,0,0,TAU);c.fill();c.stroke();
+        const dome=c.createRadialGradient(-5,-8,2,0,-4,15);dome.addColorStop(0,'#ffffff');dome.addColorStop(.3,ball.flash?'#ffffff':this.theme.accent);dome.addColorStop(1,'#142934');c.fillStyle=dome;c.beginPath();c.ellipse(0,-4,13,9,0,Math.PI,TAU);c.fill();c.strokeStyle='rgba(225,255,255,.75)';c.lineWidth=1.5;c.stroke();
+        c.fillStyle=this.theme.secondary;c.shadowColor=c.fillStyle;c.shadowBlur=12;for(const lx of[-14,0,14]){c.beginPath();c.arc(lx,5,2.4,0,TAU);c.fill()}
         if(ball.flash>.05){c.globalAlpha=ball.flash;c.strokeStyle=ball.impactSide>0?this.theme.secondary:this.theme.hot;c.lineWidth=4;c.beginPath();c.moveTo(ball.impactSide>0?13:-13,-8);c.lineTo(ball.impactSide>0?25:-25,-16);c.stroke()}
         c.restore();
       }
