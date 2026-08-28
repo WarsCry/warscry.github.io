@@ -108,7 +108,7 @@
     table: $('tableMode'), tableMessage: $('tableMessage'), tableScore: $('tableScore'), tableMultiplier: $('tableMultiplier'), tableBalls: $('tableBalls'), tableMission: $('tableMission')
   };
   let selected = Math.max(0,Math.min(2,Number(new URLSearchParams(location.search).get('machine')||1)-1)), mode = 'intro', gameRoot = null, activeProfile = null, gameActive = false;
-  let score = 0, multiplier = 1, ballsLeft = 3, targetBank = 0, coreCharge = 0, multiballStarted = false, extraBallAwarded = false;
+  let score = 0, multiplier = 1, ballsLeft = 2, targetBank = 0, coreCharge = 0, multiballStarted = false, extraBallAwarded = false;
   let balls = [], bumpers = [], targets = [], walls = [], flippers = [], rampSensors = [], decor = [], messageTimer = 0, physicsAccumulator = 0, tableCreature = null, plunger = null;
   let leftPressed = false, rightPressed = false;
   const walkingInput = { forward:false, back:false, left:false, right:false };
@@ -240,7 +240,7 @@
   }
   function addScore(points, label) {
     score += points * multiplier; updateHud(); if (label) announce(`${label}  +${(points * multiplier).toLocaleString()}`, 850);
-    if (score >= 100000 && !extraBallAwarded) { extraBallAwarded = true; ballsLeft++; sound('extra'); announce('EXTRA BALL AWARDED', 1800); updateHud(); }
+    if (score >= 100000 && !extraBallAwarded) { extraBallAwarded = true; ballsLeft++; sound('extra'); announce('EXTRA SAUCER LOADED IN SPRING', 2100); updateHud(); }
   }
 
   function localBox(name, width, height, depth, x, y, z, material, parent = gameRoot) {
@@ -337,7 +337,7 @@
   function checkRamps(ball){rampSensors.forEach((sensor,index)=>{const keyName=`${index}`;if(ball.z>.85)ball.rampPass.delete(keyName);if(ball.prevZ>.45&&ball.z<=.45&&Math.abs(ball.x-sensor.x)<.72&&!ball.rampPass.has(keyName)){ball.rampPass.add(keyName);addScore(2500,index?'RIGHT ORBIT':'LEFT ORBIT');sound('ramp');burst(sensor.x,sensor.z,index?machines[selected].secondary:machines[selected].accent)}})}
   function startMultiball(){multiballStarted=true;multiplier=Math.min(8,multiplier+1);sound('multiball');announce(activeProfile.jackpot,2600);addScore(10000,'CORE CHARGED');spawnBall(false,-.5,-3.2,3.4,3.6);spawnBall(false,.5,-3.2,-3.4,3.6);updateHud()}
   function activate2DMultiball(){if(multiballStarted)return;multiballStarted=true;multiplier=Math.min(8,multiplier+1);sound('multiball');announce(activeProfile.jackpot,2600);addScore(10000,'CORE CHARGED');pinball2d.addMultiball();updateHud()}
-  function handle2DDrain(remaining){sound('drain');if(remaining){announce('MULTIBALL LOST — KEEP FIGHTING',1400);return}ballsLeft--;updateHud();if(ballsLeft>0){announce(`SAUCER ${4-ballsLeft} READY`,1600);setTimeout(()=>{if(gameActive&&mode==='play')pinball2d.serveBall()},900)}else endGame()}
+  function handle2DDrain(remaining){sound('drain');if(remaining){announce('MULTIBALL LOST — KEEP FIGHTING',1400);return}ballsLeft--;updateHud();if(ballsLeft>0){announce('NEXT SAUCER LOADED IN SPRING',1700);setTimeout(()=>{if(gameActive&&mode==='play')pinball2d.serveBall()},900)}else endGame()}
   function burst(x,z,material) {
     const pieces=[];for(let i=0;i<10;i++){const mesh=BABYLON.MeshBuilder.CreatePolyhedron('score spark',{type:1,size:.055+Math.random()*.075},scene);mesh.parent=gameRoot;mesh.position.set(x,2.63,z);mesh.material=material;pieces.push({mesh,vx:(Math.random()-.5)*.08,vy:.035+Math.random()*.07,vz:(Math.random()-.5)*.08})}
     let frames=0;const observer=scene.onBeforeRenderObservable.add(()=>{frames++;pieces.forEach(p=>{p.mesh.position.x+=p.vx;p.mesh.position.y+=p.vy;p.mesh.position.z+=p.vz;p.vy-=.002;p.mesh.rotation.y+=.15});if(frames>35){scene.onBeforeRenderObservable.remove(observer);pieces.forEach(p=>p.mesh.dispose())}})
@@ -358,7 +358,7 @@
   }
 
   function startGame(){
-    prepareAudio();mode='play';gameActive=true;activeProfile=profiles[selected];score=0;multiplier=1;ballsLeft=3;targetBank=0;coreCharge=0;multiballStarted=false;extraBallAwarded=false;balls=[];leftPressed=false;rightPressed=false;
+    prepareAudio();mode='play';gameActive=true;activeProfile=profiles[selected];score=0;multiplier=1;ballsLeft=2;targetBank=0;coreCharge=0;multiballStarted=false;extraBallAwarded=false;balls=[];leftPressed=false;rightPressed=false;
     avatar.target=null;avatar.root.setEnabled(false);ui.lobby.classList.add('hidden');ui.walk.classList.add('hidden');ui.result.classList.add('hidden');ui.hud.classList.add('hidden');ui.controls.classList.add('hidden');ui.leave.classList.add('hidden');ui.table.classList.remove('hidden');shell.classList.add('table-open');camera.detachControl();
     pinball2d.start(selected,activeProfile);updateHud();startMusic();
   }

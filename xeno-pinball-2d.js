@@ -52,13 +52,13 @@
       this.targets = layout.targets.map((t, i) => ({ x:t[0], y:t[1], r:23, index:i, lit:false, flash:0, last:0 }));
       this.portal = layout.portal;
       this.walls = [
-        [58,1034,58,220],[58,220,118,96],[118,96,572,96],[572,96,622,148],[700,188,700,1034],
+        [58,1034,58,220],[58,220,118,96],[118,96,270,96],[490,96,572,96],[572,96,622,148],[700,188,700,1034],
         [625,305,625,858],[58,725,205,918],[625,725,555,918],[122,700,185,615],[638,700,575,615],
         [205,918,252,958],[555,918,508,958],
       ].map((s, i) => ({ ax:s[0], ay:s[1], bx:s[2], by:s[3], width:i < 5 ? 8 : 6 }));
       this.slings = [{ x:216,y:820,r:39,index:20,last:0 },{ x:544,y:820,r:39,index:21,last:0 }];
       this.upperWalls = [
-        [58,1034,58,150],[58,150,155,72],[155,72,605,72],[605,72,702,150],[702,150,702,1034],
+        [58,1034,58,150],[58,150,155,72],[155,72,270,72],[490,72,605,72],[605,72,702,150],[702,150,702,1034],
         [58,760,205,918],[702,760,555,918],[205,918,252,958],[555,918,508,958],
         [150,650,260,565],[610,650,500,565],
       ].map((s,i)=>({ax:s[0],ay:s[1],bx:s[2],by:s[3],width:i<5?8:6}));
@@ -125,7 +125,7 @@
       this.charge = clamp((performance.now() - this.chargeStarted) / 1050, .22, 1);
       ball.ready = false;
       ball.vx = 0;
-      ball.vy = -(700 + this.charge * 360);
+      ball.vy = -(650 + this.charge * 320);
       ball.thrust = 1;
       this.callbacks.onCharge?.(null);
       this.callbacks.onLaunch?.(Math.round(this.charge * 100));
@@ -184,11 +184,11 @@
         const previousVx = ball.vx, previousVy = ball.vy;
         ball.trail.unshift({x:ball.x,y:ball.y,rotation:ball.rotation});
         if (ball.trail.length > 11) ball.trail.pop();
-        ball.vy += (315 + this.machineIndex * 18) * dt;
+        ball.vy += (292 + this.machineIndex * 16) * dt;
         const drag = Math.pow(.9982, dt * 60);
         ball.vx *= drag; ball.vy *= drag;
         const speed = Math.hypot(ball.vx, ball.vy);
-        if (speed > 1080) { ball.vx *= 1080/speed; ball.vy *= 1080/speed; }
+        if (speed > 950) { ball.vx *= 950/speed; ball.vy *= 950/speed; }
         ball.x += ball.vx * dt; ball.y += ball.vy * dt;
 
         if (!ball.entered && ball.x > 625 && ball.y < 320) {
@@ -205,8 +205,8 @@
           this.shake = 10;
         }
         ball.layerCooldown=Math.max(0,ball.layerCooldown-dt);if(ball.layer===1)ball.layerTime+=dt;
-        if(ball.layer===0&&ball.layerCooldown===0&&ball.entered&&ball.y<145&&ball.x>145&&ball.x<615){
-          ball.layer=1;ball.layerTime=0;this.activeLayer=1;ball.x=380;ball.y=940;ball.vx*=.32;ball.vy=-Math.max(520,Math.abs(ball.vy)*.72);ball.trail=[];ball.stuckFor=0;
+        if(ball.layer===0&&ball.layerCooldown===0&&ball.entered&&ball.y<145&&ball.x>225&&ball.x<535){
+          ball.layer=1;ball.layerTime=0;this.activeLayer=1;ball.x=380;ball.y=940;ball.vx*=.3;ball.vy=-Math.max(460,Math.abs(ball.vy)*.68);ball.trail=[];ball.stuckFor=0;
           this.award(3000,'UPPER ORBIT',now);this.callbacks.onLayer?.(1);this.pulses.push({x:380,y:900,r:24,life:1,color:this.theme.secondary});this.burst(380,900,this.theme.secondary,34,1.5);this.shake=9;
         }else if(ball.layer===1&&((ball.y<150&&ball.x>110&&ball.x<650)||ball.layerTime>16)){
           ball.layer=0;ball.layerTime=0;ball.layerCooldown=4;this.activeLayer=0;ball.x=380;ball.y=165;ball.vx*=.45;ball.vy=Math.max(260,Math.abs(ball.vy)*.48);ball.trail=[];ball.stuckFor=0;
@@ -279,7 +279,7 @@
       ball.x+=nx*push;ball.y+=ny*push;
       const dot=ball.vx*nx+ball.vy*ny;
       if(dot<0){ball.vx-=1.9*dot*nx;ball.vy-=1.9*dot*ny}
-      const kick=sling?350:410;ball.vx+=nx*kick;ball.vy+=ny*kick;
+      const kick=sling?315:370;ball.vx+=nx*kick;ball.vy+=ny*kick;
       if(now-object.last>150){object.last=now;object.flash=1;this.callbacks.onBumper?.(sling);this.award(sling?650:1000,sling?'PLASMA SLING':'BIO BUMPER',now);this.burst(object.x,object.y,object.index%2?this.theme.secondary:this.theme.accent,sling?16:24,sling?1.1:1.5);this.pulses.push({x:object.x,y:object.y,r:object.r,life:1,color:object.index%2?this.theme.secondary:this.theme.accent});this.shake=Math.max(this.shake,sling?4:8);if(!sling&&++this.coreHits>=8){this.coreHits=0;this.callbacks.onCoreCharged?.()}}
     }
 
@@ -299,7 +299,7 @@
       const nx=distance>.001?ox/distance:0,ny=distance>.001?oy/distance:-1,push=limit-distance;ball.x+=nx*push;ball.y+=ny*push;
       const rx=px-flipper.x,ry=py-flipper.y,svx=-flipper.angular*ry,svy=flipper.angular*rx,rvx=ball.vx-svx,rvy=ball.vy-svy,dot=rvx*nx+rvy*ny;
       if(dot<0){ball.vx=rvx-1.88*dot*nx+svx;ball.vy=rvy-1.88*dot*ny+svy}
-      if(flipper.pressed){ball.vy-=220;ball.vx+=flipper.side==='left'?72:-72}
+      if(flipper.pressed){ball.vy-=200;ball.vx+=flipper.side==='left'?65:-65}
     }
 
     drain(ball){
