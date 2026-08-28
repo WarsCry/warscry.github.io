@@ -4,7 +4,7 @@ const starCount=document.querySelector('#starCount'),celebration=document.queryS
 const encouragement=document.querySelector('#encouragement'),rewardIcon=document.querySelector('#rewardIcon');
 const rewardTitle=document.querySelector('#rewardTitle'),rewardText=document.querySelector('#rewardText');
 const themeButton=document.querySelector('#themeButton'),languageButton=document.querySelector('#languageButton');
-let stars=0,currentGame='',soundOn=true,audioContext,audioMaster,audioCompressor,audioEffects,audioMusic,crowdYayBuffer,crowdYayLoading,praiseIndex=0,theme='cosmos',language='fr',lastMemorySignature='',storyStep=0,storyRewarded=false,storyVoiceToken=0,currentStoryKey='',ambience=null,mazeAnimation=0;
+let stars=0,currentGame='',soundOn=true,audioContext,audioMaster,audioCompressor,audioEffects,audioMusic,crowdYayBuffer,crowdYayLoading,praiseIndex=0,theme='cosmos',language='fr',lastMemorySignature='',lastMazeSignature='',storyStep=0,storyRewarded=false,storyVoiceToken=0,currentStoryKey='',ambience=null,mazeAnimation=0;
 
 const copy={
   fr:{home:'Accueil',welcomeKicker:'MISSION DES PETITS EXPLORATEURS',welcomeTitle:'Choisis un jeu!',welcomeText:'Sans pub. Sans achat. Joue autant que tu veux.',parent:'💜 Conçu pour les petites mains — aucun lien caché dans les jeux.',play:'Jouer',listen:'Écouter',again:'Encore! 🔄',newDrawing:'Nouveau dessin! 🎨',themeCosmos:'Mode Cosmos',themeUnicorn:'Mode Licorne',soundOn:'Désactiver les sons',soundOff:'Activer les sons',
@@ -185,11 +185,11 @@ function sound(type='good'){
 }
 function cheer(message){const options=encouragementSets[language];encouragement.textContent=message||options[Math.floor(Math.random()*options.length)];encouragement.classList.remove('show');void encouragement.offsetWidth;encouragement.classList.add('show');setTimeout(()=>encouragement.classList.remove('show'),900)}
 function burst(){const icons=theme==='cosmos'?['⭐','✨','💜','💚']:['🌸','✨','💖','🌈'];for(let i=0;i<18;i++){const p=document.createElement('i');p.className='spark';p.textContent=icons[i%icons.length];p.style.setProperty('--x',`${(Math.random()-.5)*520}px`);p.style.setProperty('--y',`${-100-Math.random()*330}px`);p.style.setProperty('--r',`${Math.random()*540-270}deg`);celebration.append(p);setTimeout(()=>p.remove(),1500)}}
-function celebrate(){
+function celebrate(onComplete){
   stars++;starCount.textContent=stars;starCount.parentElement.classList.remove('score-pop');void starCount.offsetWidth;starCount.parentElement.classList.add('score-pop');
   const praises=praiseSets[language],praise=praises[praiseIndex++%praises.length];rewardTitle.textContent=praise[0];rewardText.textContent=praise[1];rewardIcon.textContent=praise[2];
   sound('good');setTimeout(kidsCrowdYay,70);setTimeout(applause,180);setTimeout(()=>speakPraise(`${praise[0]} ${praise[1]}`),1450);celebration.classList.add('show');celebration.setAttribute('aria-hidden','false');burst();
-  setTimeout(()=>{celebration.classList.remove('show');celebration.setAttribute('aria-hidden','true');newRound.classList.remove('hidden')},2700);
+  setTimeout(()=>{celebration.classList.remove('show');celebration.setAttribute('aria-hidden','true');if(onComplete){newRound.classList.add('hidden');onComplete()}else newRound.classList.remove('hidden')},2700);
 }
 function labels(){return copy[language]}
 function cardCopy(game){const base=[...labels().cards[game]];if(game==='memory')base[1]=theme==='cosmos'?(language==='fr'?'Mémoire spatiale':'Space Memory'):(language==='fr'?'Mémoire enchantée':'Enchanted Memory');if(game==='counting'){base[0]=language==='fr'?(theme==='cosmos'?'MISSION ÉTOILES':'MISSION FLEURS'):(theme==='cosmos'?'STAR MISSION':'FLOWER MISSION');base[1]=language==='fr'?(theme==='cosmos'?'Compte les étoiles':'Compte les fleurs'):(theme==='cosmos'?'Count the stars':'Count the flowers')}return base}
@@ -222,10 +222,14 @@ function buildPattern(){
 
 function buildMaze(){
   instruction.textContent=labels().instructions.maze;const cols=10,rows=7,width=900,height=620,margin=34,cellW=(width-margin*2)/cols,cellH=(height-margin*2)/rows;
-  const cells=Array.from({length:rows},()=>Array.from({length:cols},()=>({walls:[true,true,true,true],visited:false}))),directions=[{dx:0,dy:-1,wall:0,opposite:2},{dx:1,dy:0,wall:1,opposite:3},{dx:0,dy:1,wall:2,opposite:0},{dx:-1,dy:0,wall:3,opposite:1}];
-  const stack=[[0,0]];cells[0][0].visited=true;
-  while(stack.length){const [x,y]=stack[stack.length-1],choices=shuffle(directions).filter(d=>{const nx=x+d.dx,ny=y+d.dy;return nx>=0&&nx<cols&&ny>=0&&ny<rows&&!cells[ny][nx].visited});if(!choices.length){stack.pop();continue}const d=choices[0],nx=x+d.dx,ny=y+d.dy;cells[y][x].walls[d.wall]=false;cells[ny][nx].walls[d.opposite]=false;cells[ny][nx].visited=true;stack.push([nx,ny])}
-  for(let i=0;i<9;i++){const x=Math.floor(Math.random()*cols),y=Math.floor(Math.random()*rows),available=directions.filter(d=>x+d.dx>=0&&x+d.dx<cols&&y+d.dy>=0&&y+d.dy<rows);if(!available.length)continue;const d=available[Math.floor(Math.random()*available.length)],nx=x+d.dx,ny=y+d.dy;cells[y][x].walls[d.wall]=false;cells[ny][nx].walls[d.opposite]=false}
+  const directions=[{dx:0,dy:-1,wall:0,opposite:2},{dx:1,dy:0,wall:1,opposite:3},{dx:0,dy:1,wall:2,opposite:0},{dx:-1,dy:0,wall:3,opposite:1}];let cells,mazeSignature;
+  do{
+    cells=Array.from({length:rows},()=>Array.from({length:cols},()=>({walls:[true,true,true,true],visited:false})));const stack=[[0,0]];cells[0][0].visited=true;
+    while(stack.length){const [x,y]=stack[stack.length-1],choices=shuffle(directions).filter(d=>{const nx=x+d.dx,ny=y+d.dy;return nx>=0&&nx<cols&&ny>=0&&ny<rows&&!cells[ny][nx].visited});if(!choices.length){stack.pop();continue}const d=choices[0],nx=x+d.dx,ny=y+d.dy;cells[y][x].walls[d.wall]=false;cells[ny][nx].walls[d.opposite]=false;cells[ny][nx].visited=true;stack.push([nx,ny])}
+    for(let i=0;i<9;i++){const x=Math.floor(Math.random()*cols),y=Math.floor(Math.random()*rows),available=directions.filter(d=>x+d.dx>=0&&x+d.dx<cols&&y+d.dy>=0&&y+d.dy<rows);if(!available.length)continue;const d=available[Math.floor(Math.random()*available.length)],nx=x+d.dx,ny=y+d.dy;cells[y][x].walls[d.wall]=false;cells[ny][nx].walls[d.opposite]=false}
+    mazeSignature=cells.flat().map(cell=>cell.walls.map(Number).join('')).join('');
+  }while(mazeSignature===lastMazeSignature);
+  lastMazeSignature=mazeSignature;
   const candidates=[];for(let y=0;y<rows;y++)for(let x=0;x<cols;x++)if(x+y>=4&&!(x===cols-1&&y===rows-1))candidates.push([x,y]);
   const keyCells=shuffle(candidates).slice(0,3),keys=new Map(keyCells.map(([x,y],i)=>[`${x},${y}`,i])),player={x:0,y:0},trail=[[0,0]];let found=0,completed=false,dragging=false,lastMove=0,lastBump=0,lockedNotice=0;
   area.innerHTML=`<div class="kids-maze"><div class="maze-hud"><span>🔑 <b>0</b>/3 ${labels().mazeKeys}</span><em>${theme==='cosmos'?'👽 🚀':'🦄 🏰'}</em></div><div class="kids-maze-frame"><canvas class="kids-maze-canvas" width="${width}" height="${height}" aria-label="${labels().cards.maze[1]}"></canvas></div><div class="maze-pad" aria-label="${language==='fr'?'Flèches du labyrinthe':'Maze arrows'}"><button data-dx="0" data-dy="-1" aria-label="${language==='fr'?'Monter':'Up'}">▲</button><button data-dx="-1" data-dy="0" aria-label="${language==='fr'?'Gauche':'Left'}">◀</button><button data-dx="0" data-dy="1" aria-label="${language==='fr'?'Descendre':'Down'}">▼</button><button data-dx="1" data-dy="0" aria-label="${language==='fr'?'Droite':'Right'}">▶</button></div></div>`;
@@ -234,7 +238,7 @@ function buildMaze(){
   function checkCell(){
     const id=`${player.x},${player.y}`;
     if(keys.has(id)){keys.delete(id);found++;hudCount.textContent=found;frame.classList.remove('key-found');void frame.offsetWidth;frame.classList.add('key-found');sound('key');cheer(labels().mazeOneKey);if(found===3){setTimeout(()=>sound('unlock'),260);instruction.textContent=labels().mazeExit;frame.classList.add('unlocked');setTimeout(()=>{cheer(labels().mazeAllKeys);speak(labels().mazeAllKeys)},320)}else speak(labels().mazeOneKey)}
-    if(player.x===cols-1&&player.y===rows-1){if(found<3){const now=performance.now();if(now-lockedNotice>900){lockedNotice=now;sound('no');cheer(labels().mazeLocked)}}else if(!completed){completed=true;dragging=false;sound('unlock');setTimeout(celebrate,420)}}
+    if(player.x===cols-1&&player.y===rows-1){if(found<3){const now=performance.now();if(now-lockedNotice>900){lockedNotice=now;sound('no');cheer(labels().mazeLocked)}}else if(!completed){completed=true;dragging=false;sound('unlock');setTimeout(()=>celebrate(()=>{if(currentGame==='maze'&&play.classList.contains('active'))buildGame()}),420)}}
   }
   function move(dx,dy){
     if(completed)return false;const dir=dx===1?1:dx===-1?3:dy===1?2:0;if(cells[player.y][player.x].walls[dir]){const now=performance.now();if(now-lastBump>550){lastBump=now;sound('no')}return false}player.x+=dx;player.y+=dy;trail.push([player.x,player.y]);if(trail.length>35)trail.shift();sound('step');checkCell();return true
