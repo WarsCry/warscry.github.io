@@ -118,7 +118,7 @@
   const shell = document.querySelector('.shell');
   const pinball2d = new window.XenoPinball2D($('pinball2d'), {
     onScore: (points, label) => addScore(points, label),
-    onReady: () => announce('ROCKET READY — HOLD TO LAUNCH', 1700),
+    onReady: () => announce('SAUCER READY — HOLD TO LAUNCH', 1700),
     onCharge: (percent) => { $('tableLaunch').textContent = percent === null ? 'HOLD TO LAUNCH' : `POWER ${percent}%`; },
     onLaunch: (power) => { sound('launch'); announce(`PLASMA LAUNCH ${power}%`, 1000); },
     onFlipper: () => sound('flipper'),
@@ -130,6 +130,7 @@
     onCombo: (count) => { sound('target'); announce(`${count}X FLOW COMBO`, 1200); },
     onFlow: () => { sound('multiball'); announce('MAXIMUM FLOW — SCORE SURGE', 1900); },
     onCoreCharged: () => activate2DMultiball(),
+    onLayer: (layer) => { sound('ramp'); announce(layer ? 'UPPER ORBIT — SECOND DECK' : 'MAIN DECK RETURN', 1700); },
     onDrain: (remaining) => handle2DDrain(remaining),
   });
 
