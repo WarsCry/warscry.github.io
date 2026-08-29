@@ -12,15 +12,29 @@
     'voidbound.html': { accent:'#ff835c', fr:['Choisis un protocole de mission et un niveau de menace.','Sélectionne un héros; les signaux verts indiquent ses déplacements.','La couverture réduit les tirs et le panneau Dominion révèle les intentions ennemies.'], en:['Choose a mission protocol and threat level.','Select a hero; green signals show available movement.','Cover reduces ranged damage and Dominion Intel reveals enemy intentions.'] },
     'atelier-dreams.html': { accent:'#e99dff', fr:['Choisis ton nom et ton guide.','Lis l’histoire puis choisis les actions qui te ressemblent.','Tes décisions façonnent le voyage et sa conclusion.'], en:['Choose your name and guide.','Read the story, then choose actions that feel like you.','Your decisions shape the journey and its ending.'] }
   };
-  const scoreKey = 'danpcArcadeScoresV1';
-  const getScores = (id) => { try { return (JSON.parse(localStorage.getItem(scoreKey)) || {})[id] || []; } catch { return []; } };
   const modal = document.createElement('div');
   modal.className = 'arcade-launcher'; modal.setAttribute('aria-hidden','true');
   modal.innerHTML = '<section class="launcher-panel" role="dialog" aria-modal="true" aria-labelledby="launcherTitle"><button class="launcher-close" aria-label="Close">×</button><p class="launcher-kicker"></p><h2 id="launcherTitle"></h2><p class="launcher-copy"></p><div class="launcher-options"></div><input class="launcher-name" maxlength="18"><div class="launcher-actions"><button class="tutorial">TUTORIAL</button><button class="scores">SCOREBOARD</button><button class="invite">INVITE A FRIEND</button><button class="primary play-now">PLAY NOW</button></div><div class="launcher-tutorial launcher-hidden"><h3></h3><ol></ol></div><div class="launcher-scores launcher-hidden"><h3></h3><div></div></div></section>';
   document.body.append(modal);
   const q = (s) => modal.querySelector(s); let current = null, chosen = null;
   function language(){ return document.documentElement.lang === 'en' ? 'en' : 'fr'; }
-  function renderScores(){ const lang=language(), list=getScores(current.id), box=q('.launcher-scores div'); q('.launcher-scores h3').textContent=lang==='fr'?'MEILLEURS SCORES':'HIGH SCORES'; box.innerHTML=list.length?`<ol>${list.slice(0,5).map((row,i)=>`<li><b>${i+1}</b><span>${row.name||'PLAYER'}</span><strong>${row.display||row.score}</strong></li>`).join('')}</ol>`:`<p class="launcher-empty">${lang==='fr'?'Aucun score encore — sois le premier!':'No scores yet — be the first!'}</p>`; }
+  const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+  async function renderScores(){
+    const lang=language(), gameId=current.id, box=q('.launcher-scores div');
+    q('.launcher-scores h3').textContent=lang==='fr'?'CLASSEMENT MONDIAL':'GLOBAL SCOREBOARD';
+    box.innerHTML=`<p class="launcher-empty">${lang==='fr'?'Chargement du classement…':'Loading scoreboard…'}</p>`;
+    const list=window.DanArcadeScores?.listGlobal
+      ? await window.DanArcadeScores.listGlobal(gameId)
+      : (window.DanArcadeScores?.list(gameId)||[]);
+    if(!current||current.id!==gameId)return;
+    const offline=list.source==='local';
+    q('.launcher-scores h3').textContent=offline
+      ? (lang==='fr'?'CLASSEMENT LOCAL — HORS LIGNE':'LOCAL SCOREBOARD — OFFLINE')
+      : (lang==='fr'?'CLASSEMENT MONDIAL':'GLOBAL SCOREBOARD');
+    box.innerHTML=list.length
+      ? `<ol>${list.slice(0,10).map((row,i)=>`<li><b>${i+1}</b><span>${escapeHtml(row.name||'PLAYER')}</span><strong>${escapeHtml(row.display||row.score)}</strong></li>`).join('')}</ol>`
+      : `<p class="launcher-empty">${lang==='fr'?'Aucun score encore — sois le premier!':'No scores yet — be the first!'}</p>`;
+  }
   function open(link){ const url=new URL(link.href,location.href), id=url.pathname.split('/').pop(), config=games[id]; if(!config)return; const lang=language(); current={link,url,id,config}; chosen=config.options?.[0]?.[0]||null; modal.style.setProperty('--launcher-accent',config.accent); q('.launcher-kicker').textContent=lang==='fr'?'PRÊT POUR LA MISSION?':'READY FOR THE MISSION?'; q('#launcherTitle').textContent=link.closest('.game').querySelector('h3').textContent; q('.launcher-copy').textContent=lang==='fr'?'Choisis comment entrer, consulte les règles ou regarde les meilleurs scores.':'Choose how to enter, review the rules, or check the high scores.'; q('.launcher-name').placeholder=lang==='fr'?'Nom du joueur pour le classement':'Player name for the scoreboard'; q('.launcher-name').value=localStorage.getItem('danpcPlayerName')||''; q('.tutorial').textContent=lang==='fr'?'TUTORIEL':'TUTORIAL'; q('.scores').textContent=lang==='fr'?'CLASSEMENT':'SCOREBOARD'; q('.invite').textContent=lang==='fr'?'INVITER PAR COURRIEL':'INVITE BY EMAIL'; q('.play-now').textContent=lang==='fr'?'JOUER':'PLAY NOW'; q('.launcher-tutorial h3').textContent=lang==='fr'?'COMMENT JOUER':'HOW TO PLAY'; q('.launcher-tutorial ol').innerHTML=config[lang].map(step=>`<li>${step}</li>`).join(''); const options=q('.launcher-options'); options.innerHTML=''; (config.options||[]).forEach(([value,label],index)=>{const b=document.createElement('button');b.textContent=label;b.classList.toggle('selected',index===0);b.onclick=()=>{chosen=value;options.querySelectorAll('button').forEach(x=>x.classList.toggle('selected',x===b))};options.append(b)}); options.classList.toggle('launcher-hidden',!config.options); q('.launcher-tutorial').classList.add('launcher-hidden');q('.launcher-scores').classList.add('launcher-hidden');renderScores();modal.classList.add('open');modal.setAttribute('aria-hidden','false');q('.launcher-close').focus(); }
   document.querySelectorAll('.game:not(.cosmo) .play').forEach(link=>link.addEventListener('click',event=>{const id=new URL(link.href,location.href).pathname.split('/').pop();if(games[id]){event.preventDefault();open(link)}}));
   q('.launcher-close').onclick=()=>{modal.classList.remove('open');modal.setAttribute('aria-hidden','true')}; modal.addEventListener('click',e=>{if(e.target===modal)q('.launcher-close').click()});
