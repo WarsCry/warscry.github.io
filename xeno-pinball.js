@@ -246,7 +246,7 @@
   }
   function addScore(points, label) {
     score += points * multiplier; updateHud(); if (label) announce(`${label}  +${(points * multiplier).toLocaleString()}`, 850);
-    if (score >= 100000 && !extraBallAwarded) { extraBallAwarded = true; ballsLeft++; sound('extra'); announce('EXTRA SAUCER LOADED IN SPRING', 2100); updateHud(); }
+    if (score >= 100000 && !extraBallAwarded) { extraBallAwarded = true; if (mode==='play'&&pinball2d.active) pinball2d.queueExtraBall(); else ballsLeft=Math.min(2,ballsLeft+1); sound('extra'); announce('EXTRA SAUCER LOADED IN SPRING', 2100); updateHud(); }
   }
 
   function localBox(name, width, height, depth, x, y, z, material, parent = gameRoot) {
@@ -341,7 +341,7 @@
   }
   function hitTargets(ball,now){targets.forEach(target=>{const distance=Math.hypot(ball.x-target.x,ball.z-target.z);if(distance<ball.r+target.r){const nx=(ball.x-target.x)/(distance||1),nz=(ball.z-target.z)/(distance||1);ball.vx+=nx*1.8;ball.vz+=nz*1.8;if(now-target.last>400){target.last=now;if(!target.lit){target.lit=true;target.lamp.material=mat.gold;targetBank++;addScore(750,'ALIEN SEAL');sound('target');burst(target.x,target.z,mat.gold)}if(targetBank>=targets.length){targetBank=0;multiplier=Math.min(8,multiplier+1);announce(`TARGET BANK COMPLETE  ×${multiplier}`,1700);sound('ramp');setTimeout(()=>targets.forEach(item=>{item.lit=false;item.lamp.material=machines[selected].accent}),800);updateHud()}}}})}
   function checkRamps(ball){rampSensors.forEach((sensor,index)=>{const keyName=`${index}`;if(ball.z>.85)ball.rampPass.delete(keyName);if(ball.prevZ>.45&&ball.z<=.45&&Math.abs(ball.x-sensor.x)<.72&&!ball.rampPass.has(keyName)){ball.rampPass.add(keyName);addScore(2500,index?'RIGHT ORBIT':'LEFT ORBIT');sound('ramp');burst(sensor.x,sensor.z,index?machines[selected].secondary:machines[selected].accent)}})}
-  function startMultiball(){multiballStarted=true;multiplier=Math.min(8,multiplier+1);sound('multiball');announce(activeProfile.jackpot,2600);addScore(10000,'CORE CHARGED');spawnBall(false,-.5,-3.2,3.4,3.6);spawnBall(false,.5,-3.2,-3.4,3.6);updateHud()}
+  function startMultiball(){multiballStarted=true;multiplier=Math.min(8,multiplier+1);sound('multiball');announce(activeProfile.jackpot,2600);addScore(10000,'CORE CHARGED');if(balls.filter(item=>item.alive).length<2)spawnBall(false,0,-3.2,Math.random()<.5?3.4:-3.4,3.6);updateHud()}
   function activate2DMultiball(){if(multiballStarted)return;multiballStarted=true;multiplier=Math.min(8,multiplier+1);sound('multiball');announce(activeProfile.jackpot,2600);addScore(10000,'CORE CHARGED');pinball2d.addMultiball();updateHud()}
   function handle2DDrain(remaining){sound('drain');if(remaining){announce('MULTIBALL LOST — KEEP FIGHTING',1400);return}ballsLeft--;updateHud();if(ballsLeft>0){announce('NEXT SAUCER LOADED IN SPRING',1700);setTimeout(()=>{if(gameActive&&mode==='play')pinball2d.serveBall()},900)}else endGame()}
   function burst(x,z,material) {
