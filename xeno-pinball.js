@@ -8,15 +8,15 @@
   scene.fogDensity = .0042;
   scene.fogColor = new BABYLON.Color3(.025, .038, .065);
   const camera = new BABYLON.ArcRotateCamera('arcade camera', -Math.PI / 2, 1.12, 26, new BABYLON.Vector3(0, 3, -5), scene);
-  camera.lowerBetaLimit = .8; camera.upperBetaLimit = 1.35; camera.lowerRadiusLimit = 9; camera.upperRadiusLimit = 23; camera.panningSensibility = 0; camera.attachControl(canvas, true);
+  camera.lowerBetaLimit = .8; camera.upperBetaLimit = 1.48; camera.lowerRadiusLimit = 9; camera.upperRadiusLimit = 23; camera.panningSensibility = 0; camera.attachControl(canvas, true);
   const hemi = new BABYLON.HemisphericLight('room glow', new BABYLON.Vector3(0, 1, 0), scene); hemi.intensity = .72; hemi.diffuse = new BABYLON.Color3(.46, .66, .72); hemi.groundColor = new BABYLON.Color3(.09, .11, .17);
-  const key = new BABYLON.PointLight('central reactor', new BABYLON.Vector3(0, 8.5, -2), scene); key.diffuse = new BABYLON.Color3(.48, .9, .86); key.intensity = 44; key.range = 38;
+  const key = new BABYLON.PointLight('central reactor', new BABYLON.Vector3(0, 8.5, -2), scene); key.diffuse = new BABYLON.Color3(.48, .9, .86); key.intensity = 32; key.range = 38;
   const floorFill = new BABYLON.PointLight('walkway fill', new BABYLON.Vector3(0, 2.4, 5), scene); floorFill.diffuse = new BABYLON.Color3(.3, .54, .62); floorFill.intensity = 11; floorFill.range = 19;
   const glow = new BABYLON.GlowLayer('neon bloom', scene, { blurKernelSize: 48 }); glow.intensity = .75;
   const pipeline = new BABYLON.DefaultRenderingPipeline('cinematic', true, scene, [camera]); pipeline.fxaaEnabled = true; pipeline.bloomEnabled = true; pipeline.bloomWeight = .1; pipeline.bloomThreshold = .92; pipeline.imageProcessingEnabled = true; pipeline.imageProcessing.contrast = 1.08; pipeline.imageProcessing.exposure = 1;
   const color = BABYLON.Color3.FromHexString;
   const makeMat = (name, hex, emissive = null, metal = .25, rough = .38) => { const m = new BABYLON.PBRMaterial(name, scene); m.albedoColor = color(hex); m.metallic = metal; m.roughness = rough; if (emissive) m.emissiveColor = color(emissive); return m; };
-  const mat = { floor: makeMat('black glass', '#07151d', null, .75, .18), wall: makeMat('ribbed hull', '#10182b', null, .7, .28), mint: makeMat('mint neon', '#70ffe1', '#36bfa6', .2, .18), acid: makeMat('acid neon', '#caff62', '#7eab35', .2, .18), violet: makeMat('violet neon', '#a26fff', '#5e35b8', .2, .18), pink: makeMat('pink neon', '#ff4f9a', '#a01f58', .2, .18), gold: makeMat('gold trim', '#ffd66c', '#654914', .72, .22), chrome: makeMat('dark chrome', '#566675', null, .9, .14), glass: makeMat('canopy glass', '#15384b', '#071d2b', .1, .08) };
+  const mat = { floor: makeMat('black glass', '#07151d', null, .75, .18), wall: makeMat('ribbed hull', '#10182b', null, .7, .28), mint: makeMat('mint neon', '#70ffe1', '#36bfa6', .2, .18), acid: makeMat('acid neon', '#caff62', '#7eab35', .2, .18), violet: makeMat('violet neon', '#a26fff', '#5e35b8', .2, .18), pink: makeMat('pink neon', '#ff4f9a', '#a01f58', .2, .18), gold: makeMat('gold trim', '#ffd66c', '#654914', .72, .22), chrome: makeMat('dark chrome', '#566675', null, .9, .14), glass: makeMat('canopy glass', '#15384b', '#071d2b', .1, .08), alien: makeMat('friendly alien green', '#61c948', '#081b0d', .05, .62), eye: makeMat('friendly alien eyes', '#020609', '#071418', .45, .12) };
   mat.glass.alpha = .64;
   const hullTexture = new BABYLON.Texture('assets/textures/alien-hull-v1.webp', scene, false, false, BABYLON.Texture.TRILINEAR_SAMPLINGMODE); hullTexture.uScale = 5; hullTexture.vScale = 5;
   const wallTexture = hullTexture.clone(); wallTexture.uScale = 2.2; wallTexture.vScale = 5.5;
@@ -25,62 +25,69 @@
   const box = (name, w, h, d, x, y, z, material) => { const mesh = BABYLON.MeshBuilder.CreateBox(name, { width: w, height: h, depth: d }, scene); mesh.position.set(x, y, z); mesh.material = material; return mesh; };
 
   function buildRoom() {
-    const floor = BABYLON.MeshBuilder.CreateCylinder('orbital lounge deck', { diameter: 54, height: .65, tessellation: 64 }, scene); floor.position.y = -.5; floor.material = mat.floor;
-    const innerDeck = BABYLON.MeshBuilder.CreateCylinder('recessed central deck', { diameter: 24.2, height: .08, tessellation: 64 }, scene); innerDeck.position.y = -.12; innerDeck.material = mat.chrome;
-    const deckRing = BABYLON.MeshBuilder.CreateTorus('central deck trim', { diameter: 24.35, thickness: .065, tessellation: 80 }, scene); deckRing.position.y = -.11; deckRing.rotation.x = Math.PI / 2; deckRing.material = mat.chrome;
+    const displayMat=(name,title,subtitle,accent)=>{const texture=new BABYLON.DynamicTexture(name,{width:768,height:420},scene,true),ctx=texture.getContext();ctx.fillStyle='#07101b';ctx.fillRect(0,0,768,420);ctx.strokeStyle=accent;ctx.lineWidth=12;ctx.strokeRect(18,18,732,384);ctx.fillStyle='#d9fffa';ctx.textAlign='center';ctx.font='900 64px Arial';ctx.fillText(title,384,178);ctx.fillStyle=accent;ctx.font='700 29px Arial';ctx.fillText(subtitle,384,250);ctx.strokeStyle='rgba(255,255,255,.16)';ctx.lineWidth=3;for(let x=110;x<690;x+=92){ctx.beginPath();ctx.moveTo(x,302);ctx.lineTo(x+38,340);ctx.stroke()}texture.update();const material=new BABYLON.StandardMaterial(`${name} material`,scene);material.diffuseTexture=texture;material.emissiveTexture=texture;material.emissiveColor=new BABYLON.Color3(.12,.12,.12);return material};
+    const floor=box('square arcade floor',38,.65,38,0,-.5,0,mat.floor);
+    const carpet=box('recessed arcade carpet',31,.07,27,0,-.14,1.5,mat.wall);
+    [[38,.11,.16,0,-.08,-18.1],[38,.11,.16,0,-.08,18.1],[.16,.11,36.2,-18.1,-.08,0],[.16,.11,36.2,18.1,-.08,0]].forEach(([w,h,d,x,y,z],i)=>box('square floor perimeter',w,h,d,x,y,z,i%2?mat.violet:mat.mint));
 
-    for(let i=0;i<12;i++){
-      const a=i/12*Math.PI*2,x=Math.sin(a)*25.5,z=Math.cos(a)*25.5;
-      const panel=box('acoustic hull panel',12.8,9.4,.7,x,4.45,z,mat.wall);panel.rotation.y=a;
-      const inset=box('recessed wall bay',9.8,6.5,.18,Math.sin(a)*25.08,4.35,Math.cos(a)*25.08,mat.chrome);inset.rotation.y=a;
-      const column=box('structural column',.62,10.5,1.15,Math.sin(a-.255)*25.15,4.8,Math.cos(a-.255)*25.15,mat.chrome);column.rotation.y=a;
-      const marker=box('wall guidance light',2.8,.09,.08,Math.sin(a)*24.94,7.55,Math.cos(a)*24.94,i%3===0?mat.gold:mat.mint);marker.rotation.y=a;
-    }
+    box('machine feature wall',38,10,.8,0,4.55,-19,mat.wall);
+    box('left arcade wall',.8,10,38,-19,4.55,0,mat.wall);
+    box('right arcade wall',.8,10,38,19,4.55,0,mat.wall);
+    box('front wall left wing',14.2,10,.8,-11.9,4.55,19,mat.wall);
+    box('front wall right wing',14.2,10,.8,11.9,4.55,19,mat.wall);
+    [[-18.45,-18.45],[18.45,-18.45],[-18.45,18.45],[18.45,18.45]].forEach(([x,z])=>box('room corner pillar',1.15,10.7,1.15,x,4.8,z,mat.chrome));
 
-    const ceilingDisk = BABYLON.MeshBuilder.CreateCylinder('coffered ceiling', { diameter: 45, height: .55, tessellation: 48 }, scene); ceilingDisk.position.y=10.35;ceilingDisk.material=mat.wall;
-    const ceilingRing = BABYLON.MeshBuilder.CreateTorus('ceiling aperture', { diameter: 25, thickness: .65, tessellation: 80 }, scene); ceilingRing.position.y=10;ceilingRing.rotation.x=Math.PI/2;ceilingRing.material=mat.chrome;
-    const washMat=makeMat('soft ceiling wash','#79939e','#173c45',.55,.3);
-    for(let i=0;i<8;i++){const a=i/8*Math.PI*2,beam=box('ceiling support',18,.28,.72,Math.sin(a)*8.5,9.92,Math.cos(a)*8.5,mat.chrome);beam.rotation.y=a;const light=box('ceiling wash light',5.5,.06,.14,Math.sin(a)*12.6,9.7,Math.cos(a)*12.6,washMat);light.rotation.y=a}
-    [[-13,-12],[13,-12],[-13,12],[13,12]].forEach(([x,z],i)=>{const loungeLight=new BABYLON.PointLight(`architectural fill ${i}`,new BABYLON.Vector3(x,5.8,z),scene);loungeLight.diffuse=i<2?new BABYLON.Color3(.28,.72,.76):new BABYLON.Color3(.42,.48,.72);loungeLight.intensity=20;loungeLight.range=22});
+    const ceiling=box('square coffered ceiling',37.6,.55,37.6,0,10.15,0,mat.wall);
+    [-12,0,12].forEach(x=>box('ceiling light rail',7.2,.08,.28,x,9.82,-7.4,x===0?mat.violet:mat.mint));
+    [-11,11].forEach(z=>box('cross ceiling rail',.28,.08,26,0,9.82,z,mat.gold));
+    const saucerMetal=new BABYLON.StandardMaterial('matte ceiling saucer',scene);saucerMetal.diffuseColor=color('#101a20');saucerMetal.emissiveColor=color('#071015');saucerMetal.specularColor=color('#000000');
+    const saucer=BABYLON.MeshBuilder.CreateCylinder('ceiling flying saucer',{diameterTop:3.3,diameterBottom:6.4,height:.58,tessellation:48},scene);saucer.position.set(0,9.45,3.5);saucer.material=saucerMetal;
+    const saucerRing=BABYLON.MeshBuilder.CreateTorus('saucer light ring',{diameter:5.25,thickness:.11,tessellation:64},scene);saucerRing.position.set(0,9.12,3.5);saucerRing.rotation.x=Math.PI/2;saucerRing.material=mat.mint;
+    const saucerDome=BABYLON.MeshBuilder.CreateSphere('saucer glass dome',{diameter:2.7,segments:24},scene);saucerDome.position.set(0,9.52,3.5);saucerDome.scaling.y=.36;saucerDome.material=saucerMetal;
 
-    [[-11,-8,-.34],[0,-11,0],[11,-8,.34]].forEach(([x,z,a],i)=>{
-      const pad=box('cabinet service plinth',7.7,.22,12.3,x,-.02,z,mat.chrome);pad.rotation.y=a;
-      const edge=box('cabinet threshold light',5.4,.045,.09,x+Math.sin(a)*4.88,.1,z+Math.cos(a)*4.88,i===0?mat.mint:i===1?mat.violet:mat.gold);edge.rotation.y=a;
-      const spot=new BABYLON.SpotLight(`cabinet gallery light ${i}`,new BABYLON.Vector3(x,8.8,z+1.5),new BABYLON.Vector3(0,-1,-.12),Math.PI/2.8,10,scene);spot.diffuse=i===0?new BABYLON.Color3(.35,1,.82):i===1?new BABYLON.Color3(.58,.35,1):new BABYLON.Color3(1,.72,.3);spot.intensity=4.6;spot.range=17;
+    [-9.2,0,9.2].forEach((x,i)=>{
+      const alcove=box('cabinet wall alcove',8.25,7.4,.2,x,4.2,-18.52,mat.chrome);
+      const cap=box('cabinet wall marquee',6.3,.11,.12,x,8.05,-18.35,i===0?mat.mint:i===1?mat.violet:mat.gold);
+      const pad=box('cabinet service plinth',7.6,.22,12.3,x,-.02,-11.7,mat.chrome);
+      const edge=box('cabinet threshold light',5.4,.045,.11,x,.1,-6.82,i===0?mat.mint:i===1?mat.violet:mat.gold);
+      const spot=new BABYLON.SpotLight(`cabinet gallery light ${i}`,new BABYLON.Vector3(x,8.9,-8.8),new BABYLON.Vector3(0,-1,-.22),Math.PI/2.65,10,scene);spot.diffuse=i===0?new BABYLON.Color3(.35,1,.82):i===1?new BABYLON.Color3(.58,.35,1):new BABYLON.Color3(1,.72,.3);spot.intensity=5.4;spot.range=15;
     });
 
-    const displayMat=(name,title,subtitle,accent)=>{const texture=new BABYLON.DynamicTexture(name,{width:768,height:420},scene,true),ctx=texture.getContext();ctx.fillStyle='#07101b';ctx.fillRect(0,0,768,420);ctx.strokeStyle=accent;ctx.lineWidth=12;ctx.strokeRect(18,18,732,384);ctx.fillStyle='#d9fffa';ctx.textAlign='center';ctx.font='900 64px Arial';ctx.fillText(title,384,178);ctx.fillStyle=accent;ctx.font='700 29px Arial';ctx.fillText(subtitle,384,250);ctx.strokeStyle='rgba(255,255,255,.16)';ctx.lineWidth=3;for(let x=110;x<690;x+=92){ctx.beginPath();ctx.moveTo(x,302);ctx.lineTo(x+38,340);ctx.stroke()}texture.update();const material=new BABYLON.StandardMaterial(`${name} material`,scene);material.diffuseTexture=texture;material.emissiveTexture=texture;material.emissiveColor=new BABYLON.Color3(.12,.12,.12);return material};
-    [['ORBITAL LEAGUE','TONIGHT · 22:00','#70ffe1'],['MULTIBALL NIGHT','THREE CABINETS · ONE CROWN','#caff62'],['TEMPLE CIRCUIT','ZERO GRAVITY FINALS','#ffd66c'],['NEBULA RECORDS','CHASE THE LIGHTS','#a26fff']].forEach(([title,subtitle,accent],i)=>{const a=[.78,2.36,3.92,5.5][i],screen=BABYLON.MeshBuilder.CreatePlane('arcade wall poster',{width:5.6,height:3.05},scene);screen.position.set(Math.sin(a)*24.55,4.65,Math.cos(a)*24.55);screen.rotation.y=a;screen.material=displayMat(`poster ${i}`,title,subtitle,accent)});
-    for(let i=0;i<20;i++){const a=i/20*Math.PI*2,marker=BABYLON.MeshBuilder.CreateCylinder('floor guide light',{diameter:.38,height:.025,tessellation:18},scene);marker.position.set(Math.sin(a)*15.2,-.135,Math.cos(a)*15.2);marker.material=i%4===0?mat.gold:i%2?mat.mint:mat.violet}
-    ;[-1,1].forEach(side=>{const bench=box('arcade lounge bench',5.4,.62,1.45,side*16,.45,5.5,mat.chrome);bench.rotation.y=side*.18;const cushion=box('lounge illuminated cushion',4.8,.2,1.1,side*16,.84,5.5,side<0?mat.violet:mat.mint);cushion.rotation.y=side*.18;for(const offset of[-2.1,2.1]){const foot=box('bench foot',.22,.55,.72,side*16+offset,.04,5.5,mat.gold);foot.rotation.y=side*.18}});
+    [['ORBITAL LEAGUE','TONIGHT · 22:00','#70ffe1',-18.52,-5,-Math.PI/2],['NEBULA RECORDS','CHASE THE LIGHTS','#a26fff',18.52,-4,Math.PI/2],['ALIEN SNACK BAR','COSMIC FUEL ONLY','#caff62',-18.52,9,-Math.PI/2],['UFO CHAMPIONS','EARTH SECTOR FINALS','#ffd66c',18.52,9,Math.PI/2]].forEach(([title,subtitle,accent,x,z,a],i)=>{const poster=BABYLON.MeshBuilder.CreatePlane('alien arcade poster',{width:5.4,height:3},scene);poster.position.set(x,4.6,z);poster.rotation.y=a;poster.material=displayMat(`poster ${i}`,title,subtitle,accent)});
 
-    const consoleBase = BABYLON.MeshBuilder.CreateCylinder('navigation console base',{diameter:4.6,height:1.1,tessellation:32},scene);consoleBase.position.set(0,.35,3.8);consoleBase.material=mat.chrome;
-    const consoleTop = BABYLON.MeshBuilder.CreateCylinder('navigation console glass',{diameterTop:3.3,diameterBottom:4.1,height:.34,tessellation:32},scene);consoleTop.position.set(0,1.05,3.8);consoleTop.material=mat.chrome;
-    const consoleTrim=BABYLON.MeshBuilder.CreateTorus('navigation console trim',{diameter:3.75,thickness:.045,tessellation:48},scene);consoleTrim.position.set(0,1.24,3.8);consoleTrim.rotation.x=Math.PI/2;consoleTrim.material=mat.mint;
-    const holoMat=new BABYLON.StandardMaterial('restrained hologram',scene);holoMat.diffuseColor=new BABYLON.Color3(.08,.25,.28);holoMat.emissiveColor=new BABYLON.Color3(.08,.38,.34);holoMat.alpha=.42;holoMat.wireframe=true;
-    const hologram = BABYLON.MeshBuilder.CreatePolyhedron('orbital navigation hologram',{type:2,size:1.05},scene);hologram.position.set(0,2.55,3.8);hologram.material=holoMat;
-    const holoRing = BABYLON.MeshBuilder.CreateTorus('navigation data ring',{diameter:3.2,thickness:.055,tessellation:64},scene);holoRing.position.copyFrom(hologram.position);holoRing.material=mat.gold;
-    scene.registerBeforeRender(()=>{hologram.rotation.y+=.0022;hologram.rotation.x+=.0007;holoRing.rotation.x+=.0018;holoRing.rotation.z-=.001});
+    for(let i=0;i<9;i++)[-1,1].forEach(side=>{const marker=BABYLON.MeshBuilder.CreateCylinder('floor guide light',{diameter:.34,height:.025,tessellation:18},scene);marker.position.set(side*3.1,-.09,13.5-i*2.15);marker.material=i%3===0?mat.gold:side<0?mat.mint:mat.violet});
+    [-1,1].forEach(side=>{const bench=box('alien lounge bench',1.45,.62,5.2,side*16.2,.45,7,mat.chrome);const cushion=box('lounge illuminated cushion',1.1,.2,4.6,side*16.2,.84,7,side<0?mat.violet:mat.mint);[-1.8,1.8].forEach(offset=>box('bench foot',.72,.55,.22,side*16.2,.04,7+offset,mat.gold))});
+
+    const crest=BABYLON.MeshBuilder.CreateTorus('alien floor crest',{diameter:5.2,thickness:.07,tessellation:64},scene);crest.position.set(0,-.08,6);crest.rotation.x=Math.PI/2;crest.material=mat.mint;
+    const crestHead=BABYLON.MeshBuilder.CreateSphere('floor alien head',{diameter:3.35,segments:24},scene);crestHead.position.set(0,-.03,6);crestHead.scaling.set(1,.045,.72);crestHead.material=mat.alien;
+    [-.66,.66].forEach(x=>{const eye=BABYLON.MeshBuilder.CreateSphere('floor alien eye',{diameter:.72,segments:16},scene);eye.position.set(x,.015,5.55);eye.scaling.set(.58,.05,1);eye.material=mat.eye});
+
+    [[-13,-12],[13,-12],[-13,12],[13,12]].forEach(([x,z],i)=>{const roomLight=new BABYLON.PointLight(`square room fill ${i}`,new BABYLON.Vector3(x,5.8,z),scene);roomLight.diffuse=i<2?new BABYLON.Color3(.32,.78,.64):new BABYLON.Color3(.48,.42,.76);roomLight.intensity=24;roomLight.range=21});
+    scene.registerBeforeRender(()=>{saucerRing.rotation.z+=.0018;saucerDome.rotation.y-=.001});
   }
 
   function buildAvatar() {
-    const root = new BABYLON.TransformNode('arcade service android', scene); root.position.set(0, 0, 8); root.rotation.y = Math.PI;
-    const body = BABYLON.MeshBuilder.CreateCapsule('android torso', { height: 2.05, radius: .48, tessellation: 18 }, scene); body.parent = root; body.position.y = 1.45; body.material = mat.chrome;
-    const head = BABYLON.MeshBuilder.CreateSphere('android helmet', { diameter: 1.18, segments: 24 }, scene); head.parent = root; head.position.set(0, 2.72, 0); head.scaling.set(1, .76, .82); head.material = mat.wall;
-    const visor=box('android visor',.72,.19,.08,0,2.75,.48,mat.mint);visor.parent=root;
-    const antennaTip = BABYLON.MeshBuilder.CreateSphere('android status light', { diameter: .18, segments: 12 }, scene); antennaTip.parent = root; antennaTip.position.set(0, 1.72, .49); antennaTip.material = mat.gold;
+    const root = new BABYLON.TransformNode('friendly green alien player', scene); root.position.set(0, 0, 10); root.rotation.y = Math.PI;
+    const body = BABYLON.MeshBuilder.CreateCapsule('friendly alien torso', { height: 1.95, radius: .5, tessellation: 20 }, scene); body.parent = root; body.position.y = 1.42; body.material = mat.alien;
+    const belt=box('alien arcade belt',.92,.16,.62,0,1.03,0,mat.violet);belt.parent=root;
+    const head = new BABYLON.TransformNode('friendly alien head',scene);head.parent=root;head.position.y=2.72;
+    const face = BABYLON.MeshBuilder.CreateSphere('friendly alien face', { diameter: 1.34, segments: 28 }, scene); face.parent = head; face.scaling.set(1.12,.86,.82); face.material = mat.alien;
+    [-1,1].forEach(side=>{const antenna=BABYLON.MeshBuilder.CreateCylinder('friendly alien antenna',{height:.48,diameter:.075,tessellation:12},scene);antenna.parent=head;antenna.position.set(side*.25,.72,0);antenna.rotation.z=-side*.18;antenna.material=mat.alien;const tip=BABYLON.MeshBuilder.CreateSphere('friendly antenna light',{diameter:.18,segments:12},scene);tip.parent=head;tip.position.set(side*.3,.95,0);tip.material=side<0?mat.mint:mat.acid});
+    [-1,1].forEach(side=>{const ear=BABYLON.MeshBuilder.CreateSphere('friendly alien ear',{diameter:.43,segments:16},scene);ear.parent=head;ear.position.set(side*.71,0,0);ear.scaling.set(.5,.9,.34);ear.material=mat.alien;const eye=BABYLON.MeshBuilder.CreateSphere('friendly alien eye',{diameter:.46,segments:20},scene);eye.parent=head;eye.position.set(side*.29,.06,.51);eye.scaling.set(.6,1.04,.3);eye.rotation.z=side*.17;eye.material=mat.eye;const sparkle=BABYLON.MeshBuilder.CreateSphere('friendly eye sparkle',{diameter:.075,segments:10},scene);sparkle.parent=head;sparkle.position.set(side*.25,.14,.595);sparkle.material=mat.mint});
+    const smilePath=[];for(let i=0;i<9;i++){const x=-.23+i*.0575;smilePath.push(new BABYLON.Vector3(x,-.2+Math.pow(x/.23,2)*.075,.555))}const smile=BABYLON.MeshBuilder.CreateTube('friendly alien smile',{path:smilePath,radius:.022,tessellation:8},scene);smile.parent=head;smile.material=mat.eye;
+    const antennaTip = BABYLON.MeshBuilder.CreateSphere('alien arcade badge', { diameter: .2, segments: 12 }, scene); antennaTip.parent = root; antennaTip.position.set(0, 1.62, .51); antennaTip.material = mat.gold;
     const limbs = {};
-    [['leftLeg',-.25],['rightLeg',.25]].forEach(([name,x])=>{const leg=BABYLON.MeshBuilder.CreateCapsule(name,{height:1.25,radius:.15,tessellation:12},scene);leg.parent=root;leg.position.set(x,.58,0);leg.material=mat.violet;limbs[name]=leg});
-    [['leftArm',-.62],['rightArm',.62]].forEach(([name,x])=>{const arm=BABYLON.MeshBuilder.CreateCapsule(name,{height:1.2,radius:.12,tessellation:12},scene);arm.parent=root;arm.position.set(x,1.48,0);arm.rotation.z=x<0?-.18:.18;arm.material=mat.chrome;limbs[name]=arm});
-    const shadow = BABYLON.MeshBuilder.CreateDisc('android shadow',{radius:.68,tessellation:32},scene);shadow.parent=root;shadow.position.y=.015;shadow.rotation.x=Math.PI/2;shadow.material=mat.floor;
+    [['leftLeg',-.25],['rightLeg',.25]].forEach(([name,x])=>{const leg=BABYLON.MeshBuilder.CreateCapsule(name,{height:1.22,radius:.16,tessellation:14},scene);leg.parent=root;leg.position.set(x,.58,0);leg.material=mat.alien;limbs[name]=leg;const boot=BABYLON.MeshBuilder.CreateSphere('alien arcade shoe',{diameter:.38,segments:14},scene);boot.parent=root;boot.position.set(x,.12,.09);boot.scaling.set(1.05,.55,1.35);boot.material=mat.violet});
+    [['leftArm',-.63],['rightArm',.63]].forEach(([name,x])=>{const arm=BABYLON.MeshBuilder.CreateCapsule(name,{height:1.18,radius:.13,tessellation:14},scene);arm.parent=root;arm.position.set(x,1.46,0);arm.rotation.z=x<0?-.18:.18;arm.material=mat.alien;limbs[name]=arm});
+    const shadow = BABYLON.MeshBuilder.CreateDisc('friendly alien shadow',{radius:.72,tessellation:32},scene);shadow.parent=root;shadow.position.y=.015;shadow.rotation.x=Math.PI/2;shadow.material=mat.floor;
     root.setEnabled(false);
     return { root, head, antennaTip, ...limbs, yaw: Math.PI, walking: 0, target: null, enterOnArrival: false };
   }
 
   const machines = [
-    { name: 'HIVE CORE', description: 'Wake the living reactor, charge its three organs, and survive the queen’s multiball.', difficulty: 'BALANCED', accent: mat.mint, secondary: mat.acid, x: -11, z: -8, angle: -.34 },
-    { name: 'NEBULA RUN', description: 'Race a stolen scout craft through collapsing gates and chain hyperspace jackpots.', difficulty: 'FAST', accent: mat.violet, secondary: mat.pink, x: 0, z: -11, angle: 0 },
-    { name: 'TEMPLE ZERO', description: 'Break ancient seals, climb the golden pyramid, and awaken the star guardian.', difficulty: 'TACTICAL', accent: mat.gold, secondary: mat.mint, x: 11, z: -8, angle: .34 },
+    { name: 'HIVE CORE', description: 'Wake the living reactor, charge its three organs, and survive the queen’s multiball.', difficulty: 'BALANCED', accent: mat.mint, secondary: mat.acid, x: -9.2, z: -11.7, angle: 0 },
+    { name: 'NEBULA RUN', description: 'Race a stolen scout craft through collapsing gates and chain hyperspace jackpots.', difficulty: 'FAST', accent: mat.violet, secondary: mat.pink, x: 0, z: -11.7, angle: 0 },
+    { name: 'TEMPLE ZERO', description: 'Break ancient seals, climb the golden pyramid, and awaken the star guardian.', difficulty: 'TACTICAL', accent: mat.gold, secondary: mat.mint, x: 9.2, z: -11.7, angle: 0 },
   ];
   function machineLabel(machine) {
     const texture = new BABYLON.DynamicTexture(`screen ${machine.name}`, { width: 1024, height: 512 }, scene, true), ctx = texture.getContext();
@@ -152,7 +159,7 @@
     const machine = machines[index], distance = 8.05;
     return new BABYLON.Vector3(machine.x + Math.sin(machine.angle) * distance, 0, machine.z + Math.cos(machine.angle) * distance);
   }
-  function lobbyPositionAllowed(x,z){if(Math.hypot(x,z)>22.5)return false;if(Math.hypot(x,z-3.8)<3.05)return false;return machines.every(machine=>Math.hypot(x-machine.x,z-machine.z)>6.25)}
+  function lobbyPositionAllowed(x,z){if(Math.abs(x)>17.2||z<-16.4||z>17.2)return false;if(Math.abs(x)>14.7&&z>3.5&&z<10.5)return false;return machines.every(machine=>Math.hypot(x-machine.x,z-machine.z)>6.25)}
   function walkToMachine(index, enterOnArrival = false) {
     showMachine(index, false); avatar.target = machineApproachPoint(selected); avatar.enterOnArrival = enterOnArrival; announce(enterOnArrival ? `WALKING TO ${machines[selected].name}` : `${machines[selected].name} SELECTED`, 1200);
   }
@@ -171,10 +178,11 @@
       }
       else { const targetYaw = Math.atan2(dx, dz), delta = Math.atan2(Math.sin(targetYaw-avatar.yaw),Math.cos(targetYaw-avatar.yaw)); avatar.yaw += Math.max(-3.2*dt,Math.min(3.2*dt,delta)); avatar.root.position.x += dx/distance*Math.min(distance,4.4*dt); avatar.root.position.z += dz/distance*Math.min(distance,4.4*dt); moving = 1; }
     }
-    const radius = Math.hypot(avatar.root.position.x, avatar.root.position.z); if (radius > 22.5) { avatar.root.position.x *= 22.5/radius; avatar.root.position.z *= 22.5/radius; }
+    avatar.root.position.x=Math.max(-17.2,Math.min(17.2,avatar.root.position.x));avatar.root.position.z=Math.max(-16.4,Math.min(17.2,avatar.root.position.z));
     avatar.root.rotation.y = avatar.yaw; avatar.walking += Math.abs(moving) * dt * 10;
     const stride = moving ? Math.sin(avatar.walking) * .56 : Math.sin(now*.002)*.035; avatar.leftLeg.rotation.x = stride; avatar.rightLeg.rotation.x = -stride; avatar.leftArm.rotation.x = -stride*.72; avatar.rightArm.rotation.x = stride*.72; avatar.head.position.y = 2.72 + Math.abs(Math.sin(avatar.walking))*Math.abs(moving)*.06; avatar.antennaTip.scaling.setAll(.9+Math.sin(now*.006)*.12);
-    const lookAhead=avatar.root.position.add(new BABYLON.Vector3(Math.sin(avatar.yaw)*4.5,1.8,Math.cos(avatar.yaw)*4.5));camera.setTarget(BABYLON.Vector3.Lerp(camera.target,lookAhead,Math.min(1,dt*7)));camera.alpha=1.5*Math.PI-avatar.yaw;camera.beta=1.27;camera.radius=8.5;
+    const compactView=innerWidth<=720,tabletView=innerWidth<=900;
+    const lookAhead=avatar.root.position.add(new BABYLON.Vector3(Math.sin(avatar.yaw)*4.5,2.05,Math.cos(avatar.yaw)*4.5));camera.setTarget(BABYLON.Vector3.Lerp(camera.target,lookAhead,Math.min(1,dt*7)));camera.alpha=1.5*Math.PI-avatar.yaw;camera.beta=compactView?1.36:1.41;camera.radius=compactView?14.2:tabletView?12:10.5;
     let nearest = selected, nearestDistance = Infinity; machines.forEach((machine,index)=>{const d=Math.hypot(machine.x-avatar.root.position.x,machine.z-avatar.root.position.z);if(d<nearestDistance){nearestDistance=d;nearest=index}}); if(nearestDistance<9&&nearest!==selected)showMachine(nearest,false);
   }
 
