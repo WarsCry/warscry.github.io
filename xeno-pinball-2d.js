@@ -168,13 +168,18 @@
     }
 
     makeLiveBall(x,y,vx,vy) {
-      return { x,y,vx,vy,r:13,ready:false,alive:true,entered:true,layer:0,layerTime:0,layerCooldown:0,trail:[],lastRail:0,lastRamp:0,lastLane:0,lastRicochet:0,rotation:0,bank:0,flash:0,thrust:.72,impactSide:0,impactPower:0,stuckFor:0,stuckX:x,stuckY:y };
+      return { x,y,vx,vy,r:12,ready:false,alive:true,entered:true,layer:0,layerTime:0,layerCooldown:0,trail:[],lastRail:0,lastRamp:0,lastLane:0,lastRicochet:0,rotation:0,bank:0,flash:0,thrust:.72,impactSide:0,impactPower:0,stuckFor:0,stuckX:x,stuckY:y };
     }
 
     update(frame, now) {
       if (!this.active) return;
       if (this.charging) {
         this.charge = clamp((now - this.chargeStarted) / 1050, 0, 1);
+        const readyBall = this.balls.find((item) => item.ready && item.alive);
+        if (readyBall) {
+          const springTravel = this.charge * 92 * .18;
+          readyBall.y = 988 + springTravel;
+        }
         this.callbacks.onCharge?.(Math.round(this.charge * 100));
       }
       if (this.combo > 1 && now - this.lastAward > 2300) this.combo = 1;
@@ -416,13 +421,13 @@
     drawBalls(c){
       for(const ball of this.balls){
         if(ball.layer!==this.activeLayer)continue;
-        for(let i=ball.trail.length-1;i>=0;i--){const point=ball.trail[i],life=1-i/ball.trail.length;c.save();c.translate(point.x,point.y);c.globalAlpha=life*.2;c.strokeStyle=i%2?this.theme.accent:this.theme.secondary;c.lineWidth=2;c.shadowColor=c.strokeStyle;c.shadowBlur=9;c.beginPath();c.ellipse(0,0,13+life*4,4.5+life*1.7,0,0,TAU);c.stroke();c.restore()}
+        for(let i=ball.trail.length-1;i>=0;i--){const point=ball.trail[i],life=1-i/ball.trail.length;c.save();c.translate(point.x,point.y);c.globalAlpha=life*.2;c.strokeStyle=i%2?this.theme.accent:this.theme.secondary;c.lineWidth=2;c.shadowColor=c.strokeStyle;c.shadowBlur=9;c.beginPath();c.ellipse(0,0,12+life*3.7,4.2+life*1.5,0,0,TAU);c.stroke();c.restore()}
         c.save();c.translate(ball.x,ball.y);c.shadowColor=this.theme.accent;c.shadowBlur=15+ball.flash*18;
-        const hull=c.createRadialGradient(-6,-7,2,0,0,22);hull.addColorStop(0,'#ffffff');hull.addColorStop(.22,'#d8e1e4');hull.addColorStop(.52,'#7b8b94');hull.addColorStop(.76,'#283740');hull.addColorStop(1,'#080e15');c.fillStyle=hull;c.strokeStyle='#efffff';c.lineWidth=2;c.beginPath();c.arc(0,0,20,0,TAU);c.fill();c.stroke();
-        c.strokeStyle='rgba(225,255,255,.55)';c.lineWidth=1.8;c.beginPath();c.arc(0,0,14,0,TAU);c.stroke();
-        const dome=c.createRadialGradient(-3.5,-4,1,0,0,10);dome.addColorStop(0,'#ffffff');dome.addColorStop(.32,ball.flash?'#ffffff':this.theme.accent);dome.addColorStop(1,'#132b35');c.fillStyle=dome;c.beginPath();c.arc(0,0,9.5,0,TAU);c.fill();
-        c.fillStyle=this.theme.secondary;c.shadowColor=c.fillStyle;c.shadowBlur=9;for(let i=0;i<6;i++){const a=i/6*TAU;c.beginPath();c.arc(Math.cos(a)*15.7,Math.sin(a)*15.7,1.9,0,TAU);c.fill()}
-        if(ball.flash>.05){c.globalAlpha=ball.flash;c.strokeStyle=ball.impactSide>0?this.theme.secondary:this.theme.hot;c.lineWidth=3.5;c.beginPath();c.moveTo(ball.impactSide>0?11:-11,-7);c.lineTo(ball.impactSide>0?22:-22,-14);c.stroke()}
+        const hull=c.createRadialGradient(-5.5,-6,2,0,0,20);hull.addColorStop(0,'#ffffff');hull.addColorStop(.22,'#d8e1e4');hull.addColorStop(.52,'#7b8b94');hull.addColorStop(.76,'#283740');hull.addColorStop(1,'#080e15');c.fillStyle=hull;c.strokeStyle='#efffff';c.lineWidth=1.8;c.beginPath();c.arc(0,0,18,0,TAU);c.fill();c.stroke();
+        c.strokeStyle='rgba(225,255,255,.55)';c.lineWidth=1.6;c.beginPath();c.arc(0,0,12.5,0,TAU);c.stroke();
+        const dome=c.createRadialGradient(-3,-3.5,1,0,0,9);dome.addColorStop(0,'#ffffff');dome.addColorStop(.32,ball.flash?'#ffffff':this.theme.accent);dome.addColorStop(1,'#132b35');c.fillStyle=dome;c.beginPath();c.arc(0,0,8.5,0,TAU);c.fill();
+        c.fillStyle=this.theme.secondary;c.shadowColor=c.fillStyle;c.shadowBlur=8;for(let i=0;i<6;i++){const a=i/6*TAU;c.beginPath();c.arc(Math.cos(a)*14.1,Math.sin(a)*14.1,1.7,0,TAU);c.fill()}
+        if(ball.flash>.05){c.globalAlpha=ball.flash;c.strokeStyle=ball.impactSide>0?this.theme.secondary:this.theme.hot;c.lineWidth=3;c.beginPath();c.moveTo(ball.impactSide>0?10:-10,-6);c.lineTo(ball.impactSide>0?20:-20,-12);c.stroke()}
         c.restore();
       }
     }
