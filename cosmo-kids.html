@@ -6,12 +6,16 @@
   <meta name="theme-color" content="#17104a">
   <title>Cosmo Kids | Jeux sans pub</title>
   <link rel="icon" type="image/png" href="favicondanpc.png">
-  <link rel="stylesheet" href="cosmo-kids.css?v=13">
+  <link rel="stylesheet" href="cosmo-kids.css?v=14">
 </head>
 <body data-theme="cosmos">
   <div class="space" aria-hidden="true"><i></i><i></i><i></i></div>
   <header class="topbar">
-    <a class="home" href="index.html" aria-label="Retour au site">‹ <span id="homeLabel">Accueil</span></a>
+    <div id="parentExit" class="parent-exit" aria-label="Sortie des parents">
+      <button id="exitKey" class="exit-key" type="button"><span>🔑</span><b id="parentExitLabel">Parents</b></button>
+      <i class="exit-track" aria-hidden="true"></i>
+      <span id="exitLock" class="exit-lock" aria-hidden="true">🔒</span>
+    </div>
     <div class="brand"><span id="brandIcon" class="planet">🪐</span><strong id="brandName">Cosmo Kids</strong></div>
     <div class="top-actions">
       <button id="themeButton" class="setting-button" type="button"><span id="themeIcon">🦄</span><b id="themeLabel">Mode Licorne</b></button>
@@ -53,12 +57,22 @@
     </section>
   </main>
 
+  <div id="parentGate" class="parent-gate hidden" role="dialog" aria-modal="true" aria-labelledby="parentGateTitle">
+    <div class="parent-gate-card">
+      <span class="parent-gate-icon" aria-hidden="true">🔓</span>
+      <h2 id="parentGateTitle">Sortie des parents</h2>
+      <p id="parentGateHelp">Maintiens le bouton pendant deux secondes pour quitter Cosmo Kids.</p>
+      <button id="holdExit" class="hold-exit" type="button"><span id="holdExitLabel">Maintiens 2 secondes</span></button>
+      <button id="cancelExit" class="cancel-exit" type="button">Retour aux jeux</button>
+    </div>
+  </div>
+
   <div id="celebration" class="celebration" aria-hidden="true">
     <div class="confetti"></div>
     <div class="celebration-orbit" aria-hidden="true"><i>⭐</i><i>🚀</i><i>🌈</i><i>🪐</i></div>
     <div class="reward"><span id="rewardIcon">🌟</span><b id="rewardTitle">Bravo!</b><small id="rewardText">Une étoile pour toi!</small><em aria-hidden="true">👽</em></div>
   </div>
   <script src="arcade-fx.js?v=1"></script>
-  <script src="cosmo-kids.js?v=16"></script>
+  <script src="cosmo-kids.js?v=17"></script>
 </body>
 </html>
