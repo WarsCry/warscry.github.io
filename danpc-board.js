@@ -78,13 +78,34 @@
     }, { applyLocally: false });
   }
 
+  function repairLegacySolitaireEntry(game, entry) {
+    if (game !== 'alien-solitaire.html' || !entry || Number(entry.score) > 1) return entry;
+    const match = String(entry.display || '').match(/DRAW\s+([13]).*?(\d+)\s+moves.*?(\d+):(\d{2})/i);
+    if (!match) return entry;
+    const moveCount = Number(match[2]);
+    const seconds = Number(match[3]) * 60 + Number(match[4]);
+    const repairedScore = Math.max(1, 10000000 - seconds * 100 - moveCount * 250);
+    if (repairedScore <= 1) return entry;
+    return { ...entry, score: repairedScore };
+  }
+
   let migration;
   function migrateLocalScores() {
     if (migration) return migration;
     migration = cloud.then(async () => {
       const data = all();
+      let repaired = false;
+      for (const [game, rows] of Object.entries(data)) {
+        if (!Array.isArray(rows)) continue;
+        data[game] = rows.map(entry => {
+          const fixed = repairLegacySolitaireEntry(game, entry);
+          if (fixed !== entry) repaired = true;
+          return fixed;
+        }).sort((a, b) => b.score - a.score || a.at - b.at).slice(0, 10);
+      }
+      if (repaired) localStorage.setItem(KEY, JSON.stringify(data));
       await Promise.all(Object.entries(data).map(([game, rows]) => {
-        const best = Array.isArray(rows) ? rows.slice().sort((a, b) => b.score - a.score)[0] : null;
+        const best = Array.isArray(rows) ? rows[0] : null;
         return best ? pushBest(game, best) : Promise.resolve();
       }));
     }).catch(() => {});
