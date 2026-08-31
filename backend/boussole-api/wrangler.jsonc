@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "danpc-boussole-api",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-08-31",
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "ALLOWED_ORIGINS": "https://danpc.ca,https://www.danpc.ca,https://warscry.github.io,http://127.0.0.1:4207,http://localhost:4207"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "danpc-boussole-results",
+      "database_id": "REPLACE_AFTER_D1_CREATION"
+    }
+  ]
+}

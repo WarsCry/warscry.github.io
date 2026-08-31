@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Une boussole citoyenne neutre et privée pour préparer son vote à l'élection provinciale du Québec de 2026.">
   <meta name="theme-color" content="#071a35">
+  <meta name="boussole-api" content="">
   <link rel="icon" href="/favicondanpc.ico">
   <link rel="apple-touch-icon" href="/favicondanpc.png">
   <link rel="stylesheet" href="boussole-quebec.css">
@@ -78,6 +79,27 @@
         </div>
         <div class="party-ranking" id="partyRanking"></div>
         <p class="party-match-note" data-i18n="partyMatchNote">Ce résultat ne prédit pas ton vote et ne couvre pas tous les partis autorisés. Vérifie les engagements actuels et les candidatures dans ta circonscription.</p>
+      </article>
+
+      <article class="community-card" aria-labelledby="communityTitle">
+        <div class="community-heading">
+          <div>
+            <p class="card-kicker" data-i18n="communityKicker">MOYENNE PUBLIQUE DANPC</p>
+            <h3 id="communityTitle" data-i18n="communityTitle">Le classement de la communauté</h3>
+            <p data-i18n="communityIntro">La moyenne anonyme des compatibilités envoyées volontairement par les visiteurs.</p>
+          </div>
+          <div class="community-count"><strong id="communityCount">0</strong><span data-i18n="communityParticipants">participations</span></div>
+        </div>
+        <div class="community-ranking" id="communityRanking" aria-live="polite"></div>
+        <div class="community-consent">
+          <label>
+            <input id="communityConsent" type="checkbox">
+            <span data-i18n="communityConsent">J'accepte d'envoyer anonymement mes cinq notes. Mes réponses détaillées ne seront pas conservées.</span>
+          </label>
+          <button class="primary-btn" id="submitCommunity" type="button" data-i18n="communitySubmit">Ajouter mon résultat à la moyenne</button>
+        </div>
+        <p class="community-status" id="communityStatus" aria-live="polite"></p>
+        <p class="community-caution" data-i18n="communityCaution">Une participation par navigateur. Ce classement spontané n'est pas un sondage scientifique et ne représente pas l'ensemble de l'électorat québécois.</p>
       </article>
 
       <div class="profile-grid" id="profileGrid"></div>

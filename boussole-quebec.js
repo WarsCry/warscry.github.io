@@ -11,7 +11,7 @@
         title: "Ta boussole. Ton choix.",
         intro: "Dix questions simples pour mettre des mots sur tes priorités avant de comparer les programmes et les personnes candidates.",
         trustNeutral: "⚖️ Aucun parti favorisé",
-        trustPrivate: "🔒 Réponses privées",
+        trustPrivate: "🔒 Aucun nom ni courriel",
         trustTime: "⏱️ Environ 3 minutes",
         start: "Commencer le questionnaire",
         disclaimer: "Ce site n'est pas affilié à Élections Québec. Il ne recommande aucun parti et ne remplace pas la lecture des plateformes officielles.",
@@ -32,6 +32,22 @@
         closeOn: "Ta réponse est proche de l'orientation générale du parti sur",
         differsOn: "Ta réponse s'en éloigne surtout sur",
         officialParty: "Voir le site officiel",
+        communityKicker: "MOYENNE PUBLIQUE DANPC",
+        communityTitle: "Le classement de la communauté",
+        communityIntro: "La moyenne anonyme des compatibilités envoyées volontairement par les visiteurs.",
+        communityParticipants: "participations",
+        communityConsent: "J'accepte d'envoyer anonymement mes cinq notes. Mes réponses détaillées ne seront pas conservées.",
+        communitySubmit: "Ajouter mon résultat à la moyenne",
+        communityCaution: "Une participation par navigateur. Ce classement spontané n'est pas un sondage scientifique et ne représente pas l'ensemble de l'électorat québécois.",
+        communityLoading: "Chargement du classement public…",
+        communityEmpty: "Sois la première personne à contribuer à la moyenne DanPC.",
+        communityConsentNeeded: "Coche d'abord la case de consentement.",
+        communitySending: "Envoi anonyme en cours…",
+        communityThanks: "Merci! Ton résultat a été ajouté à la moyenne.",
+        communityDuplicate: "Ce navigateur a déjà contribué. Le classement est à jour.",
+        communityUnavailable: "Le classement public est temporairement indisponible. Ton résultat personnel demeure intact.",
+        communityPreparing: "Le classement public est en préparation.",
+        communityAlreadySent: "Résultat déjà ajouté",
         priorities: "TES PRIORITÉS DÉCLARÉES",
         yourSummary: "TON RÉSUMÉ",
         copy: "Copier mon résumé",
@@ -56,7 +72,7 @@
         dateAdvance: "Vote par anticipation",
         dateElection: "Jour du scrutin",
         footerIndependent: "Projet citoyen indépendant créé par DanPC.",
-        footerPrivacy: "Aucune réponse n'est transmise ou conservée sur un serveur. Tout reste dans ton navigateur.",
+        footerPrivacy: "Sans consentement, tout reste dans ton navigateur. Si tu participes à la moyenne publique, les réponses sont traitées pour calculer cinq notes; seules ces notes et un identifiant aléatoire haché sont conservés.",
         verified: "Informations électorales vérifiées le 31 août 2026.",
         method: "Méthode et règles de neutralité",
         counter: (n) => `Question ${n} / 10`,
@@ -91,7 +107,7 @@
         title: "Your compass. Your choice.",
         intro: "Ten simple questions to clarify your priorities before comparing official platforms and local candidates.",
         trustNeutral: "⚖️ No party favoured",
-        trustPrivate: "🔒 Private answers",
+        trustPrivate: "🔒 No name or email",
         trustTime: "⏱️ About 3 minutes",
         start: "Start the questionnaire",
         disclaimer: "This website is not affiliated with Élections Québec. It does not recommend a party and is not a substitute for reading official platforms.",
@@ -112,6 +128,22 @@
         closeOn: "Your answer is close to the party's general direction on",
         differsOn: "Your answer differs most on",
         officialParty: "See the official website",
+        communityKicker: "DANPC PUBLIC AVERAGE",
+        communityTitle: "The community ranking",
+        communityIntro: "The anonymous average of compatibility scores voluntarily submitted by visitors.",
+        communityParticipants: "submissions",
+        communityConsent: "I agree to anonymously submit my five scores. My detailed answers will not be retained.",
+        communitySubmit: "Add my result to the average",
+        communityCaution: "One submission per browser. This voluntary ranking is not a scientific poll and does not represent Québec's full electorate.",
+        communityLoading: "Loading the public ranking…",
+        communityEmpty: "Be the first person to contribute to the DanPC average.",
+        communityConsentNeeded: "Please check the consent box first.",
+        communitySending: "Sending anonymously…",
+        communityThanks: "Thank you! Your result was added to the average.",
+        communityDuplicate: "This browser has already contributed. The ranking is up to date.",
+        communityUnavailable: "The public ranking is temporarily unavailable. Your personal result remains intact.",
+        communityPreparing: "The public ranking is being prepared.",
+        communityAlreadySent: "Result already added",
         priorities: "YOUR STATED PRIORITIES",
         yourSummary: "YOUR SUMMARY",
         copy: "Copy my summary",
@@ -136,7 +168,7 @@
         dateAdvance: "Advance voting",
         dateElection: "Election day",
         footerIndependent: "Independent civic project created by DanPC.",
-        footerPrivacy: "No answers are sent to or stored on a server. Everything stays in your browser.",
+        footerPrivacy: "Without consent, everything stays in your browser. If you join the public average, answers are processed into five scores; only those scores and a hashed random identifier are retained.",
         verified: "Election information verified August 31, 2026.",
         method: "Method and neutrality rules",
         counter: (n) => `Question ${n} / 10`,
@@ -166,6 +198,9 @@
   };
 
   const state = { lang: localStorage.getItem("boussoleLang") || "fr", current: 0, answers: Array(10).fill(null) };
+  const communityApi = document.querySelector('meta[name="boussole-api"]')?.content.trim() || "";
+  const communityStorageKey = "danpcBoussoleCommunitySubmittedV1";
+  const visitorTokenKey = "danpcBoussoleVisitorTokenV1";
 
   // Approximate issue positions on the quiz's 0–3 scale, based on public party
   // platforms and announcements available on August 31, 2026. These values are
@@ -346,6 +381,93 @@
     }).join("");
   }
 
+  function setCommunityStatus(message, tone = "") {
+    const status = $("#communityStatus");
+    status.textContent = message;
+    status.className = `community-status${tone ? ` ${tone}` : ""}`;
+  }
+
+  function renderCommunityRanking(aggregate) {
+    const submissions = Number(aggregate?.submissions || 0);
+    $("#communityCount").textContent = submissions.toLocaleString(state.lang === "fr" ? "fr-CA" : "en-CA");
+    if (!submissions) {
+      $("#communityRanking").innerHTML = `<p class="community-empty">${t().ui.communityEmpty}</p>`;
+      return;
+    }
+    const byId = new Map(partyProfiles.map((party) => [party.id, party]));
+    $("#communityRanking").innerHTML = (aggregate.averages || []).map((average, rank) => {
+      const party = byId.get(average.id);
+      if (!party) return "";
+      const score = Math.max(0, Math.min(100, Number(average.score) || 0));
+      return `<div class="community-row" style="--party-color:${party.color}">
+        <span class="community-position">${rank + 1}</span>
+        <strong>${party.id}</strong>
+        <div class="community-bar"><span style="width:${score}%"></span></div>
+        <b>${score.toFixed(1)}%</b>
+      </div>`;
+    }).join("");
+  }
+
+  function visitorToken() {
+    let token = localStorage.getItem(visitorTokenKey);
+    if (!token) {
+      token = crypto.randomUUID();
+      localStorage.setItem(visitorTokenKey, token);
+    }
+    return token;
+  }
+
+  function updateCommunitySubmitState() {
+    const submitted = localStorage.getItem(communityStorageKey) === "1";
+    $("#submitCommunity").disabled = submitted || !communityApi;
+    $("#communityConsent").disabled = submitted || !communityApi;
+    if (submitted) $("#submitCommunity").textContent = t().ui.communityAlreadySent;
+    else $("#submitCommunity").textContent = t().ui.communitySubmit;
+  }
+
+  async function loadCommunityResults() {
+    updateCommunitySubmitState();
+    if (!communityApi) {
+      setCommunityStatus(t().ui.communityPreparing);
+      return;
+    }
+    setCommunityStatus(t().ui.communityLoading);
+    try {
+      const response = await fetch(communityApi, { headers: { Accept: "application/json" } });
+      if (!response.ok) throw new Error("community unavailable");
+      renderCommunityRanking(await response.json());
+      setCommunityStatus("");
+    } catch {
+      setCommunityStatus(t().ui.communityUnavailable, "error");
+    }
+  }
+
+  async function submitCommunityResult() {
+    if (!communityApi) return;
+    if (!$("#communityConsent").checked) {
+      setCommunityStatus(t().ui.communityConsentNeeded, "error");
+      return;
+    }
+    $("#submitCommunity").disabled = true;
+    setCommunityStatus(t().ui.communitySending);
+    try {
+      const response = await fetch(communityApi, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ consent: true, visitorToken: visitorToken(), answers: state.answers })
+      });
+      const payload = await response.json();
+      if (!response.ok && response.status !== 409) throw new Error("submission failed");
+      localStorage.setItem(communityStorageKey, "1");
+      renderCommunityRanking(payload.aggregate);
+      setCommunityStatus(payload.duplicate ? t().ui.communityDuplicate : t().ui.communityThanks, "success");
+    } catch {
+      setCommunityStatus(t().ui.communityUnavailable, "error");
+      $("#submitCommunity").disabled = false;
+    }
+    updateCommunitySubmitState();
+  }
+
   function renderResults() {
     quizShell.classList.add("hidden");
     results.classList.remove("hidden");
@@ -369,6 +491,7 @@
 
     $("#researchPrompts").innerHTML = t().prompts.map((prompt) => `<div class="research-prompt">${prompt}</div>`).join("");
     $("#copySummary").textContent = t().ui.copy;
+    loadCommunityResults();
     results.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
@@ -387,6 +510,7 @@
   $("#nextQuestion").addEventListener("click", nextQuestion);
   $("#restartQuiz").addEventListener("click", () => { state.current = 0; state.answers = Array(10).fill(null); showQuiz(); });
   $("#copySummary").addEventListener("click", copySummary);
+  $("#submitCommunity").addEventListener("click", submitCommunityResult);
   $("#printResult").addEventListener("click", () => window.print());
   $("#langFr").addEventListener("click", () => applyLanguage("fr"));
   $("#langEn").addEventListener("click", () => applyLanguage("en"));
