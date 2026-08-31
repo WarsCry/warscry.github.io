@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#070918">
+  <title>Classements | DanPC Arcade</title>
+  <meta name="description" content="Tous les classements mondiaux des jeux DanPC Arcade réunis sur une seule page.">
+  <link rel="icon" type="image/png" href="favicondanpc.png">
+  <style>
+    :root{--space:#070918;--panel:rgba(9,18,39,.9);--line:rgba(118,255,224,.22);--mint:#76ffe0;--lime:#c6ff6b;--text:#f2fbff;--muted:#98b0bf}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;min-height:100vh;color:var(--text);font-family:"Segoe UI",system-ui,sans-serif;background:radial-gradient(circle at 12% 4%,rgba(93,47,184,.4),transparent 27%),radial-gradient(circle at 88% 20%,rgba(0,208,184,.2),transparent 29%),linear-gradient(rgba(3,5,12,.84),rgba(5,10,22,.96)),url("assets/textures/alien-hull-v1.webp");background-size:auto,auto,auto,620px}
+    body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.2;background-image:radial-gradient(#fff 1px,transparent 1px),radial-gradient(#76ffe0 1px,transparent 1px);background-size:83px 83px,151px 151px;background-position:17px 29px,61px 77px}
+    a{color:inherit}.shell{position:relative;width:min(1320px,100%);margin:auto;padding:20px clamp(14px,4vw,48px) 55px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px}.back,.language{border:1px solid var(--line);border-radius:999px;background:rgba(7,15,32,.76)}.back{padding:9px 14px;color:var(--mint);text-decoration:none}.language{display:flex;gap:5px;padding:5px}.language button{padding:6px 11px;border:0;border-radius:999px;background:transparent;color:var(--muted);font-weight:900;cursor:pointer}.language button.active{background:rgba(118,255,224,.16);color:var(--mint)}
+    .hero{text-align:center;padding:clamp(48px,8vw,86px) 0 38px}.kicker{margin:0;color:var(--mint);font-size:11px;font-weight:950;letter-spacing:.28em}.hero h1{margin:9px 0 13px;font-size:clamp(39px,8vw,78px);line-height:.95;letter-spacing:.035em}.hero h1 .title-accent{color:var(--lime)}.hero>p:not(.kicker){max-width:720px;margin:0 auto;color:var(--muted);font-size:clamp(15px,2vw,19px);line-height:1.55}.board-tools{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:24px}.refresh{padding:11px 17px;border:1px solid rgba(198,255,107,.5);border-radius:999px;color:#07131a;background:linear-gradient(105deg,var(--lime),var(--mint));font:inherit;font-weight:950;cursor:pointer}.refresh:disabled{cursor:wait;filter:saturate(.45);opacity:.7}.status{color:var(--muted);font-size:13px}
+    .score-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px}.score-card{--accent:var(--mint);position:relative;min-width:0;overflow:hidden;border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);border-radius:23px;background:linear-gradient(145deg,color-mix(in srgb,var(--accent) 9%,rgba(13,25,50,.95)),rgba(5,10,25,.95)),url("assets/textures/alien-circuit-v1.webp");background-size:auto,470px;box-shadow:0 18px 55px rgba(0,0,0,.3)}.score-card:before{content:"";position:absolute;width:170px;height:170px;right:-75px;top:-85px;border-radius:50%;background:var(--accent);filter:blur(58px);opacity:.15}.card-head{position:relative;display:flex;align-items:center;gap:13px;padding:20px 20px 15px}.game-icon{display:grid;place-items:center;width:48px;height:48px;flex:0 0 auto;border:1px solid color-mix(in srgb,var(--accent) 50%,transparent);border-radius:15px;background:color-mix(in srgb,var(--accent) 10%,#081126);font-size:25px;filter:drop-shadow(0 0 12px var(--accent))}.card-title{min-width:0}.card-title h2{margin:0;font-size:clamp(19px,3vw,26px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.card-title a{display:inline-block;margin-top:5px;color:var(--accent);font-size:11px;font-weight:900;letter-spacing:.08em;text-decoration:none}.source{margin-left:auto;align-self:flex-start;padding:5px 8px;border:1px solid color-mix(in srgb,var(--accent) 35%,transparent);border-radius:999px;color:var(--accent);font-size:9px;font-weight:950;letter-spacing:.1em;white-space:nowrap}.score-list{position:relative;margin:0;padding:0 16px 17px;list-style:none}.score-row{display:grid;grid-template-columns:30px minmax(70px,.7fr) minmax(120px,1.3fr);align-items:center;gap:9px;min-height:43px;padding:7px 8px;border-top:1px solid rgba(255,255,255,.07)}.score-row:first-child{border-top-color:color-mix(in srgb,var(--accent) 28%,transparent)}.rank{display:grid;place-items:center;width:25px;height:25px;border-radius:50%;color:#071218;background:var(--accent);font-size:11px;font-weight:950}.player{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:850}.result{min-width:0;text-align:right}.result strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e9f7fb;font-size:12px}.result small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px;color:var(--muted);font-size:9px}.empty{margin:0;padding:22px 20px 25px;color:var(--muted);text-align:center}.footer{text-align:center;padding-top:36px;color:#718998;font-size:12px}
+    @media(max-width:800px){.score-grid{grid-template-columns:1fr}.hero{padding-top:43px}.score-row{grid-template-columns:29px minmax(65px,.65fr) minmax(110px,1.35fr)}.card-title h2{font-size:20px}}
+    @media(max-width:430px){.shell{padding-inline:10px}.back{font-size:12px}.card-head{padding-inline:14px}.score-list{padding-inline:10px}.source{display:none}.score-row{gap:6px;padding-inline:5px}.result strong{font-size:11px}}
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <nav class="topbar">
+      <a class="back" href="arcade.html"><span data-fr="← DanPC Arcade" data-en="← DanPC Arcade">← DanPC Arcade</span></a>
+      <div class="language" aria-label="Language switch"><button id="fr" type="button">FR</button><button id="en" type="button">EN</button></div>
+    </nav>
+    <header class="hero">
+      <p class="kicker" data-fr="TABLEAU CENTRAL · FIREBASE" data-en="CENTRAL BOARD · FIREBASE">TABLEAU CENTRAL · FIREBASE</p>
+      <h1><span data-fr="TOUS LES" data-en="ALL">TOUS LES</span> <span class="title-accent" data-fr="CLASSEMENTS" data-en="SCOREBOARDS">CLASSEMENTS</span></h1>
+      <p data-fr="Les meilleurs signaux de chaque jeu DanPC Arcade, réunis au même endroit. Les classements demeurent aussi accessibles avant d’entrer dans chaque jeu." data-en="The best signals from every DanPC Arcade game, gathered in one place. Scoreboards also remain available before entering each game.">Les meilleurs signaux de chaque jeu DanPC Arcade, réunis au même endroit.</p>
+      <div class="board-tools"><button class="refresh" id="refresh" type="button" data-fr="↻ ACTUALISER" data-en="↻ REFRESH">↻ ACTUALISER</button><span class="status" id="status" aria-live="polite"></span></div>
+    </header>
+    <section class="score-grid" id="scoreGrid" aria-label="Classements DanPC Arcade"></section>
+    <footer class="footer">© <span id="year"></span> DanPC Arcade · <span data-fr="La compétition familiale est officiellement ouverte." data-en="The family competition is officially open.">La compétition familiale est officiellement ouverte.</span></footer>
+  </main>
+  <script src="danpc-board.js?v=3"></script>
+  <script src="arcade-classements.js?v=1"></script>
+</body>
+</html>
