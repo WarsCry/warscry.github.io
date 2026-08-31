@@ -21,6 +21,17 @@
         resultEyebrow: "Ton portrait citoyen",
         resultTitle: "Voici ce qui compte pour toi",
         resultIntro: "Ce portrait résume tes réponses. Ce n'est ni une étiquette politique ni une recommandation de vote.",
+        partyMatchKicker: "TA NOTE PERSONNELLE",
+        partyMatchTitle: "Les partis les plus proches de tes convictions",
+        partyMatchIntro: "Comparaison approximative entre la CAQ, le PCQ, le PQ, le PLQ et QS, fondée uniquement sur tes réponses.",
+        partyMatchApprox: "RÉSULTAT APPROXIMATIF",
+        partyMatchNote: "Ce résultat ne prédit pas ton vote et ne couvre pas tous les partis autorisés. Vérifie les engagements actuels et les candidatures dans ta circonscription.",
+        closest: "Le plus proche",
+        whyMatch: "Pourquoi ça colle",
+        watchPoints: "Points à surveiller",
+        closeOn: "Ta réponse est proche de l'orientation générale du parti sur",
+        differsOn: "Ta réponse s'en éloigne surtout sur",
+        officialParty: "Voir le site officiel",
         priorities: "TES PRIORITÉS DÉCLARÉES",
         yourSummary: "TON RÉSUMÉ",
         copy: "Copier mon résumé",
@@ -90,6 +101,17 @@
         resultEyebrow: "Your civic profile",
         resultTitle: "What matters to you",
         resultIntro: "This profile summarizes your answers. It is neither a political label nor a voting recommendation.",
+        partyMatchKicker: "YOUR PERSONAL NOTE",
+        partyMatchTitle: "The parties closest to your views",
+        partyMatchIntro: "An approximate comparison among the CAQ, PCQ, PQ, PLQ, and QS, based only on your answers.",
+        partyMatchApprox: "APPROXIMATE RESULT",
+        partyMatchNote: "This result does not predict your vote and does not cover every authorized party. Check current commitments and the candidates in your electoral division.",
+        closest: "Closest match",
+        whyMatch: "Why it fits",
+        watchPoints: "Points to examine",
+        closeOn: "Your answer is close to the party's general direction on",
+        differsOn: "Your answer differs most on",
+        officialParty: "See the official website",
         priorities: "YOUR STATED PRIORITIES",
         yourSummary: "YOUR SUMMARY",
         copy: "Copy my summary",
@@ -144,6 +166,17 @@
   };
 
   const state = { lang: localStorage.getItem("boussoleLang") || "fr", current: 0, answers: Array(10).fill(null) };
+
+  // Approximate issue positions on the quiz's 0–3 scale, based on public party
+  // platforms and announcements available on August 31, 2026. These values are
+  // deliberately broad: the UI explains that this is a reflection aid, not advice.
+  const partyProfiles = [
+    { id: "CAQ", name: { fr: "Coalition avenir Québec", en: "Coalition Avenir Québec" }, url: "https://coalitionavenirquebec.org/", color: "#36a6d9", positions: [1.5, 1.1, 1.0, 0.6, 3.0, 1.2, 0.2, 1.3, 1.2], salience: [1.1, 1.1, 1.25, 1.25, 1, 1, 1.2, 1, 1] },
+    { id: "PCQ", name: { fr: "Parti conservateur du Québec", en: "Conservative Party of Québec" }, url: "https://conservateur.quebec/", color: "#5b8fd9", positions: [0.2, 0.2, 0.5, 0.8, 3.0, 0.1, 0.0, 0.3, 0.4], salience: [1.35, 1.25, 1.1, 1, 1, 1.25, 1.2, 1.15, 1.15] },
+    { id: "PQ", name: { fr: "Parti Québécois", en: "Parti Québécois" }, url: "https://pq.org/", color: "#25a0df", positions: [1.5, 2.0, 0.6, 0.2, 0.0, 1.3, 1.4, 1.8, 2.0], salience: [1, 1.15, 1.3, 1.25, 2.25, 1.1, 1, 1.1, 1.1] },
+    { id: "PLQ", name: { fr: "Parti libéral du Québec", en: "Quebec Liberal Party" }, url: "https://plq.org/", color: "#e44b57", positions: [1.3, 1.5, 2.5, 2.6, 3.0, 1.7, 1.5, 1.4, 1.5], salience: [1.15, 1.1, 1.15, 1.25, 1.5, 1.05, 1, 1, 1] },
+    { id: "QS", name: { fr: "Québec solidaire", en: "Québec solidaire" }, url: "https://quebecsolidaire.net/", color: "#f28b2e", positions: [2.9, 2.9, 2.7, 2.9, 0.6, 2.9, 2.0, 2.9, 2.8], salience: [1.25, 1.25, 1.1, 1.1, 1.15, 1.3, 1, 1.35, 1.25] }
+  ];
   const $ = (selector) => document.querySelector(selector);
   const quizShell = $("#quizShell");
   const results = $("#results");
@@ -251,10 +284,73 @@
     return (state.lang === "fr" ? fr : en)[questionIndex][answerIndex];
   }
 
+  function normalizedUserPosition(questionIndex, answerIndex) {
+    if (questionIndex === 4) return [0, 0.8, 3, null][answerIndex];
+    if (questionIndex === 6 && answerIndex === 3) return null;
+    return answerIndex;
+  }
+
+  function issueWeights() {
+    // The last question is intentionally decisive: it tells us which trade-offs
+    // matter most to the visitor. Inequality is reflected through taxation and
+    // housing, while labour remains its own answer above.
+    const weights = Array(9).fill(0.5);
+    const priorityIssues = [[0], [1], [2, 3, 4], [0, 5, 7]];
+    (state.answers[9] || []).forEach((priority) => {
+      priorityIssues[priority].forEach((issue) => { weights[issue] += 1.5; });
+    });
+    return weights;
+  }
+
+  function calculatePartyMatches() {
+    const weights = issueWeights();
+    return partyProfiles.map((party) => {
+      let earned = 0;
+      let possible = 0;
+      const issueScores = [];
+      for (let i = 0; i < 9; i += 1) {
+        const userPosition = normalizedUserPosition(i, state.answers[i]);
+        if (userPosition === null) continue;
+        const weight = weights[i] * party.salience[i];
+        const similarity = Math.max(0, 1 - Math.abs(userPosition - party.positions[i]) / 3);
+        earned += similarity * weight;
+        possible += weight;
+        issueScores.push({ index: i, similarity, weight, impact: similarity * weight });
+      }
+      issueScores.sort((a, b) => (b.similarity - a.similarity) || (b.weight - a.weight));
+      const agreements = issueScores.slice(0, 2);
+      const tensions = [...issueScores].sort((a, b) => (a.similarity - b.similarity) || (b.weight - a.weight)).slice(0, 2);
+      return { ...party, score: Math.round((earned / possible) * 100), agreements, tensions };
+    }).sort((a, b) => b.score - a.score);
+  }
+
+  function renderPartyMatches() {
+    const questions = t().questions;
+    const matches = calculatePartyMatches();
+    $("#partyRanking").innerHTML = matches.map((party, rank) => {
+      const agreementTopics = party.agreements.map((item) => questions[item.index].topic).join(", ");
+      const tensionTopics = party.tensions.map((item) => questions[item.index].topic).join(", ");
+      return `<article class="party-result${rank === 0 ? " winner" : ""}" style="--party-color:${party.color}">
+        <div class="party-rank">${rank + 1}</div>
+        <div class="party-result-main">
+          <div class="party-name-row"><h4>${party.id} <span>${party.name[state.lang]}</span></h4>${rank === 0 ? `<span class="closest-label">${t().ui.closest}</span>` : ""}</div>
+          <div class="score-track" aria-label="${party.score}%"><span style="width:${party.score}%"></span></div>
+          <div class="party-reasons">
+            <p><strong>${t().ui.whyMatch}:</strong> ${t().ui.closeOn} <b>${agreementTopics}</b>.</p>
+            <p><strong>${t().ui.watchPoints}:</strong> ${t().ui.differsOn} <b>${tensionTopics}</b>.</p>
+          </div>
+          <a href="${party.url}" target="_blank" rel="noopener">${t().ui.officialParty} ↗</a>
+        </div>
+        <div class="party-score"><strong>${party.score}%</strong><span>approx.</span></div>
+      </article>`;
+    }).join("");
+  }
+
   function renderResults() {
     quizShell.classList.add("hidden");
     results.classList.remove("hidden");
     const questions = t().questions;
+    renderPartyMatches();
     $("#profileGrid").innerHTML = "";
     for (let i = 0; i < 9; i += 1) {
       const answer = state.answers[i];
