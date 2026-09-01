@@ -5,6 +5,7 @@
     { id:'xeno-maze.html', icon:'🧬', accent:'#a9ff49', title:'Xeno Maze: Signal Lost', href:'xeno-maze.html?v=3' },
     { id:'starfall.html', icon:'🛸', accent:'#76ffe0', title:'Starfall: Alien Uprising', href:'starfall.html' },
     { id:'xeno-pinball.html', icon:'🪩', accent:'#ff63ad', title:'Xeno Arcade Room', href:'xeno-pinball.html?v=4' },
+    { id:'xeno-air-hockey', icon:'🏒', accent:'#70ffe1', title:'Xeno Air Hockey', href:'xeno-pinball.html?hockey=1' },
     { id:'xeno-mahjong.html', icon:'🗿', accent:'#f4c86a', title:'Xeno Mahjong', href:'xeno-mahjong.html?v=3' },
     { id:'xeno-sudoku.html', icon:'🔢', accent:'#67ffe0', title:'Xeno Sudoku', href:'xeno-sudoku.html' },
     { id:'alien-chess.html', icon:'👽', accent:'#baff66', title:'Alien Chess', href:'alien-chess.html' },

@@ -24,6 +24,7 @@
   const cabinetTexture = new BABYLON.Texture('assets/textures/alien-circuit-v1.webp', scene, false, false, BABYLON.Texture.TRILINEAR_SAMPLINGMODE); cabinetTexture.uScale = 3.4; cabinetTexture.vScale = 4.8; mat.chrome.albedoTexture = cabinetTexture; mat.chrome.albedoColor = new BABYLON.Color3(.48,.56,.6);
   const box = (name, w, h, d, x, y, z, material) => { const mesh = BABYLON.MeshBuilder.CreateBox(name, { width: w, height: h, depth: d }, scene); mesh.position.set(x, y, z); mesh.material = material; return mesh; };
   const AIR_HOCKEY = { x:-10.35, z:8.25, halfWidth:3.5, halfDepth:4.75 };
+  let airHockeyTable = null, roomCeiling = null;
 
   function buildRoom() {
     const displayMat=(name,title,subtitle,accent)=>{const texture=new BABYLON.DynamicTexture(name,{width:768,height:420},scene,true),ctx=texture.getContext();ctx.fillStyle='#07101b';ctx.fillRect(0,0,768,420);ctx.strokeStyle=accent;ctx.lineWidth=12;ctx.strokeRect(18,18,732,384);ctx.fillStyle='#d9fffa';ctx.textAlign='center';ctx.font='900 64px Arial';ctx.fillText(title,384,178);ctx.fillStyle=accent;ctx.font='700 29px Arial';ctx.fillText(subtitle,384,250);ctx.strokeStyle='rgba(255,255,255,.16)';ctx.lineWidth=3;for(let x=110;x<690;x+=92){ctx.beginPath();ctx.moveTo(x,302);ctx.lineTo(x+38,340);ctx.stroke()}texture.update();const material=new BABYLON.StandardMaterial(`${name} material`,scene);material.diffuseTexture=texture;material.emissiveTexture=texture;material.emissiveColor=new BABYLON.Color3(.035,.035,.035);material.disableLighting=true;return material};
@@ -38,7 +39,7 @@
     box('front wall right wing',14.2,10,.8,11.9,4.55,19,mat.wall);
     [[-18.45,-18.45],[18.45,-18.45],[-18.45,18.45],[18.45,18.45]].forEach(([x,z])=>box('room corner pillar',1.15,10.7,1.15,x,4.8,z,mat.chrome));
 
-    const ceiling=box('square coffered ceiling',37.6,.55,37.6,0,10.15,0,mat.wall);
+    const ceiling=box('square coffered ceiling',37.6,.55,37.6,0,10.15,0,mat.wall);roomCeiling=ceiling;
     [-12,0,12].forEach(x=>box('ceiling light rail',7.2,.08,.28,x,9.82,-7.4,x===0?mat.violet:mat.mint));
     [-11,11].forEach(z=>box('cross ceiling rail',.28,.08,26,0,9.82,z,mat.gold));
     const saucerMetal=new BABYLON.StandardMaterial('matte ceiling saucer',scene);saucerMetal.diffuseColor=color('#101a20');saucerMetal.emissiveColor=color('#071015');saucerMetal.specularColor=color('#000000');
@@ -60,10 +61,10 @@
     [-1,1].forEach(side=>{const bench=box('alien lounge bench',1.45,.62,5.2,side*16.2,.45,7,mat.chrome);const cushion=box('lounge illuminated cushion',1.1,.2,4.6,side*16.2,.84,7,side<0?mat.violet:mat.mint);[-1.8,1.8].forEach(offset=>box('bench foot',.72,.55,.22,side*16.2,.04,7+offset,mat.gold))});
 
     const hockeyRoot=new BABYLON.TransformNode('alien air hockey table',scene);hockeyRoot.position.set(AIR_HOCKEY.x,0,AIR_HOCKEY.z);
-    const hockeySurface=makeMat('air hockey plasma surface','#12384a','#0b3545',.62,.14),hockeyWhite=makeMat('air hockey white lines','#d6fff9','#8affee',.15,.2);
+    const hockeySurface=makeMat('air hockey plasma surface','#071c29','#020a10',.58,.2),hockeyWhite=makeMat('air hockey white lines','#8bd7cc','#183a35',.15,.24);
     const hockeyBox=(name,w,h,d,x,y,z,material)=>{const mesh=box(name,w,h,d,x,y,z,material);mesh.parent=hockeyRoot;return mesh};
     hockeyBox('air hockey cabinet',5.8,.86,8.15,0,.92,0,mat.chrome);
-    hockeyBox('air hockey play surface',5.28,.14,7.55,0,1.43,0,hockeySurface);
+    const hockeyPlaySurface=hockeyBox('air hockey play surface',5.28,.14,7.55,0,1.43,0,hockeySurface);
     [-2.78,2.78].forEach((x,i)=>hockeyBox('air hockey side rail',.24,.38,8.05,x,1.61,0,i?mat.pink:mat.mint));
     [-3.9,3.9].forEach((z,i)=>{hockeyBox('air hockey end rail',5.8,.38,.24,0,1.61,z,i?mat.pink:mat.mint);hockeyBox('air hockey goal mouth',1.9,.13,.28,0,1.76,z+(i?-.04:.04),mat.eye)});
     hockeyBox('air hockey center line',5.18,.025,.055,0,1.525,0,hockeyWhite);
@@ -72,7 +73,8 @@
     const centerRing=BABYLON.MeshBuilder.CreateTorus('air hockey center ring',{diameter:1.72,thickness:.055,tessellation:40},scene);centerRing.parent=hockeyRoot;centerRing.position.y=1.56;centerRing.rotation.x=Math.PI/2;centerRing.material=mat.violet;
     const puck=BABYLON.MeshBuilder.CreateCylinder('air hockey animated puck',{diameter:.52,height:.13,tessellation:32},scene);puck.parent=hockeyRoot;puck.position.y=1.67;puck.material=mat.gold;
     const paddles=[-1,1].map(side=>{const paddle=BABYLON.MeshBuilder.CreateCylinder('air hockey alien paddle',{diameter:1.02,height:.2,tessellation:32},scene);paddle.parent=hockeyRoot;paddle.position.set(0,1.68,side*2.7);paddle.material=side<0?mat.mint:mat.pink;const handle=BABYLON.MeshBuilder.CreateCylinder('air hockey paddle handle',{diameter:.48,height:.3,tessellation:24},scene);handle.parent=paddle;handle.position.y=.2;handle.material=mat.chrome;return paddle});
-    const hockeyGlow=new BABYLON.PointLight('air hockey underglow',new BABYLON.Vector3(AIR_HOCKEY.x,1.2,AIR_HOCKEY.z),scene);hockeyGlow.diffuse=new BABYLON.Color3(.35,.75,1);hockeyGlow.intensity=5;hockeyGlow.range=10;
+    airHockeyTable={root:hockeyRoot,surface:hockeyPlaySurface,puck,cpu:paddles[0],player:paddles[1],x:AIR_HOCKEY.x,z:AIR_HOCKEY.z};
+    const hockeyGlow=new BABYLON.PointLight('air hockey underglow',new BABYLON.Vector3(AIR_HOCKEY.x,1.2,AIR_HOCKEY.z),scene);hockeyGlow.diffuse=new BABYLON.Color3(.22,.58,.75);hockeyGlow.intensity=.55;hockeyGlow.range=8;
     let puckX=0,puckZ=.2,puckVX=1.55,puckVZ=2.35;
 
     const crest=BABYLON.MeshBuilder.CreateTorus('alien floor crest',{diameter:5.2,thickness:.07,tessellation:64},scene);crest.position.set(0,-.08,6);crest.rotation.x=Math.PI/2;crest.material=mat.mint;
@@ -80,7 +82,7 @@
     [-.66,.66].forEach(x=>{const eye=BABYLON.MeshBuilder.CreateSphere('floor alien eye',{diameter:.72,segments:16},scene);eye.position.set(x,.015,5.55);eye.scaling.set(.58,.05,1);eye.material=mat.eye});
 
     [[-13,-12],[13,-12],[-13,12],[13,12]].forEach(([x,z],i)=>{const roomLight=new BABYLON.PointLight(`square room fill ${i}`,new BABYLON.Vector3(x,5.8,z),scene);roomLight.diffuse=i<2?new BABYLON.Color3(.32,.78,.64):new BABYLON.Color3(.48,.42,.76);roomLight.intensity=24;roomLight.range=21});
-    scene.registerBeforeRender(()=>{const dt=Math.min(.032,engine.getDeltaTime()/1000);saucerRing.rotation.z+=.0018;saucerDome.rotation.y-=.001;puckX+=puckVX*dt;puckZ+=puckVZ*dt;if(Math.abs(puckX)>2.32){puckX=Math.sign(puckX)*2.32;puckVX*=-1}if(Math.abs(puckZ)>3.34){puckZ=Math.sign(puckZ)*3.34;puckVZ*=-1}puck.position.x=puckX;puck.position.z=puckZ;const pulse=performance.now()*.001;paddles[0].position.x=Math.max(-1.9,Math.min(1.9,puckX*.58+Math.sin(pulse*1.6)*.42));paddles[0].position.z=-2.72+Math.sin(pulse*2.1)*.22;paddles[1].position.x=Math.max(-1.9,Math.min(1.9,puckX*.5+Math.cos(pulse*1.35)*.5));paddles[1].position.z=2.72+Math.cos(pulse*1.9)*.22;centerRing.rotation.z+=.003});
+    scene.registerBeforeRender(()=>{const dt=Math.min(.032,engine.getDeltaTime()/1000);saucerRing.rotation.z+=.0018;saucerDome.rotation.y-=.001;centerRing.rotation.z+=.003;if(mode==='hockey')return;puckX+=puckVX*dt;puckZ+=puckVZ*dt;if(Math.abs(puckX)>2.32){puckX=Math.sign(puckX)*2.32;puckVX*=-1}if(Math.abs(puckZ)>3.34){puckZ=Math.sign(puckZ)*3.34;puckVZ*=-1}puck.position.x=puckX;puck.position.z=puckZ;const pulse=performance.now()*.001;paddles[0].position.x=Math.max(-1.9,Math.min(1.9,puckX*.58+Math.sin(pulse*1.6)*.42));paddles[0].position.z=-2.72+Math.sin(pulse*2.1)*.22;paddles[1].position.x=Math.max(-1.9,Math.min(1.9,puckX*.5+Math.cos(pulse*1.35)*.5));paddles[1].position.z=2.72+Math.cos(pulse*1.9)*.22});
   }
 
   function buildAvatar() {
@@ -98,7 +100,7 @@
     [['leftArm',-.63],['rightArm',.63]].forEach(([name,x])=>{const arm=BABYLON.MeshBuilder.CreateCapsule(name,{height:1.18,radius:.13,tessellation:14},scene);arm.parent=root;arm.position.set(x,1.46,0);arm.rotation.z=x<0?-.18:.18;arm.material=mat.alien;limbs[name]=arm});
     const shadow = BABYLON.MeshBuilder.CreateDisc('friendly alien shadow',{radius:.72,tessellation:32},scene);shadow.parent=root;shadow.position.y=.015;shadow.rotation.x=Math.PI/2;shadow.material=mat.floor;
     root.setEnabled(false);
-    return { root, head, antennaTip, ...limbs, yaw: Math.PI, walking: 0, target: null, lookAt: null, enterOnArrival: false };
+    return { root, head, antennaTip, ...limbs, yaw: Math.PI, walking: 0, target: null, lookAt: null, enterOnArrival: false, hockeyOnArrival: false };
   }
 
   const machines = [
@@ -134,7 +136,8 @@
   const ui = {
     lobby: $('lobbyPanel'), walk: $('walkControls'), hud: $('gameHud'), controls: $('mobileControls'), message: $('message'), leave: $('leaveMachine'), result: $('resultScreen'),
     score: $('score'), multiplier: $('multiplier'), balls: $('balls'), mission: $('mission'), high: $('highScore'), final: $('finalScore'), resultTitle: $('resultTitle'), resultMessage: $('resultMessage'),
-    table: $('tableMode'), tableMessage: $('tableMessage'), tableScore: $('tableScore'), tableMultiplier: $('tableMultiplier'), tableBalls: $('tableBalls'), tableMission: $('tableMission')
+    table: $('tableMode'), tableMessage: $('tableMessage'), tableScore: $('tableScore'), tableMultiplier: $('tableMultiplier'), tableBalls: $('tableBalls'), tableMission: $('tableMission'),
+    hockey: $('hockeyMode'), hockeyPlayer: $('hockeyPlayerScore'), hockeyCpu: $('hockeyCpuScore'), hockeyStatus: $('hockeyStatus'), hockeyPrompt: $('hockeyPrompt')
   };
   let selected = Math.max(0,Math.min(2,Number(new URLSearchParams(location.search).get('machine')||1)-1)), mode = 'intro', gameRoot = null, activeProfile = null, gameActive = false;
   let score = 0, multiplier = 1, ballsLeft = 2, targetBank = 0, coreCharge = 0, multiballStarted = false, extraBallAwarded = false;
@@ -162,6 +165,16 @@
     onLayer: (layer) => { sound('ramp'); announce(layer ? 'UPPER ORBIT — SECOND DECK' : 'MAIN DECK RETURN', 1700); },
     onDrain: (remaining) => handle2DDrain(remaining),
   });
+  const hockeyGame = new window.XenoAirHockey(canvas, scene, camera, airHockeyTable, {
+    player: ui.hockeyPlayer, cpu: ui.hockeyCpu, status: ui.hockeyStatus, prompt: ui.hockeyPrompt
+  }, {
+    sound: kind => sound(kind),
+    finish: (playerWon, playerScore, cpuScore, elapsedMs) => {
+      if (!playerWon) return;
+      const seconds=Math.max(1,Math.round(elapsedMs/1000)),rankScore=Math.max(1,1000000+(7-cpuScore)*100000-seconds*250);
+      window.DanArcadeScores?.record('xeno-air-hockey',rankScore,`WIN 7–${cpuScore} · ${Math.floor(seconds/60).toString().padStart(2,'0')}:${(seconds%60).toString().padStart(2,'0')}`,'ALIEN CPU');
+    }
+  });
 
   function showMachine(index, moveCamera = mode === 'intro') {
     selected = (index + machines.length) % machines.length;
@@ -178,9 +191,9 @@
   }
   function lobbyPositionAllowed(x,z){if(Math.abs(x)>17.2||z<-16.4||z>17.2)return false;if(Math.abs(x)>14.7&&z>3.5&&z<10.5)return false;if(Math.abs(x-AIR_HOCKEY.x)<AIR_HOCKEY.halfWidth&&Math.abs(z-AIR_HOCKEY.z)<AIR_HOCKEY.halfDepth)return false;return machines.every(machine=>Math.hypot(x-machine.x,z-machine.z)>6.25)}
   function walkToMachine(index, enterOnArrival = false) {
-    showMachine(index, false); avatar.target = machineApproachPoint(selected); avatar.lookAt = null; avatar.enterOnArrival = enterOnArrival; announce(enterOnArrival ? `WALKING TO ${machines[selected].name}` : `${machines[selected].name} SELECTED`, 1200);
+    showMachine(index, false); avatar.target = machineApproachPoint(selected); avatar.lookAt = null; avatar.enterOnArrival = enterOnArrival; avatar.hockeyOnArrival=false; announce(enterOnArrival ? `WALKING TO ${machines[selected].name}` : `${machines[selected].name} SELECTED`, 1200);
   }
-  function walkToAirHockey(){avatar.target=new BABYLON.Vector3(AIR_HOCKEY.x+4.45,0,AIR_HOCKEY.z+.15);avatar.lookAt=new BABYLON.Vector3(AIR_HOCKEY.x,1.5,AIR_HOCKEY.z);avatar.enterOnArrival=false;announce('WALKING TO ALIEN AIR HOCKEY',1500)}
+  function walkToAirHockey(){avatar.target=new BABYLON.Vector3(AIR_HOCKEY.x+4.45,0,AIR_HOCKEY.z+.15);avatar.lookAt=new BABYLON.Vector3(AIR_HOCKEY.x,1.5,AIR_HOCKEY.z);avatar.enterOnArrival=false;avatar.hockeyOnArrival=true;announce('WALKING TO ALIEN AIR HOCKEY',1500)}
   function updateAvatar(dt, now) {
     if (mode !== 'lobby') return;
     let moving = 0;
@@ -190,9 +203,10 @@
     } else if (avatar.target) {
       const dx = avatar.target.x - avatar.root.position.x, dz = avatar.target.z - avatar.root.position.z, distance = Math.hypot(dx, dz);
       if (distance < .22) {
-        const shouldEnter = avatar.enterOnArrival, machine = machines[selected], focus=avatar.lookAt||machine; avatar.target = null; avatar.lookAt=null; avatar.enterOnArrival = false;
+        const shouldEnter = avatar.enterOnArrival, shouldPlayHockey=avatar.hockeyOnArrival, machine = machines[selected], focus=avatar.lookAt||machine; avatar.target = null; avatar.lookAt=null; avatar.enterOnArrival = false; avatar.hockeyOnArrival=false;
         avatar.yaw = Math.atan2(focus.x - avatar.root.position.x, focus.z - avatar.root.position.z); avatar.root.rotation.y = avatar.yaw;
         if (shouldEnter) { announce('CABINET LINKED', 600); setTimeout(() => { if (mode === 'lobby') startGame(); }, 180); }
+        else if (shouldPlayHockey) { announce('HOCKEY LINKED', 600); setTimeout(() => { if (mode === 'lobby') startHockey(); }, 180); }
       }
       else { const targetYaw = Math.atan2(dx, dz), delta = Math.atan2(Math.sin(targetYaw-avatar.yaw),Math.cos(targetYaw-avatar.yaw)); avatar.yaw += Math.max(-3.2*dt,Math.min(3.2*dt,delta)); avatar.root.position.x += dx/distance*Math.min(distance,4.4*dt); avatar.root.position.z += dz/distance*Math.min(distance,4.4*dt); moving = 1; }
     }
@@ -230,6 +244,9 @@
     if (!audioCtx) return;
     const fx=window.DanArcadeFX;
     if(['flipper','rail','bumper','target','drain'].includes(kind))fx?.play('metal',{volume:kind==='bumper' ? .25 : kind==='drain' ? .28 : .15,rate:kind==='rail'?1.55:kind==='target'?1.32:kind==='drain' ? .62 : .92,cooldown:kind==='rail'?75:35});
+    if(kind==='hockeyRail'||kind==='hockeyHit')fx?.play('metal',{volume:kind==='hockeyHit'?.23:.11,rate:kind==='hockeyHit'?1.18:1.7,cooldown:kind==='hockeyHit'?45:75});
+    if(kind==='hockeyGoal')fx?.play('cheer',{volume:.26,duration:1.7});
+    if(kind==='hockeyLost')fx?.play('metal',{volume:.25,rate:.54,duration:.55});
     if(kind==='launch')fx?.play('laser',{volume:.2,rate:.58,duration:.7});
     if(kind==='ramp')fx?.play('magic',{volume:.14,rate:1.25,cooldown:130});
     if(kind==='multiball'){fx?.play('cheer',{volume:.28,duration:2.2});fx?.hit(document.querySelector('.table-overlay')||canvas,'#caff62',1)}
@@ -245,13 +262,17 @@
     else if (kind === 'multiball') { [220,330,440,660,880,1320].forEach((n,i)=>tone(n,.65,.07,'sawtooth',i*.08,1.3)); noise(.8,.08,1700,.2); }
     else if (kind === 'extra') [523,659,784,1047].forEach((n,i)=>tone(n,.7,.065,'sine',i*.1,1.05));
     else if (kind === 'gameover') [392,330,261,196].forEach((n,i)=>tone(n,.65,.06,'triangle',i*.18,.72));
+    else if (kind === 'hockeyHit') { noise(.065,.06,1600); tone(260,.08,.045,'square',0,1.8); }
+    else if (kind === 'hockeyRail') { noise(.045,.025,2400); tone(920,.06,.018,'triangle'); }
+    else if (kind === 'hockeyGoal') [392,523,659,784].forEach((n,i)=>tone(n,.5,.055,'triangle',i*.065,1.15));
+    else if (kind === 'hockeyLost') [330,262,196].forEach((n,i)=>tone(n,.42,.05,'sawtooth',i*.1,.72));
   }
   function startMusic() {
     clearInterval(musicTimer); musicStep = 0;
-    const themes = [[55,82.4,110,164.8],[65.4,98,130.8,196],[49,73.4,98,146.8]][selected];
+    const pinballThemes = [[55,82.4,110,164.8],[65.4,98,130.8,196],[49,73.4,98,146.8]], hockeyTheme=[73.4,110,146.8,220];
     musicTimer = setInterval(() => {
-      if (mode !== 'play') return;
-      const root = themes[musicStep % themes.length];
+      if (mode !== 'play'&&mode!=='hockey') return;
+      const theme=mode==='hockey'?hockeyTheme:pinballThemes[selected],root = theme[musicStep % theme.length];
       tone(root,1.8,.023,'sine',0,1,musicBus); tone(root*2, .55,.018,'triangle',.04,1.5,musicBus);
       if (musicStep % 2) tone(root*4, .26,.012,'square',.18,1.25,musicBus);
       musicStep++;
@@ -390,25 +411,32 @@
   }
 
   function startGame(){
-    prepareAudio();mode='play';gameActive=true;activeProfile=profiles[selected];score=0;multiplier=1;ballsLeft=2;targetBank=0;coreCharge=0;multiballStarted=false;extraBallAwarded=false;balls=[];leftPressed=false;rightPressed=false;
-    avatar.target=null;avatar.root.setEnabled(false);ui.lobby.classList.add('hidden');ui.walk.classList.add('hidden');ui.result.classList.add('hidden');ui.hud.classList.add('hidden');ui.controls.classList.add('hidden');ui.leave.classList.add('hidden');ui.table.classList.remove('hidden');shell.classList.add('table-open');camera.detachControl();
+    prepareAudio();hockeyGame.stop();glow.intensity=.75;camera.lowerBetaLimit=.8;roomCeiling?.setEnabled(true);mode='play';gameActive=true;activeProfile=profiles[selected];score=0;multiplier=1;ballsLeft=2;targetBank=0;coreCharge=0;multiballStarted=false;extraBallAwarded=false;balls=[];leftPressed=false;rightPressed=false;
+    avatar.target=null;avatar.root.setEnabled(false);ui.lobby.classList.add('hidden');ui.walk.classList.add('hidden');ui.result.classList.add('hidden');ui.hud.classList.add('hidden');ui.controls.classList.add('hidden');ui.leave.classList.add('hidden');ui.hockey.classList.add('hidden');ui.table.classList.remove('hidden');shell.classList.remove('hockey-open');shell.classList.add('table-open');camera.detachControl();
     pinball2d.start(selected,activeProfile);updateHud();startMusic();
   }
+  function setHockeyCamera(){camera.setTarget(new BABYLON.Vector3(AIR_HOCKEY.x,1.45,AIR_HOCKEY.z));camera.alpha=Math.PI/2;camera.beta=innerWidth<=720?.25:innerWidth<=900?.43:.66;camera.radius=innerWidth<=720?13.8:innerWidth<=900?12.6:10.8}
+  function startHockey(){
+    prepareAudio();gameActive=false;mode='hockey';stopMusic();pinball2d.stop();glow.intensity=.42;camera.lowerBetaLimit=.15;roomCeiling?.setEnabled(false);avatar.target=null;avatar.hockeyOnArrival=false;avatar.root.setEnabled(false);ui.lobby.classList.add('hidden');ui.walk.classList.add('hidden');ui.result.classList.add('hidden');ui.hud.classList.add('hidden');ui.controls.classList.add('hidden');ui.leave.classList.add('hidden');ui.table.classList.add('hidden');ui.hockey.classList.remove('hidden');shell.classList.remove('table-open');shell.classList.add('hockey-open');camera.detachControl();setHockeyCamera();hockeyGame.start();startMusic();
+  }
+  function leaveHockey(){
+    hockeyGame.stop();stopMusic();glow.intensity=.75;camera.lowerBetaLimit=.8;roomCeiling?.setEnabled(true);mode='lobby';ui.hockey.classList.add('hidden');shell.classList.remove('hockey-open');avatar.root.setEnabled(true);avatar.root.position.set(AIR_HOCKEY.x+4.45,0,AIR_HOCKEY.z+.15);avatar.yaw=Math.atan2(AIR_HOCKEY.x-avatar.root.position.x,AIR_HOCKEY.z-avatar.root.position.z);avatar.root.rotation.y=avatar.yaw;ui.lobby.classList.remove('hidden');ui.walk.classList.remove('hidden');camera.detachControl();showMachine(selected,false);
+  }
   function endGame(){gameActive=false;stopMusic();sound('gameover');updateHud();window.DanArcadeScores?.record('xeno-pinball.html',Math.floor(score),Math.floor(score).toLocaleString(),machines[selected].name);ui.final.textContent=Math.floor(score).toLocaleString();ui.resultTitle.textContent=machines[selected].name;ui.resultMessage.textContent=score===highScore&&score>0?'NEW ORBITAL HIGH SCORE!':'The arcade has recorded your signal.';setTimeout(()=>ui.result.classList.remove('hidden'),900)}
-  function returnLobby(){gameActive=false;mode='lobby';stopMusic();pinball2d.stop();balls.forEach(ball=>{ball.trail?.dispose();ball.mesh?.dispose()});balls=[];if(gameRoot){gameRoot.dispose();gameRoot=null}machines.forEach(item=>item.previewMeshes.forEach(mesh=>mesh.setEnabled(true)));avatar.root.setEnabled(true);const approach=machineApproachPoint(selected);avatar.root.position.copyFrom(approach);avatar.yaw=Math.atan2(machines[selected].x-approach.x,machines[selected].z-approach.z);avatar.root.rotation.y=avatar.yaw;ui.result.classList.add('hidden');ui.hud.classList.add('hidden');ui.controls.classList.add('hidden');ui.leave.classList.add('hidden');ui.table.classList.add('hidden');shell.classList.remove('table-open');ui.message.classList.add('hidden');ui.tableMessage.classList.add('hidden');ui.lobby.classList.remove('hidden');ui.walk.classList.remove('hidden');camera.detachControl();showMachine(selected,false)}
+  function returnLobby(){gameActive=false;mode='lobby';stopMusic();hockeyGame.stop();glow.intensity=.75;camera.lowerBetaLimit=.8;roomCeiling?.setEnabled(true);pinball2d.stop();balls.forEach(ball=>{ball.trail?.dispose();ball.mesh?.dispose()});balls=[];if(gameRoot){gameRoot.dispose();gameRoot=null}machines.forEach(item=>item.previewMeshes.forEach(mesh=>mesh.setEnabled(true)));avatar.root.setEnabled(true);const approach=machineApproachPoint(selected);avatar.root.position.copyFrom(approach);avatar.yaw=Math.atan2(machines[selected].x-approach.x,machines[selected].z-approach.z);avatar.root.rotation.y=avatar.yaw;ui.result.classList.add('hidden');ui.hud.classList.add('hidden');ui.controls.classList.add('hidden');ui.leave.classList.add('hidden');ui.table.classList.add('hidden');ui.hockey.classList.add('hidden');shell.classList.remove('table-open','hockey-open');ui.message.classList.add('hidden');ui.tableMessage.classList.add('hidden');ui.lobby.classList.remove('hidden');ui.walk.classList.remove('hidden');camera.detachControl();showMachine(selected,false)}
 
   function pressControl(element,side){element.addEventListener('pointerdown',event=>{event.preventDefault();element.setPointerCapture?.(event.pointerId);setFlipper(side,true)});['pointerup','pointercancel','pointerleave'].forEach(type=>element.addEventListener(type,event=>{event.preventDefault();setFlipper(side,false)}))}
   function holdWalk(element,key){element.addEventListener('pointerdown',event=>{event.preventDefault();avatar.target=null;element.setPointerCapture?.(event.pointerId);walkingInput[key]=true});['pointerup','pointercancel','pointerleave'].forEach(type=>element.addEventListener(type,event=>{event.preventDefault();walkingInput[key]=false}))}
   $('previousMachine').onclick=()=>walkToMachine(selected-1);$('nextMachine').onclick=()=>walkToMachine(selected+1);$('enterMachine').onclick=()=>walkToMachine(selected,true);$('visitAirHockey').onclick=walkToAirHockey;
-  $('startButton').onclick=()=>{prepareAudio();$('startScreen').classList.add('hidden');tone(110,.8,.05,'sine',0,4);mode='lobby';ui.walk.classList.remove('hidden');camera.detachControl();avatar.root.setEnabled(true);showMachine(selected,false)};
+  $('startButton').onclick=()=>{prepareAudio();$('startScreen').classList.add('hidden');tone(110,.8,.05,'sine',0,4);mode='lobby';ui.walk.classList.remove('hidden');camera.detachControl();avatar.root.setEnabled(true);showMachine(selected,false);if(new URLSearchParams(location.search).get('hockey')==='1')setTimeout(()=>{if(mode==='lobby')walkToAirHockey()},300)};
   const launchButton=$('launchBall');launchButton.addEventListener('pointerdown',event=>{event.preventDefault();launchButton.setPointerCapture?.(event.pointerId);beginLaunch()});['pointerup','pointercancel','pointerleave'].forEach(type=>launchButton.addEventListener(type,event=>{event.preventDefault();releaseLaunch()}));
-  $('leaveMachine').onclick=returnLobby;$('tableLeave').onclick=returnLobby;$('replayButton').onclick=startGame;$('returnButton').onclick=returnLobby;pressControl($('leftFlipper'),'left');pressControl($('rightFlipper'),'right');pressControl($('tableLeft'),'left');pressControl($('tableRight'),'right');holdWalk($('walkForward'),'forward');holdWalk($('walkBack'),'back');holdWalk($('turnLeft'),'left');holdWalk($('turnRight'),'right');
+  $('leaveMachine').onclick=returnLobby;$('tableLeave').onclick=returnLobby;$('replayButton').onclick=startGame;$('returnButton').onclick=returnLobby;$('hockeyLeave').onclick=leaveHockey;$('hockeyRestart').onclick=()=>{prepareAudio();hockeyGame.restart()};pressControl($('leftFlipper'),'left');pressControl($('rightFlipper'),'right');pressControl($('tableLeft'),'left');pressControl($('tableRight'),'right');holdWalk($('walkForward'),'forward');holdWalk($('walkBack'),'back');holdWalk($('turnLeft'),'left');holdWalk($('turnRight'),'right');
   const tableLaunch=$('tableLaunch');tableLaunch.addEventListener('pointerdown',event=>{event.preventDefault();tableLaunch.setPointerCapture?.(event.pointerId);beginLaunch()});['pointerup','pointercancel','pointerleave'].forEach(type=>tableLaunch.addEventListener(type,event=>{event.preventDefault();releaseLaunch()}));
-  window.addEventListener('keydown',event=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','KeyW','KeyA','KeyS','KeyD','KeyZ','Slash'].includes(event.code))event.preventDefault();if(mode==='lobby'){if(event.code==='ArrowUp'||event.code==='KeyW')walkingInput.forward=true;if(event.code==='ArrowDown'||event.code==='KeyS')walkingInput.back=true;if(event.code==='ArrowLeft'||event.code==='KeyA')walkingInput.left=true;if(event.code==='ArrowRight'||event.code==='KeyD')walkingInput.right=true}else if(mode==='play'){if(event.code==='ArrowLeft'||event.code==='KeyZ')setFlipper('left',true);if(event.code==='ArrowRight'||event.code==='Slash')setFlipper('right',true);if(event.code==='Space'&&!event.repeat)beginLaunch()}});
-  window.addEventListener('keyup',event=>{if(event.code==='ArrowUp'||event.code==='KeyW')walkingInput.forward=false;if(event.code==='ArrowDown'||event.code==='KeyS')walkingInput.back=false;if(event.code==='ArrowLeft'||event.code==='KeyA'){walkingInput.left=false;setFlipper('left',false)}if(event.code==='ArrowRight'||event.code==='KeyD'){walkingInput.right=false;setFlipper('right',false)}if(event.code==='KeyZ')setFlipper('left',false);if(event.code==='Slash')setFlipper('right',false);if(event.code==='Space')releaseLaunch()});
-  window.addEventListener('blur',()=>{Object.keys(walkingInput).forEach(key=>walkingInput[key]=false);setFlipper('left',false);setFlipper('right',false);releaseLaunch()});
+  window.addEventListener('keydown',event=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','KeyW','KeyA','KeyS','KeyD','KeyZ','Slash'].includes(event.code))event.preventDefault();if(mode==='lobby'){if(event.code==='ArrowUp'||event.code==='KeyW')walkingInput.forward=true;if(event.code==='ArrowDown'||event.code==='KeyS')walkingInput.back=true;if(event.code==='ArrowLeft'||event.code==='KeyA')walkingInput.left=true;if(event.code==='ArrowRight'||event.code==='KeyD')walkingInput.right=true}else if(mode==='play'){if(event.code==='ArrowLeft'||event.code==='KeyZ')setFlipper('left',true);if(event.code==='ArrowRight'||event.code==='Slash')setFlipper('right',true);if(event.code==='Space'&&!event.repeat)beginLaunch()}else if(mode==='hockey')hockeyGame.setKey(event.code,true)});
+  window.addEventListener('keyup',event=>{if(event.code==='ArrowUp'||event.code==='KeyW')walkingInput.forward=false;if(event.code==='ArrowDown'||event.code==='KeyS')walkingInput.back=false;if(event.code==='ArrowLeft'||event.code==='KeyA'){walkingInput.left=false;setFlipper('left',false)}if(event.code==='ArrowRight'||event.code==='KeyD'){walkingInput.right=false;setFlipper('right',false)}if(event.code==='KeyZ')setFlipper('left',false);if(event.code==='Slash')setFlipper('right',false);if(event.code==='Space')releaseLaunch();if(mode==='hockey')hockeyGame.setKey(event.code,false)});
+  window.addEventListener('blur',()=>{Object.keys(walkingInput).forEach(key=>walkingInput[key]=false);setFlipper('left',false);setFlipper('right',false);releaseLaunch();['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].forEach(code=>hockeyGame.setKey(code,false))});
   scene.onPointerObservable.add(pointer=>{if(mode==='lobby'&&pointer.type===BABYLON.PointerEventTypes.POINTERPICK&&Number.isInteger(pointer.pickInfo?.pickedMesh?.metadata?.machineIndex))walkToMachine(pointer.pickInfo.pickedMesh.metadata.machineIndex)});
-  showMachine(selected);window.addEventListener('resize',()=>engine.resize());
+  showMachine(selected);window.addEventListener('resize',()=>{engine.resize();if(mode==='hockey')setHockeyCamera()});
   let lastFrame=performance.now();
-  engine.runRenderLoop(()=>{const now=performance.now(),frame=Math.min(.05,(now-lastFrame)/1000);lastFrame=now;updateAvatar(frame,now);if(gameActive&&mode==='play')pinball2d.update(frame,now);scene.render()});
+  engine.runRenderLoop(()=>{const now=performance.now(),frame=Math.min(.05,(now-lastFrame)/1000);lastFrame=now;updateAvatar(frame,now);if(gameActive&&mode==='play')pinball2d.update(frame,now);if(mode==='hockey')hockeyGame.update(frame,now);scene.render()});
 })();

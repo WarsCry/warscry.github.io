@@ -7,7 +7,7 @@
   <title>Xeno Arcade Room | DanPC</title>
   <meta name="description" content="Walk through the 3D Xeno Arcade Room, discover its animated alien air-hockey table, choose a pinball cabinet, and play.">
   <link rel="icon" type="image/png" href="favicondanpc.png">
-  <link rel="stylesheet" href="xeno-pinball.css?v=6">
+  <link rel="stylesheet" href="xeno-pinball.css?v=7">
   <link rel="stylesheet" href="premium-materials.css?v=1">
 </head>
 <body class="premium-pinball">
@@ -29,7 +29,7 @@
         <div><span id="machineNumber">MACHINE 01 / 03</span><b id="machineDifficulty">BALANCED</b></div>
         <button id="nextMachine" aria-label="Next machine">›</button>
       </div>
-      <div class="lobby-actions"><button class="primary" id="enterMachine">APPROACH MACHINE</button><button class="activity" id="visitAirHockey">VISIT AIR HOCKEY</button></div>
+      <div class="lobby-actions"><button class="primary" id="enterMachine">APPROACH MACHINE</button><button class="activity" id="visitAirHockey">PLAY AIR HOCKEY</button></div>
       <small>Walk with WASD / arrows or use the movement pad · selecting a cabinet walks you toward it</small>
     </section>
 
@@ -37,6 +37,18 @@
       <span>WALK</span><button id="walkForward" aria-label="Walk forward">▲</button>
       <button id="turnLeft" aria-label="Turn left">◀</button><button id="walkBack" aria-label="Walk backward">▼</button><button id="turnRight" aria-label="Turn right">▶</button>
     </div>
+
+    <section class="hockey-mode hidden" id="hockeyMode" aria-label="Playable alien air hockey match">
+      <header class="hockey-scoreboard">
+        <button id="hockeyLeave" aria-label="Leave air hockey and return to the arcade room">← ARCADE ROOM</button>
+        <div class="hockey-team player"><small>YOU · PINK</small><b id="hockeyPlayerScore">0</b></div>
+        <div class="hockey-match"><small>ALIEN AIR HOCKEY</small><strong id="hockeyStatus">FIRST TO 7</strong></div>
+        <div class="hockey-team cpu"><small>ALIEN CPU · MINT</small><b id="hockeyCpuScore">0</b></div>
+        <button id="hockeyRestart">↻ RESTART</button>
+      </header>
+      <div class="hockey-prompt" id="hockeyPrompt">DRAG YOUR PINK PADDLE · WASD / ARROWS</div>
+      <footer class="hockey-help">DRAG OR TOUCH THE TABLE TO MOVE · DEFEND THE NEAR GOAL · FIRST TO 7 WINS</footer>
+    </section>
 
     <section class="table-mode hidden" id="tableMode" aria-label="Alien pinball machine">
       <div class="table-cabinet">
@@ -85,15 +97,16 @@
       <p>ORBITAL RECREATION DECK // ONLINE</p>
       <h2>XENO<br><span>ARCADE ROOM</span></h2>
       <div class="orb"><i></i><i></i><i></i></div>
-      <p>Enter the 3D Xeno Arcade Room, watch the alien air-hockey attract match, choose a pinball cabinet, then pilot a metallic flying saucer through ramps, missions, and multiball.</p>
+      <p>Enter the 3D Xeno Arcade Room, challenge the alien at playable air hockey, or choose a pinball cabinet and pilot a metallic flying saucer through ramps, missions, and multiball.</p>
       <button id="startButton">ENTER THE ARCADE ROOM</button>
       <small>Keyboard: Z / ← and / / → flippers · Hold Space to charge the saucer · Phone controls included</small>
     </section>
   </main>
   <script src="https://cdn.babylonjs.com/babylon.js"></script>
   <script src="xeno-pinball-2d.js?v=8"></script>
+  <script src="xeno-air-hockey.js?v=1"></script>
   <script src="arcade-fx.js?v=1"></script>
   <script src="danpc-board.js?v=3"></script>
-  <script src="xeno-pinball.js?v=25"></script>
+  <script src="xeno-pinball.js?v=29"></script>
 </body>
 </html>
