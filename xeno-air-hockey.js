@@ -18,6 +18,10 @@
       this.startedAt = 0;
       this.serveAt = 0;
       this.serveDirection = -1;
+      this.cornerSince = 0;
+      this.cornerReleaseAt = 0;
+      this.lastPuckX = 0;
+      this.lastPuckZ = 0;
       this.pointerId = null;
       this.keys = { left:false, right:false, up:false, down:false };
       this.player = { x:0, z:2.72, vx:0, vz:0, targetX:0, targetZ:2.72, mesh:table.player };
@@ -61,6 +65,10 @@
       this.cpu.x = 0;
       this.cpu.z = -2.72;
       this.player.vx = this.player.vz = this.cpu.vx = this.cpu.vz = 0;
+      this.cornerSince = 0;
+      this.cornerReleaseAt = 0;
+      this.lastPuckX = 0;
+      this.lastPuckZ = 0;
       this.positionPaddles();
       this.updateScore();
       this.ui.status.textContent = 'FIRST TO 7';
@@ -88,8 +96,8 @@
       const distance = (1.68 - ray.origin.y) / ray.direction.y;
       if (distance <= 0) return;
       const point = ray.origin.add(ray.direction.scale(distance));
-      this.player.targetX = clamp(point.x - this.table.x, -2.08, 2.08);
-      this.player.targetZ = clamp(point.z - this.table.z, .3, 3.12);
+      this.player.targetX = clamp(point.x - this.table.x, -1.82, 1.82);
+      this.player.targetZ = clamp(point.z - this.table.z, .3, 2.88);
     }
 
     positionPaddles() {
@@ -119,18 +127,22 @@
       if (this.keys.right) this.player.targetX += keyboardSpeed * dt;
       if (this.keys.up) this.player.targetZ -= keyboardSpeed * dt;
       if (this.keys.down) this.player.targetZ += keyboardSpeed * dt;
-      this.player.targetX = clamp(this.player.targetX, -2.08, 2.08);
-      this.player.targetZ = clamp(this.player.targetZ, .3, 3.12);
-      this.moveBody(this.player, this.player.targetX, this.player.targetZ, 11.5, dt, 2.08, .3, 3.12);
+      this.player.targetX = clamp(this.player.targetX, -1.82, 1.82);
+      this.player.targetZ = clamp(this.player.targetZ, .3, 2.88);
+      this.moveBody(this.player, this.player.targetX, this.player.targetZ, 11.5, dt, 1.82, .3, 2.88);
 
       let cpuTargetX = Math.sin(now * .0011) * .32, cpuTargetZ = -2.72;
       if (!this.finished && this.puck.z < .65) {
-        cpuTargetX = clamp(this.puck.x + this.puck.vx * .1, -1.95, 1.95);
-        cpuTargetZ = clamp(this.puck.z - .62, -3.08, -.3);
+        cpuTargetX = clamp(this.puck.x + this.puck.vx * .1, -1.82, 1.82);
+        cpuTargetZ = clamp(this.puck.z - .62, -2.88, -.3);
+        if (this.puck.z < -2.45) {
+          cpuTargetX = clamp(this.puck.x + (this.puck.x >= 0 ? -.7 : .7), -1.55, 1.55);
+          cpuTargetZ = -2.05;
+        }
         if (this.puck.vz > 1.2) cpuTargetZ = -1.5;
       }
       const cpuSpeed = 6.65 + Math.max(0, this.playerScore - this.cpuScore) * .22;
-      this.moveBody(this.cpu, cpuTargetX, cpuTargetZ, cpuSpeed, dt, 2.08, -3.12, -.3);
+      this.moveBody(this.cpu, cpuTargetX, cpuTargetZ, cpuSpeed, dt, 1.82, -2.88, -.3);
       this.positionPaddles();
 
       if (this.finished) {
@@ -169,14 +181,45 @@
       }
       const maximum = 12.5, currentSpeed = Math.hypot(this.puck.vx, this.puck.vz);
       if (currentSpeed > maximum) { this.puck.vx *= maximum / currentSpeed; this.puck.vz *= maximum / currentSpeed; }
+      this.releaseCornerIfNeeded(now);
       this.puck.mesh.position.set(this.puck.x, 1.67, this.puck.z);
       this.puck.mesh.rotation.y += dt * Math.hypot(this.puck.vx, this.puck.vz) * .7;
+    }
+
+    releaseCornerIfNeeded(now) {
+      const inCorner = Math.abs(this.puck.x) > 2.04 && Math.abs(this.puck.z) > 3.08;
+      const defender = this.puck.z < 0 ? this.cpu : this.player;
+      const endTrap = Math.abs(this.puck.z) > 2.95 && Math.hypot(this.puck.x - defender.x, this.puck.z - defender.z) < .92;
+      const movement = Math.hypot(this.puck.x - this.lastPuckX, this.puck.z - this.lastPuckZ);
+      const speed = Math.hypot(this.puck.vx, this.puck.vz);
+      const stalled = movement < .012 || speed < .65;
+      this.lastPuckX = this.puck.x;
+      this.lastPuckZ = this.puck.z;
+      if (!inCorner && !endTrap && !stalled) { this.cornerSince = 0; return; }
+      if (!this.cornerSince) this.cornerSince = now;
+      if (now - this.cornerSince < (inCorner || endTrap ? 360 : 720) || now - this.cornerReleaseAt < 900) return;
+      const side = Math.abs(this.puck.x) > .45 ? Math.sign(this.puck.x) : (Math.random() < .5 ? -1 : 1);
+      const end = Math.sign(this.puck.z) || 1;
+      this.puck.x = clamp(this.puck.x - side * .3, -1.92, 1.92);
+      this.puck.z = clamp(this.puck.z - end * .32, -2.96, 2.96);
+      this.puck.vx = -side * (4.1 + Math.random() * 1.2);
+      this.puck.vz = -end * (3.2 + Math.random() * 1.1);
+      this.cornerSince = 0;
+      this.cornerReleaseAt = now;
+      this.lastPuckX = this.puck.x;
+      this.lastPuckZ = this.puck.z;
+      this.ui.prompt.textContent = inCorner ? 'CORNER RELEASE · PLAY ON' : 'PUCK RELEASE · PLAY ON';
+      this.callbacks.sound?.('hockeyRail');
     }
 
     hitPaddle(paddle, now) {
       const dx = this.puck.x - paddle.x, dz = this.puck.z - paddle.z, distance = Math.hypot(dx, dz), minimum = .77;
       if (distance >= minimum) return;
-      const nx = dx / (distance || 1), nz = dz / (distance || 1), overlap = minimum - distance;
+      let nx = dx / (distance || 1), nz = dz / (distance || 1);
+      if (paddle === this.cpu && this.puck.z < -2.5) nz = Math.max(.58, Math.abs(nz));
+      if (paddle === this.player && this.puck.z > 2.5) nz = -Math.max(.58, Math.abs(nz));
+      const normalLength = Math.hypot(nx, nz) || 1; nx /= normalLength; nz /= normalLength;
+      const overlap = minimum - distance;
       this.puck.x += nx * overlap;
       this.puck.z += nz * overlap;
       const approach = this.puck.vx * nx + this.puck.vz * nz;
@@ -209,6 +252,9 @@
     serve(direction, delay) {
       this.serveDirection = direction;
       this.serveAt = performance.now() + delay;
+      this.cornerSince = 0;
+      this.lastPuckX = 0;
+      this.lastPuckZ = 0;
       this.puck.x = 0; this.puck.z = 0; this.puck.vx = this.puck.vz = 0;
       this.puck.mesh.position.set(0, 1.67, 0);
     }
