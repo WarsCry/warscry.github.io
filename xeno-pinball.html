@@ -4,24 +4,24 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
   <meta name="theme-color" content="#05040d">
-  <title>Xeno Pinball Arena | DanPC</title>
-  <meta name="description" content="Walk through a 3D alien arcade, choose a cabinet, and play a complete original 2D pinball table.">
+  <title>Xeno Arcade Room | DanPC</title>
+  <meta name="description" content="Walk through the 3D Xeno Arcade Room, discover its animated alien air-hockey table, choose a pinball cabinet, and play.">
   <link rel="icon" type="image/png" href="favicondanpc.png">
-  <link rel="stylesheet" href="xeno-pinball.css?v=5">
+  <link rel="stylesheet" href="xeno-pinball.css?v=6">
   <link rel="stylesheet" href="premium-materials.css?v=1">
 </head>
 <body class="premium-pinball">
   <main class="shell">
-    <canvas id="renderCanvas" aria-label="3D alien pinball arcade"></canvas>
+    <canvas id="renderCanvas" aria-label="3D Xeno Arcade Room with pinball machines and alien air hockey"></canvas>
     <div class="scanlines"></div>
     <header class="topbar">
       <a href="arcade.html">← DANPC ARCADE</a>
-      <div><small>DEEP-SPACE RECREATION DECK</small><strong>XENO PINBALL ARENA</strong></div>
+      <div><small>DEEP-SPACE RECREATION DECK</small><strong>XENO ARCADE ROOM</strong></div>
       <p>HIGH SCORE <b id="highScore">0</b></p>
     </header>
 
     <section class="lobby-panel" id="lobbyPanel">
-      <p class="eyebrow">THREE MACHINES · ONE ORBITAL ARCADE</p>
+      <p class="eyebrow">THREE PINBALL MACHINES · ALIEN AIR HOCKEY</p>
       <h1 id="machineName">HIVE CORE</h1>
       <p id="machineDescription">Wake the living reactor, charge its three organs, and survive the queen’s multiball.</p>
       <div class="machine-picker">
@@ -29,7 +29,7 @@
         <div><span id="machineNumber">MACHINE 01 / 03</span><b id="machineDifficulty">BALANCED</b></div>
         <button id="nextMachine" aria-label="Next machine">›</button>
       </div>
-      <button class="primary" id="enterMachine">APPROACH MACHINE</button>
+      <div class="lobby-actions"><button class="primary" id="enterMachine">APPROACH MACHINE</button><button class="activity" id="visitAirHockey">VISIT AIR HOCKEY</button></div>
       <small>Walk with WASD / arrows or use the movement pad · selecting a cabinet walks you toward it</small>
     </section>
 
@@ -41,7 +41,7 @@
     <section class="table-mode hidden" id="tableMode" aria-label="Alien pinball machine">
       <div class="table-cabinet">
         <header class="table-scoreboard">
-          <button id="tableLeave" aria-label="Return to the 3D arcade">← ARCADE</button>
+          <button id="tableLeave" aria-label="Return to the 3D arcade room">← ARCADE ROOM</button>
           <div><small>SCORE</small><b id="tableScore">0000000</b></div>
           <div><small>MULTIPLIER</small><b id="tableMultiplier">×1</b></div>
           <div><small>SAUCERS</small><b id="tableBalls">2</b></div>
@@ -67,7 +67,7 @@
       <div><small>MISSION</small><b id="mission">AWAKEN THE HIVE</b></div>
     </section>
     <div class="message hidden" id="message">BALL READY</div>
-    <button class="leave hidden" id="leaveMachine">← ARCADE FLOOR</button>
+    <button class="leave hidden" id="leaveMachine">← ARCADE ROOM</button>
     <div class="mobile-controls hidden" id="mobileControls">
       <button id="leftFlipper">◢ LEFT</button>
       <button class="launch" id="launchBall">LAUNCH</button>
@@ -83,17 +83,17 @@
 
     <section class="start-screen" id="startScreen">
       <p>ORBITAL RECREATION DECK // ONLINE</p>
-      <h2>XENO<br><span>PINBALL</span></h2>
+      <h2>XENO<br><span>ARCADE ROOM</span></h2>
       <div class="orb"><i></i><i></i><i></i></div>
-      <p>Walk through the 3D alien arcade, choose a cabinet, then pilot a metallic flying saucer through flowing lanes, ramps, targets, combos, missions, and multiball.</p>
-      <button id="startButton">OPEN THE ARCADE</button>
+      <p>Enter the 3D Xeno Arcade Room, watch the alien air-hockey attract match, choose a pinball cabinet, then pilot a metallic flying saucer through ramps, missions, and multiball.</p>
+      <button id="startButton">ENTER THE ARCADE ROOM</button>
       <small>Keyboard: Z / ← and / / → flippers · Hold Space to charge the saucer · Phone controls included</small>
     </section>
   </main>
   <script src="https://cdn.babylonjs.com/babylon.js"></script>
   <script src="xeno-pinball-2d.js?v=8"></script>
   <script src="arcade-fx.js?v=1"></script>
-  <script src="danpc-board.js?v=2"></script>
-  <script src="xeno-pinball.js?v=20"></script>
+  <script src="danpc-board.js?v=3"></script>
+  <script src="xeno-pinball.js?v=25"></script>
 </body>
 </html>
