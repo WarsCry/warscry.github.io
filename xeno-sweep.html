@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#050b13">
+  <title>Xeno Sweep: Infestation Protocol | DanPC Arcade</title>
+  <meta name="description" content="Neutralisez une infestation extraterrestre dans ce jeu de démineur sci-fi gratuit pour téléphone, tablette et PC.">
+  <link rel="icon" type="image/png" href="favicondanpc.png">
+  <link rel="stylesheet" href="xeno-sweep.css?v=1">
+</head>
+<body>
+  <div class="stars" aria-hidden="true"></div>
+  <main class="shell">
+    <header class="topbar">
+      <a class="back" href="arcade.html">← DANPC ARCADE</a>
+      <div class="identity"><small data-fr="PROTOCOLE DE CONFINEMENT" data-en="CONTAINMENT PROTOCOL">PROTOCOLE DE CONFINEMENT</small><strong>XENO SWEEP</strong></div>
+      <button id="soundButton" class="sound" type="button" aria-pressed="true">◖)) SON</button>
+    </header>
+
+    <section class="command-bar" aria-label="Mission status">
+      <div class="readout danger"><small data-fr="COCONS INSTABLES" data-en="UNSTABLE PODS">COCONS INSTABLES</small><strong id="mineCount">010</strong></div>
+      <div class="mission-name"><small data-fr="SECTEUR ACTIF" data-en="ACTIVE SECTOR">SECTEUR ACTIF</small><strong id="difficultyLabel">ÉCOUTILLE CADET · 9×9</strong></div>
+      <button id="faceButton" class="alien-status" type="button" aria-label="Restart mission"><span id="face">👽</span></button>
+      <div class="mission-name right"><small data-fr="CASES SÉCURISÉES" data-en="SAFE CELLS">CASES SÉCURISÉES</small><strong id="safeCount">000 / 071</strong></div>
+      <div class="readout"><small data-fr="CHRONO" data-en="TIMER">CHRONO</small><strong id="timer">000</strong></div>
+    </section>
+
+    <section class="game-layout">
+      <aside class="side-panel briefing">
+        <p class="eyebrow" data-fr="ANALYSE DE LA RUCHE" data-en="HIVE ANALYSIS">ANALYSE DE LA RUCHE</p>
+        <h1 data-fr="Trouvez les cocons avant l’éclosion." data-en="Find the pods before they hatch.">Trouvez les cocons avant l’éclosion.</h1>
+        <p data-fr="Chaque chiffre révèle le nombre de cocons dans les huit chambres voisines. Balisez tous les dangers sans en ouvrir un seul." data-en="Each number reveals how many pods occupy the eight neighbouring chambers. Mark every danger without opening one.">Chaque chiffre révèle le nombre de cocons dans les huit chambres voisines.</p>
+        <div class="scanner"><i></i><span>BIOSCAN</span></div>
+        <button id="newGameButton" class="secondary" type="button" data-fr="↻ NOUVELLE INFESTATION" data-en="↻ NEW INFESTATION">↻ NOUVELLE INFESTATION</button>
+        <button id="levelButton" class="secondary" type="button" data-fr="▦ CHANGER DE SECTEUR" data-en="▦ CHANGE SECTOR">▦ CHANGER DE SECTEUR</button>
+      </aside>
+
+      <section class="board-console">
+        <div class="board-frame">
+          <div id="board" class="mine-board" role="grid" aria-label="Xeno Sweep grid"></div>
+        </div>
+        <div class="touch-tools">
+          <button id="probeMode" class="mode active" type="button" aria-pressed="true"><span>⌖</span><b data-fr="SONDE" data-en="PROBE">SONDE</b></button>
+          <p id="message" aria-live="polite">CHOISISSEZ UNE CHAMBRE POUR COMMENCER</p>
+          <button id="flagMode" class="mode" type="button" aria-pressed="false"><span>⚑</span><b data-fr="BALISE" data-en="BEACON">BALISE</b></button>
+        </div>
+      </section>
+
+      <aside class="side-panel intel">
+        <p class="eyebrow" data-fr="SIGNATURES XÉNO" data-en="XENO SIGNATURES">SIGNATURES XÉNO</p>
+        <div class="specimen" aria-hidden="true"><span>◉</span><i></i></div>
+        <dl>
+          <div><dt data-fr="MEILLEUR TEMPS" data-en="BEST TIME">MEILLEUR TEMPS</dt><dd id="bestTime">—</dd></div>
+          <div><dt data-fr="PRÉCISION" data-en="ACCURACY">PRÉCISION</dt><dd id="accuracy">100%</dd></div>
+          <div><dt data-fr="ÉTAT" data-en="STATUS">ÉTAT</dt><dd id="status">EN ATTENTE</dd></div>
+        </dl>
+        <p class="tip"><b>PC</b> <span data-fr="Clic gauche: sonder · clic droit: baliser · F: balise" data-en="Left click: probe · right click: mark · F: beacon">Clic gauche: sonder · clic droit: baliser · F: balise</span></p>
+        <p class="tip"><b data-fr="TACTILE" data-en="TOUCH">TACTILE</b> <span data-fr="Choisissez SONDE/BALISE ou gardez une case appuyée." data-en="Choose PROBE/BEACON or hold down a cell.">Choisissez SONDE/BALISE ou gardez une case appuyée.</span></p>
+      </aside>
+    </section>
+  </main>
+
+  <section id="launchScreen" class="overlay show" role="dialog" aria-modal="true" aria-labelledby="launchTitle">
+    <div class="modal">
+      <div class="launch-alien" aria-hidden="true">👽</div>
+      <p class="eyebrow" data-fr="SIGNAL BIOLOGIQUE DÉTECTÉ" data-en="BIOLOGICAL SIGNAL DETECTED">SIGNAL BIOLOGIQUE DÉTECTÉ</p>
+      <h2 id="launchTitle">XENO SWEEP<br><span>INFESTATION PROTOCOL</span></h2>
+      <p data-fr="Une partie de démineur extraterrestre où le premier contact est toujours sécuritaire. Choisissez un secteur à purifier." data-en="An alien minesweeper mission where first contact is always safe. Choose a sector to purge.">Une partie de démineur extraterrestre où le premier contact est toujours sécuritaire.</p>
+      <div id="difficultyChoices" class="difficulty-choices"></div>
+      <button id="startButton" class="primary" type="button" data-fr="COMMENCER LE BIOSCAN" data-en="BEGIN BIOSCAN">COMMENCER LE BIOSCAN</button>
+    </div>
+  </section>
+
+  <section id="resultScreen" class="overlay" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+    <div class="modal result-modal">
+      <div id="resultIcon" class="result-icon" aria-hidden="true">👽</div>
+      <p id="resultKicker" class="eyebrow">SECTEUR PURIFIÉ</p>
+      <h2 id="resultTitle">INFESTATION<br><span>NEUTRALISÉE</span></h2>
+      <p id="resultStats"></p>
+      <div class="result-actions"><button id="againButton" class="primary" type="button">REJOUER</button><button id="resultLevelButton" class="secondary" type="button">CHANGER DE SECTEUR</button></div>
+    </div>
+  </section>
+
+  <script src="arcade-fx.js?v=1"></script>
+  <script src="danpc-board.js?v=3"></script>
+  <script src="xeno-sweep.js?v=1"></script>
+</body>
+</html>

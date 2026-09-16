@@ -8,6 +8,7 @@
     { id:'xeno-air-hockey', icon:'🏒', accent:'#70ffe1', title:'Xeno Air Hockey', href:'xeno-pinball.html?hockey=1' },
     { id:'xeno-mahjong.html', icon:'🗿', accent:'#f4c86a', title:'Xeno Mahjong', href:'xeno-mahjong.html?v=3' },
     { id:'xeno-sudoku.html', icon:'🔢', accent:'#67ffe0', title:'Xeno Sudoku', href:'xeno-sudoku.html' },
+    { id:'xeno-sweep.html', icon:'🧫', accent:'#69ffde', title:'Xeno Sweep', href:'xeno-sweep.html' },
     { id:'alien-chess.html', icon:'👽', accent:'#baff66', title:'Alien Chess', href:'alien-chess.html' },
     { id:'alien-solitaire.html', icon:'🃏', accent:'#72eaff', title:'Alien Solitaire', href:'alien-solitaire.html' },
     { id:'cosmo-casino.html', icon:'🪙', accent:'#ffd967', title:'Cosmo Casino', href:'cosmo-casino.html' },
