@@ -70,6 +70,12 @@
   let soundOn = true, audioCtx = null, masterGain = null, effectsGain = null, ambienceGain = null, ambienceTimer = 0;
   let guardianRoot = null, guardianEyes = [], templeEventPlayed = false, nextTempleEvent = 8;
   let templeFallbackMeshes = [];
+  let featuredTempleRoot = null;
+
+  function fitFeaturedTemple() {
+    if (!featuredTempleRoot) return;
+    featuredTempleRoot.scaling.setAll(16.5);
+  }
 
   function box(name, size, position, material, edges = false) {
     const mesh = BABYLON.MeshBuilder.CreateBox(name, { width: size[0], height: size[1], depth: size[2] }, scene);
@@ -144,10 +150,11 @@
 
   async function loadFeaturedTemple() {
     try {
-      const result = await BABYLON.SceneLoader.ImportMeshAsync('', 'assets/xeno-mahjong/', 'xeno-mahjong-temple.glb', scene);
+      const result = await BABYLON.SceneLoader.ImportMeshAsync('', 'assets/xeno-mahjong/', 'xeno-mahjong-temple-v2.glb', scene);
       const root = result.meshes[0];
+      featuredTempleRoot = root;
       root.name = 'featured Hunyuan Mahjong temple';
-      root.scaling.setAll(16.5);
+      fitFeaturedTemple();
       root.position.set(0, -1.15, 7.2);
       result.meshes.forEach((mesh) => {
         mesh.isPickable = false;
@@ -260,6 +267,7 @@
     tiles.forEach((tile) => tile.root?.dispose());
     const boardScale = selectedTileCount === 128 ? .72 : .92;
     tileBoardRoot.scaling.copyFromFloats(boardScale, 1, boardScale);
+    fitFeaturedTemple();
     tiles = layout(); assignSolvable(tiles); tiles.forEach(createTile);
   }
   const aliveSet = () => new Set(tiles.filter((tile) => tile.alive).map((tile) => tile.id));
