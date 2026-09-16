@@ -60,6 +60,8 @@
   const glyphs = baseGlyphs.flatMap((symbol) => [`${symbol}¹`, `${symbol}²`]);
   const glyphMaterials = new Map();
   const tileBoardRoot = new BABYLON.TransformNode('adaptive tile board', scene);
+  tileBoardRoot.rotation.y = .04;
+  tileBoardRoot.rotation.z = .012;
   const ui = { remaining: $('tilesRemaining'), moves: $('movesAvailable'), timer: $('timer'), matches: $('matches'), message: $('selectionText'), start: $('startScreen'), victory: $('victoryScreen'), victoryStats: $('victoryStats'), hint: $('hintButton'), shuffle: $('shuffleButton'), undo: $('undoButton'), sound: $('soundButton'), event: $('templeEvent') };
   let tiles = [], selected = null, locked = false, history = [], matchCount = 0;
   let selectedTileCount = Number(new URLSearchParams(location.search).get('tiles')) === 64 ? 64 : 128;
