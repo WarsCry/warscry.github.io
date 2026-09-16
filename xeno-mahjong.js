@@ -6,7 +6,7 @@
   const engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
   engine.setHardwareScalingLevel(1 / Math.min(window.devicePixelRatio || 1, 1.75));
   const scene = new BABYLON.Scene(engine);
-  scene.clearColor = new BABYLON.Color4(.008, .018, .025, 1);
+  scene.clearColor = new BABYLON.Color4(.008, .018, .025, 0);
   scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
   scene.fogDensity = .0075;
   scene.fogColor = new BABYLON.Color3(.015, .04, .045);
@@ -59,6 +59,7 @@
   const baseGlyphs = ['◉', '✦', '⌁', '☽', '△', '⊕', '◇', '☄', '♆', '♁', '☼', '∞', '⌬', '⟁', '☯', '♢', '☊', '⌖', '✧', '⟡', '◈', '⏣', '⍟', '⌾', '☿', '⚶', '⧫', '⦿', '✺', '⟟', '⸙', '☍'];
   const glyphs = baseGlyphs.flatMap((symbol) => [`${symbol}¹`, `${symbol}²`]);
   const glyphMaterials = new Map();
+  const tileBoardRoot = new BABYLON.TransformNode('adaptive tile board', scene);
   const ui = { remaining: $('tilesRemaining'), moves: $('movesAvailable'), timer: $('timer'), matches: $('matches'), message: $('selectionText'), start: $('startScreen'), victory: $('victoryScreen'), victoryStats: $('victoryStats'), hint: $('hintButton'), shuffle: $('shuffleButton'), undo: $('undoButton'), sound: $('soundButton'), event: $('templeEvent') };
   let tiles = [], selected = null, locked = false, history = [], matchCount = 0;
   let selectedTileCount = Number(new URLSearchParams(location.search).get('tiles')) === 64 ? 64 : 128;
@@ -243,6 +244,7 @@
 
   function createTile(tile) {
     const root = new BABYLON.TransformNode(`tile root ${tile.id}`, scene);
+    root.parent = tileBoardRoot;
     root.position.set(tile.x, 1.43 + tile.layer * .4, tile.z); tile.homeY = root.position.y;
     const base = BABYLON.MeshBuilder.CreateBox(`tile ${tile.id}`, { width: 1.43, height: .34, depth: 1.84 }, scene);
     base.parent = root; base.material = mat.tile; base.receiveShadows = true; base.metadata = { tileId: tile.id };
@@ -254,6 +256,8 @@
 
   function buildBoard() {
     tiles.forEach((tile) => tile.root?.dispose());
+    const boardScale = selectedTileCount === 128 ? .72 : .92;
+    tileBoardRoot.scaling.copyFromFloats(boardScale, 1, boardScale);
     tiles = layout(); assignSolvable(tiles); tiles.forEach(createTile);
   }
   const aliveSet = () => new Set(tiles.filter((tile) => tile.alive).map((tile) => tile.id));
