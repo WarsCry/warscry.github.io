@@ -136,6 +136,26 @@
     scene.registerBeforeRender(() => { eye.rotation.y += .002; ring.rotation.z -= .0012; guardianEyes.forEach((item,index)=>item.scaling.x=.9+Math.sin(performance.now()*.008+index)*.12); });
   }
 
+  async function loadFeaturedTemple() {
+    try {
+      const result = await BABYLON.SceneLoader.ImportMeshAsync('', 'assets/xeno-mahjong/', 'xeno-mahjong-temple.glb', scene);
+      const root = result.meshes[0];
+      root.name = 'featured Hunyuan Mahjong temple';
+      root.scaling.setAll(11.5);
+      root.position.set(0, -.35, 4.5);
+      result.meshes.forEach((mesh) => {
+        mesh.isPickable = false;
+        mesh.receiveShadows = false;
+        if (mesh.material) {
+          mesh.material.backFaceCulling = true;
+          if ('maxSimultaneousLights' in mesh.material) mesh.material.maxSimultaneousLights = 3;
+        }
+      });
+    } catch (error) {
+      console.warn('The featured Mahjong temple could not be loaded; using the procedural temple.', error);
+    }
+  }
+
   function glyphMaterial(symbol) {
     if (glyphMaterials.has(symbol)) return glyphMaterials.get(symbol);
     const texture = new BABYLON.DynamicTexture(`glyph ${symbol}`, { width: 512, height: 640 }, scene, true);
@@ -437,6 +457,6 @@
   ui.hint.addEventListener('click', hint); ui.shuffle.addEventListener('click', hiveShuffle); ui.undo.addEventListener('click', undo); ui.sound.addEventListener('click', toggleSound);
   window.addEventListener('resize', () => engine.resize());
   window.addEventListener('keydown', (event) => { if (event.key.toLowerCase() === 'h') hint(); if (event.key.toLowerCase() === 'u') undo(); });
-  buildTemple(); buildBoard(); updateHud();
+  buildTemple(); loadFeaturedTemple(); buildBoard(); updateHud();
   engine.runRenderLoop(() => { if (victoryMode) camera.alpha += .00075; scene.render(); });
 })();
