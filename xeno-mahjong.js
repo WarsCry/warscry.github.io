@@ -66,6 +66,7 @@
   let gameActive = false, victoryMode = false, startedAt = 0, timerHandle = 0;
   let soundOn = true, audioCtx = null, masterGain = null, effectsGain = null, ambienceGain = null, ambienceTimer = 0;
   let guardianRoot = null, guardianEyes = [], templeEventPlayed = false, nextTempleEvent = 8;
+  let templeFallbackMeshes = [];
 
   function box(name, size, position, material, edges = false) {
     const mesh = BABYLON.MeshBuilder.CreateBox(name, { width: size[0], height: size[1], depth: size[2] }, scene);
@@ -81,6 +82,7 @@
   }
 
   function buildTemple() {
+    const firstTempleMesh = scene.meshes.length;
     box('floor', [44, .7, 38], [0, -1.05, 0], mat.dark);
     for (let i = 0; i < 4; i++) box(`altar ${i}`, [23 - i * 1.1, .46, 15 - i * .8], [0, -.55 + i * .3, 0], i % 2 ? mat.carved : mat.stone, true);
     for (let x = -10; x <= 10; x += 2) { const seam = box('jade seam', [.035, .025, 13.4], [x, .63, 0], mat.jade); seam.isPickable = false; }
@@ -133,6 +135,7 @@
     const jaw=box('guardian jaw',[2.2,.65,.65],[0,-1.05,-.18],mat.moss);jaw.parent=guardianRoot;
     [-1,0,1].forEach((slot)=>{const guardianEye=BABYLON.MeshBuilder.CreateSphere('guardian acid eye',{diameter:slot? .48:.58,segments:14},scene);guardianEye.parent=guardianRoot;guardianEye.position.set(slot*.72,.24+Math.abs(slot)*.1,-.58);guardianEye.scaling.y=.55;guardianEye.material=mat.acid;guardianEyes.push(guardianEye)});
     [-1,1].forEach(side=>{const horn=BABYLON.MeshBuilder.CreateCylinder('guardian jade horn',{height:2.2,diameterTop:0,diameterBottom:.55,tessellation:7},scene);horn.parent=guardianRoot;horn.position.set(side*1.65,.8,0);horn.rotation.z=side*-.7;horn.material=mat.jade});
+    templeFallbackMeshes = scene.meshes.slice(firstTempleMesh).filter((mesh) => mesh.parent !== guardianRoot);
     scene.registerBeforeRender(() => { eye.rotation.y += .002; ring.rotation.z -= .0012; guardianEyes.forEach((item,index)=>item.scaling.x=.9+Math.sin(performance.now()*.008+index)*.12); });
   }
 
@@ -141,16 +144,23 @@
       const result = await BABYLON.SceneLoader.ImportMeshAsync('', 'assets/xeno-mahjong/', 'xeno-mahjong-temple.glb', scene);
       const root = result.meshes[0];
       root.name = 'featured Hunyuan Mahjong temple';
-      root.scaling.setAll(11.5);
-      root.position.set(0, -.35, 4.5);
+      root.scaling.setAll(16.5);
+      root.position.set(0, -1.15, 7.2);
       result.meshes.forEach((mesh) => {
         mesh.isPickable = false;
         mesh.receiveShadows = false;
+        mesh.applyFog = false;
         if (mesh.material) {
           mesh.material.backFaceCulling = true;
+          if ('unlit' in mesh.material) mesh.material.unlit = false;
+          if ('disableLighting' in mesh.material) mesh.material.disableLighting = false;
+          const colorTexture = mesh.material.albedoTexture || mesh.material.diffuseTexture;
+          if (colorTexture && 'emissiveTexture' in mesh.material) mesh.material.emissiveTexture = colorTexture;
+          if ('emissiveColor' in mesh.material) mesh.material.emissiveColor = new BABYLON.Color3(.7, .82, .86);
           if ('maxSimultaneousLights' in mesh.material) mesh.material.maxSimultaneousLights = 3;
         }
       });
+      templeFallbackMeshes.forEach((mesh) => mesh.setEnabled(false));
     } catch (error) {
       console.warn('The featured Mahjong temple could not be loaded; using the procedural temple.', error);
     }
