@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#7b1530">
+  <title>DanPC Bingo Hall | Bingo 75 boules</title>
+  <meta name="description" content="Imprimez des cartes de bingo aléatoires puis jouez dans une salle de bingo classique avec annonceur et boulier automatique.">
+  <link rel="icon" type="image/png" href="favicondanpc.png">
+  <link rel="stylesheet" href="bingo.css?v=1">
+</head>
+<body>
+  <header class="topbar">
+    <a class="back" href="arcade.html">← DANPC ARCADE</a>
+    <div class="brand"><small data-fr="SOIRÉE DE BINGO" data-en="BINGO NIGHT">SOIRÉE DE BINGO</small><strong>DANPC BINGO HALL</strong></div>
+    <div class="top-actions">
+      <button id="languageButton" type="button">EN</button>
+      <button id="soundButton" type="button" aria-pressed="true">🔊 SON</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hall" aria-label="Salle de bingo">
+      <div class="ceiling-lights" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="stage">
+        <div class="curtain left" aria-hidden="true"></div><div class="curtain right" aria-hidden="true"></div>
+        <div class="marquee"><span data-fr="★ BINGO CE SOIR ★" data-en="★ BINGO TONIGHT ★">★ BINGO CE SOIR ★</span></div>
+        <div class="caller-desk">
+          <div class="caller" aria-hidden="true"><div class="hair"></div><div class="head"><i></i><i></i><b></b></div><div class="body"></div><div class="mic"></div></div>
+          <div class="caller-copy">
+            <p data-fr="VOTRE ANNONCEUSE" data-en="YOUR CALLER">VOTRE ANNONCEUSE</p>
+            <h1 id="callerMessage" aria-live="polite" data-fr="Bienvenue au bingo!" data-en="Welcome to bingo!">Bienvenue au bingo!</h1>
+            <span id="callerSub" data-fr="Imprimez les cartes, puis démarrez le boulier." data-en="Print the cards, then start the machine.">Imprimez les cartes, puis démarrez le boulier.</span>
+          </div>
+        </div>
+
+        <div class="machine-zone">
+          <div id="machine" class="bingo-machine" aria-label="Boulier métallique">
+            <div class="cage">
+              <div class="cage-ring r1"></div><div class="cage-ring r2"></div><div class="cage-ring r3"></div>
+              <div id="cageBalls" class="cage-balls" aria-hidden="true"></div>
+            </div>
+            <div class="axle"></div><div class="machine-stand"><i></i></div>
+            <div class="chute"><span></span></div>
+          </div>
+          <div class="current-ball-wrap">
+            <small data-fr="DERNIÈRE BOULE" data-en="LAST BALL">DERNIÈRE BOULE</small>
+            <div id="currentBall" class="current-ball"><span>—</span></div>
+            <b id="ballCount">0 / 75</b>
+          </div>
+        </div>
+      </div>
+
+      <section class="setup-card">
+        <div class="step"><span>1</span><div><strong data-fr="Préparez les cartes" data-en="Prepare the cards">Préparez les cartes</strong><small data-fr="Chaque carte est unique et prête à imprimer." data-en="Every card is unique and ready to print.">Chaque carte est unique et prête à imprimer.</small></div></div>
+        <button id="openCardsButton" class="paper-button" type="button" data-fr="🖨 CRÉER ET IMPRIMER DES CARTES" data-en="🖨 CREATE & PRINT CARDS">🖨 CRÉER ET IMPRIMER DES CARTES</button>
+        <div class="step"><span>2</span><div><strong data-fr="Lancez la partie" data-en="Start the game">Lancez la partie</strong><small data-fr="Le boulier annoncera les numéros automatiquement." data-en="The machine will call numbers automatically.">Le boulier annoncera les numéros automatiquement.</small></div></div>
+        <div class="start-row">
+          <label><span data-fr="Vitesse" data-en="Speed">Vitesse</span><select id="speedSelect"><option value="15000">15 s</option><option value="10000" selected>10 s</option><option value="6000">6 s</option><option value="0" data-fr="Manuel" data-en="Manual">Manuel</option></select></label>
+          <button id="startButton" class="start-button" type="button" data-fr="DÉMARRER LE BINGO" data-en="START THE BINGO">DÉMARRER LE BINGO</button>
+        </div>
+      </section>
+
+      <section class="game-console">
+        <div class="number-board-wrap">
+          <div class="board-heading"><div><small data-fr="TABLEAU OFFICIEL" data-en="OFFICIAL BOARD">TABLEAU OFFICIEL</small><h2 data-fr="Numéros sortis" data-en="Called numbers">Numéros sortis</h2></div><div id="lastBalls" class="last-balls" aria-label="Recent balls"></div></div>
+          <div id="numberBoard" class="number-board"></div>
+        </div>
+        <aside class="controls">
+          <p class="control-label" data-fr="CONTRÔLE DU BOULIER" data-en="MACHINE CONTROL">CONTRÔLE DU BOULIER</p>
+          <button id="pauseButton" type="button" disabled data-fr="Ⅱ PAUSE" data-en="Ⅱ PAUSE">Ⅱ PAUSE</button>
+          <button id="nextButton" type="button" disabled data-fr="BOULE SUIVANTE →" data-en="NEXT BALL →">BOULE SUIVANTE →</button>
+          <button id="bingoButton" class="bingo-button" type="button" disabled>BINGO!</button>
+          <button id="newGameButton" class="quiet" type="button" data-fr="↻ NOUVELLE PARTIE" data-en="↻ NEW GAME">↻ NOUVELLE PARTIE</button>
+          <div class="rules"><b data-fr="COMMENT GAGNER" data-en="HOW TO WIN">COMMENT GAGNER</b><p data-fr="Marquez les numéros annoncés sur votre carte. La première personne avec une ligne horizontale, verticale ou diagonale crie BINGO!" data-en="Mark each called number on your card. The first person with a horizontal, vertical, or diagonal line calls BINGO!">Marquez les numéros annoncés sur votre carte. La première personne avec une ligne horizontale, verticale ou diagonale crie BINGO!</p></div>
+        </aside>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="cardsDialog" class="cards-dialog">
+    <form method="dialog" class="cards-toolbar">
+      <div><small data-fr="ÉTAPE 1" data-en="STEP 1">ÉTAPE 1</small><h2 data-fr="Cartes de bingo aléatoires" data-en="Random bingo cards">Cartes de bingo aléatoires</h2></div>
+      <button class="close-dialog" value="close" aria-label="Fermer">×</button>
+    </form>
+    <div class="card-options">
+      <label><span data-fr="Nombre de cartes" data-en="Number of cards">Nombre de cartes</span><select id="cardCount"><option>1</option><option>2</option><option>4</option><option selected>6</option><option>8</option><option>10</option><option>12</option></select></label>
+      <button id="generateCardsButton" type="button" data-fr="↻ NOUVELLES CARTES" data-en="↻ NEW CARDS">↻ NOUVELLES CARTES</button>
+      <button id="printCardsButton" class="print-button" type="button" data-fr="🖨 IMPRIMER" data-en="🖨 PRINT">🖨 IMPRIMER</button>
+    </div>
+    <p class="print-tip" data-fr="Conseil: choisissez « paysage » dans les options d’impression pour placer deux cartes par page." data-en="Tip: choose landscape in the print options to place two cards on each page.">Conseil: choisissez « paysage » dans les options d’impression pour placer deux cartes par page.</p>
+    <div id="printArea" class="print-area"></div>
+  </dialog>
+
+  <div id="celebration" class="celebration" aria-hidden="true"></div>
+  <script src="bingo.js?v=1"></script>
+</body>
+</html>
