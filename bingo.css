@@ -32,7 +32,7 @@ body.fullscreen-active{min-height:100vh;background-size:auto,auto,auto,900px}
 body.fullscreen-active .topbar{position:sticky;top:0}
 body.fullscreen-active .setup-card,
 body.fullscreen-active .game-console{width:min(1500px,calc(100% - 44px))}
-@media(min-width:1200px) and (min-height:760px){
+@media(min-width:1000px){
   body.fullscreen-active .stage{min-height:clamp(650px,67vh,850px);padding-top:54px}
   body.fullscreen-active .marquee{margin-bottom:34px}
   body.fullscreen-active .machine-zone{margin-top:122px}
@@ -67,7 +67,7 @@ body.fullscreen-active .game-console{width:min(1500px,calc(100% - 44px))}
 @keyframes chuteBallDrop{0%{opacity:0;transform:translate(-58px,-35px) scale(.55)}28%{opacity:1}72%{opacity:1;transform:translate(0,3px) scale(1)}100%{opacity:0;transform:translate(4px,30px) scale(.82)}}
 
 /* TV layout: machine left, last ball large enough to read across the room */
-@media(min-width:1200px) and (min-height:760px){
+@media(min-width:1000px){
   body.fullscreen-active .machine-zone{width:min(1240px,calc(100% - 100px));justify-content:flex-start;gap:clamp(145px,13vw,235px);margin-inline:auto}
   body.fullscreen-active .bingo-machine{transform:scale(1.48);margin-left:52px;margin-right:34px}
   body.fullscreen-active .current-ball-wrap{min-width:230px}
