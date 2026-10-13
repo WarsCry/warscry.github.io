@@ -184,7 +184,7 @@
     const number = bag.pop(), label = ballLabel(number);
     called.push(number);
     const machine = $('#machine'); machine.classList.add('drawing');
-    setTimeout(()=>machine.classList.remove('drawing'),520);
+    setTimeout(()=>machine.classList.remove('drawing'),720);
     const ball = $('#currentBall'); ball.style.background = `radial-gradient(circle at 35% 25%,white,${colors[Math.floor((number-1)/15)]} 48%,#5b2f20 115%)`;
     ball.querySelector('span').textContent = label; ball.classList.remove('pop'); void ball.offsetWidth; ball.classList.add('pop');
     document.querySelector(`.board-number[data-number="${number}"]`)?.classList.add('called');
