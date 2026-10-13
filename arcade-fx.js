@@ -1,6 +1,6 @@
 (()=>{
   const files={card:'assets/arcade-sfx/card-place.mp3',coin:'assets/arcade-sfx/coin-clink.mp3',laser:'assets/arcade-sfx/laser-shot.mp3',metal:'assets/arcade-sfx/metal-impact.mp3',door:'assets/arcade-sfx/sci-fi-door.mp3',step:'assets/arcade-sfx/robot-step.mp3',magic:'assets/arcade-sfx/crystal-chime.mp3',cheer:'assets/cosmo-kids/kids-crowd-yay.mp3'},raw={},buffers={},loads={},decodes={},queued={},last={};let context,master,compressor;
-  const style=document.createElement('link');style.rel='stylesheet';style.href='arcade-fx.css?v=1';document.head.append(style);
+  const style=document.createElement('link');style.rel='stylesheet';style.href='arcade-fx.css?v=2';document.head.append(style);
   Object.entries(files).forEach(([name,url])=>{loads[name]=fetch(url).then(response=>response.ok?response.arrayBuffer():Promise.reject()).then(data=>raw[name]=data).catch(()=>null)});
   function ready(){try{if(!context){context=new(window.AudioContext||window.webkitAudioContext)();master=context.createGain();master.gain.value=.92;compressor=context.createDynamicsCompressor();compressor.threshold.value=-16;compressor.knee.value=20;compressor.ratio.value=7;compressor.attack.value=.003;compressor.release.value=.2;compressor.connect(master);master.connect(context.destination)}if(context.state==='suspended')context.resume();Object.keys(files).forEach(decode);return context}catch{return null}}
   function decode(name){if(buffers[name])return Promise.resolve(buffers[name]);if(!context)return Promise.resolve(null);if(decodes[name])return decodes[name];decodes[name]=(raw[name]?Promise.resolve(raw[name]):loads[name].then(()=>raw[name])).then(data=>{if(!data)return null;delete raw[name];return context.decodeAudioData(data.slice(0))}).then(buffer=>buffers[name]=buffer).catch(()=>null);return decodes[name]}
@@ -10,6 +10,47 @@
   function burst(target,color='#67ffe2',count=10){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;const p=point(target);for(let i=0;i<count;i++){const particle=document.createElement('i'),angle=i/count*Math.PI*2+Math.random()*.35,distance=35+Math.random()*75;particle.className='arcade-fx-particle';particle.style.setProperty('--fx-left',`${p.x}px`);particle.style.setProperty('--fx-top',`${p.y}px`);particle.style.setProperty('--fx-size',`${3+Math.random()*6}px`);particle.style.setProperty('--fx-color',color);particle.style.setProperty('--fx-dx',`${Math.cos(angle)*distance}px`);particle.style.setProperty('--fx-dy',`${Math.sin(angle)*distance}px`);document.body.append(particle);setTimeout(()=>particle.remove(),700)}}
   function shake(target=document.body,strength=1){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;const element=target?.animate?target:document.body,d=3.5*strength;element.animate([{transform:'translate(0)'},{transform:`translate(${-d}px,${d*.55}px)`},{transform:`translate(${d}px,${-d*.35}px)`},{transform:`translate(${-d*.55}px,0)`},{transform:'translate(0)'}],{duration:180+strength*45,easing:'ease-out'})}
   function hit(target,color='#67ffe2',strength=1){flash(color,.3*strength,target);burst(target,color,Math.round(8+strength*4));if(strength>.65)shake(target?.nodeType?target:document.body,strength)}
+  function installFullscreenButton(){
+    if(location.pathname.toLowerCase().endsWith('/cosmo-kids.html')||document.getElementById('arcadeFullscreenButton'))return;
+    const root=document.documentElement;
+    const button=document.createElement('button');
+    button.id='arcadeFullscreenButton';
+    button.className='arcade-fullscreen-button';
+    button.type='button';
+    button.innerHTML='<span aria-hidden="true">⛶</span>';
+    const fullscreenElement=()=>document.fullscreenElement||document.webkitFullscreenElement||null;
+    const isFrench=()=>root.lang.toLowerCase().startsWith('fr')||localStorage.getItem('siteLang')==='fr';
+    const update=()=>{
+      const active=Boolean(fullscreenElement());
+      const label=isFrench()?(active?'Quitter le plein écran':'Plein écran'):(active?'Exit fullscreen':'Fullscreen');
+      button.querySelector('span').textContent=active?'⤢':'⛶';
+      button.setAttribute('aria-label',label);
+      button.setAttribute('aria-pressed',String(active));
+      button.title=label;
+      document.body.classList.toggle('arcade-fullscreen-active',active);
+    };
+    button.addEventListener('pointerdown',event=>event.stopPropagation());
+    button.addEventListener('click',async event=>{
+      event.stopPropagation();
+      try{
+        if(fullscreenElement()){
+          if(document.exitFullscreen)await document.exitFullscreen();
+          else if(document.webkitExitFullscreen)document.webkitExitFullscreen();
+        }else if(root.requestFullscreen)await root.requestFullscreen({navigationUI:'hide'});
+        else if(root.webkitRequestFullscreen)root.webkitRequestFullscreen();
+        else throw new Error('Fullscreen API unavailable');
+      }catch{
+        button.classList.add('unavailable');
+        button.title=isFrench()?'Plein écran indisponible — utilisez F11':'Fullscreen unavailable — press F11';
+        setTimeout(()=>button.classList.remove('unavailable'),1400);
+      }
+    });
+    document.addEventListener('fullscreenchange',update);
+    document.addEventListener('webkitfullscreenchange',update);
+    document.body.append(button);
+    update();
+  }
   document.addEventListener('pointerdown',event=>{ready();const button=event.target.closest?.('button,[role="button"],.game-card');if(!button||button.disabled)return;const ripple=document.createElement('i');ripple.className='arcade-fx-ripple';ripple.style.setProperty('--fx-left',`${event.clientX}px`);ripple.style.setProperty('--fx-top',`${event.clientY}px`);document.body.append(ripple);setTimeout(()=>ripple.remove(),500)},true);
+  installFullscreenButton();
   window.DanArcadeFX={play,flash,burst,shake,hit,warm:ready};
 })();
