@@ -82,10 +82,18 @@ body.fullscreen-active .game-console{width:min(1500px,calc(100% - 44px))}
   body.fullscreen-active .caller-desk{left:auto;width:min(520px,46vw);margin-left:auto;margin-right:auto;transform:none;justify-content:center}
   body.fullscreen-active .caller-copy{text-align:center}
   body.fullscreen-active .machine-zone{position:absolute;z-index:3;left:0;right:0;bottom:0;width:auto;height:340px;margin:0;display:block;transform:none}
-  body.fullscreen-active .bingo-machine{position:absolute;left:25%;bottom:18px;margin:0;transform:translateX(-50%) scale(1.45);transform-origin:center bottom}
-  body.fullscreen-active .current-ball-wrap{position:absolute;right:clamp(20px,3vw,60px);bottom:-20px;min-width:300px}
+  body.fullscreen-active .bingo-machine{position:absolute;left:25%;bottom:18px;margin:0;transform:translateX(-50%) scale(1.55);transform-origin:center bottom}
+  body.fullscreen-active .current-ball-wrap{position:absolute;right:clamp(20px,3vw,60px);bottom:-20px;min-width:320px}
   body.fullscreen-active .current-ball-wrap small{font-size:.9rem;letter-spacing:.2em}
-  body.fullscreen-active .current-ball{width:260px;height:260px;border-width:12px;box-shadow:0 16px 38px #000,0 0 0 8px #d4a638,0 0 42px #f1cc6bbb}
-  body.fullscreen-active .current-ball span{font-size:4.8rem}
+  body.fullscreen-active .current-ball{width:280px;height:280px;border-width:12px;box-shadow:0 16px 38px #000,0 0 0 8px #d4a638,0 0 42px #f1cc6bbb}
+  body.fullscreen-active .current-ball span{font-size:5.2rem}
   body.fullscreen-active .current-ball-wrap b{font-size:1.35rem}
+}
+@media(min-width:1400px) and (min-height:800px){
+  body.fullscreen-active .bingo-machine{bottom:24px;transform:translateX(-50%) scale(2.1)}
+  body.fullscreen-active .current-ball-wrap{right:clamp(28px,3vw,70px);bottom:-18px;min-width:400px}
+  body.fullscreen-active .current-ball-wrap small{font-size:1.05rem}
+  body.fullscreen-active .current-ball{width:360px;height:360px;border-width:14px;box-shadow:0 18px 44px #000,0 0 0 10px #d4a638,0 0 52px #f1cc6bcc}
+  body.fullscreen-active .current-ball span{font-size:6.6rem}
+  body.fullscreen-active .current-ball-wrap b{font-size:1.55rem}
 }
