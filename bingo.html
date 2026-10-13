@@ -7,7 +7,7 @@
   <title>DanPC Bingo Hall | Bingo 75 boules</title>
   <meta name="description" content="Imprimez des cartes de bingo aléatoires puis jouez dans une salle de bingo classique avec annonceur et boulier automatique.">
   <link rel="icon" type="image/png" href="favicondanpc.png">
-  <link rel="stylesheet" href="bingo.css?v=1">
+  <link rel="stylesheet" href="bingo.css?v=2">
 </head>
 <body>
   <header class="topbar">
@@ -68,6 +68,8 @@
         </div>
         <aside class="controls">
           <p class="control-label" data-fr="CONTRÔLE DU BOULIER" data-en="MACHINE CONTROL">CONTRÔLE DU BOULIER</p>
+          <label class="voice-choice"><span data-fr="VOIX DE L’ANNONCEUSE" data-en="CALLER VOICE">VOIX DE L’ANNONCEUSE</span><select id="voiceSelect" aria-label="Voix de l’annonceuse"><option value="" data-fr="Meilleure voix automatique" data-en="Best automatic voice">Meilleure voix automatique</option></select></label>
+          <button id="testVoiceButton" class="voice-test" type="button" data-fr="▶ TESTER LA VOIX" data-en="▶ TEST VOICE">▶ TESTER LA VOIX</button>
           <button id="pauseButton" type="button" disabled data-fr="Ⅱ PAUSE" data-en="Ⅱ PAUSE">Ⅱ PAUSE</button>
           <button id="nextButton" type="button" disabled data-fr="BOULE SUIVANTE →" data-en="NEXT BALL →">BOULE SUIVANTE →</button>
           <button id="bingoButton" class="bingo-button" type="button" disabled>BINGO!</button>
@@ -93,6 +95,6 @@
   </dialog>
 
   <div id="celebration" class="celebration" aria-hidden="true"></div>
-  <script src="bingo.js?v=1"></script>
+  <script src="bingo.js?v=2"></script>
 </body>
 </html>

@@ -8,6 +8,7 @@
   let language = localStorage.getItem('siteLang') === 'en' ? 'en' : 'fr';
   let soundOn = localStorage.getItem('danpcBingoSound') !== 'off';
   let bag = [], called = [], timer = 0, phase = 'idle', audioContext = null;
+  let availableVoices = [];
 
   function applyLanguage() {
     document.documentElement.lang = language;
@@ -19,6 +20,35 @@
     $('#soundButton').textContent = soundOn ? (language === 'fr' ? '🔊 SON' : '🔊 SOUND') : (language === 'fr' ? '🔇 MUET' : '🔇 MUTED');
     if (phase === 'idle') setCaller(language === 'fr' ? 'Bienvenue au bingo!' : 'Welcome to bingo!', language === 'fr' ? 'Imprimez les cartes, puis démarrez le boulier.' : 'Print the cards, then start the machine.');
     renderCards();
+    populateVoices();
+  }
+
+  function voiceScore(voice) {
+    const name = voice.name.toLowerCase(), locale = voice.lang.toLowerCase();
+    let score = locale === (language === 'fr' ? 'fr-ca' : 'en-ca') ? 70 : locale.startsWith(language) ? 45 : 0;
+    if (/natural|neural|premium|enhanced/.test(name)) score += 100;
+    if (/microsoft|google|apple/.test(name)) score += 25;
+    if (/denise|claude|sylvie|audrey|thomas|jenny|aria|guy|sonia|ryan/.test(name)) score += 25;
+    if (/desktop|compact|espeak/.test(name)) score -= 40;
+    return score;
+  }
+
+  function populateVoices() {
+    if (!('speechSynthesis' in window)) return;
+    availableVoices = window.speechSynthesis.getVoices();
+    const select = $('#voiceSelect'); if (!select) return;
+    const previous = localStorage.getItem(`danpcBingoVoice:${language}`) || '';
+    const matching = availableVoices.filter(voice => voice.lang.toLowerCase().startsWith(language)).sort((a,b)=>voiceScore(b)-voiceScore(a));
+    select.replaceChildren();
+    const automatic = document.createElement('option'); automatic.value=''; automatic.textContent=language==='fr'?'✨ Meilleure voix automatique':'✨ Best automatic voice'; select.append(automatic);
+    matching.forEach(voice => { const option=document.createElement('option'); option.value=voice.voiceURI; option.textContent=`${voice.name} · ${voice.lang}${/natural|neural|premium/i.test(voice.name)?' ★':''}`; select.append(option); });
+    if (previous && matching.some(voice=>voice.voiceURI===previous)) select.value=previous;
+  }
+
+  function selectedVoice() {
+    const selected = $('#voiceSelect')?.value;
+    if (selected) return availableVoices.find(voice=>voice.voiceURI===selected) || null;
+    return availableVoices.filter(voice=>voice.lang.toLowerCase().startsWith(language)).sort((a,b)=>voiceScore(b)-voiceScore(a))[0] || null;
   }
 
   function shuffle(values) {
@@ -160,7 +190,9 @@
 
   function speak(text) {
     if (!soundOn || !('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel(); const utterance = new SpeechSynthesisUtterance(text); utterance.lang = language === 'fr' ? 'fr-CA' : 'en-CA'; utterance.rate = .88; utterance.pitch = 1.03; window.speechSynthesis.speak(utterance);
+    window.speechSynthesis.cancel(); const utterance = new SpeechSynthesisUtterance(text), voice=selectedVoice();
+    if (voice) utterance.voice=voice;
+    utterance.lang = voice?.lang || (language === 'fr' ? 'fr-CA' : 'en-CA'); utterance.rate = .93; utterance.pitch = 1; utterance.volume = 1; window.speechSynthesis.speak(utterance);
   }
 
   function sound(kind) {
@@ -180,6 +212,8 @@
 
   $('#languageButton').onclick=()=>{language=language==='fr'?'en':'fr';localStorage.setItem('siteLang',language);applyLanguage()};
   $('#soundButton').onclick=()=>{soundOn=!soundOn;localStorage.setItem('danpcBingoSound',soundOn?'on':'off');if(!soundOn)window.speechSynthesis?.cancel();applyLanguage();if(soundOn)sound('draw')};
+  $('#voiceSelect').onchange=()=>{localStorage.setItem(`danpcBingoVoice:${language}`,$('#voiceSelect').value);speak(language==='fr'?'Bonsoir tout le monde. Bienvenue au bingo!':'Good evening, everyone. Welcome to bingo!')};
+  $('#testVoiceButton').onclick=()=>speak(language==='fr'?'Bonsoir tout le monde. La prochaine boule arrive!':'Good evening, everyone. The next ball is coming!');
   $('#openCardsButton').onclick=()=>{renderCards();$('#cardsDialog').showModal()};
   $('#generateCardsButton').onclick=renderCards;
   $('#cardCount').onchange=renderCards;
@@ -193,5 +227,6 @@
   addEventListener('beforeunload',()=>{clearTimeout(timer);window.speechSynthesis?.cancel()});
 
   buildBoard(); makeCageBalls(); renderCards(); applyLanguage(); setPhase('idle');
+  if ('speechSynthesis' in window) { window.speechSynthesis.addEventListener?.('voiceschanged',populateVoices); populateVoices(); }
   if (params.get('cards') === '1') $('#cardsDialog').showModal();
 })();
