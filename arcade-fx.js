@@ -11,7 +11,8 @@
   function shake(target=document.body,strength=1){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;const element=target?.animate?target:document.body,d=3.5*strength;element.animate([{transform:'translate(0)'},{transform:`translate(${-d}px,${d*.55}px)`},{transform:`translate(${d}px,${-d*.35}px)`},{transform:`translate(${-d*.55}px,0)`},{transform:'translate(0)'}],{duration:180+strength*45,easing:'ease-out'})}
   function hit(target,color='#67ffe2',strength=1){flash(color,.3*strength,target);burst(target,color,Math.round(8+strength*4));if(strength>.65)shake(target?.nodeType?target:document.body,strength)}
   function installFullscreenButton(){
-    if(location.pathname.toLowerCase().endsWith('/cosmo-kids.html')||document.getElementById('arcadeFullscreenButton'))return;
+    if(document.getElementById('arcadeFullscreenButton'))return;
+    const cosmoKids=location.pathname.toLowerCase().endsWith('/cosmo-kids.html');
     const root=document.documentElement;
     const button=document.createElement('button');
     button.id='arcadeFullscreenButton';
@@ -47,7 +48,12 @@
     });
     document.addEventListener('fullscreenchange',update);
     document.addEventListener('webkitfullscreenchange',update);
-    document.body.append(button);
+    if(cosmoKids){
+      button.classList.add('cosmo-kids-fullscreen');
+      const actions=document.querySelector('.top-actions');
+      actions?.insertBefore(button,actions.querySelector('.score'));
+      if(!button.isConnected)document.body.append(button);
+    }else document.body.append(button);
     update();
   }
   document.addEventListener('pointerdown',event=>{ready();const button=event.target.closest?.('button,[role="button"],.game-card');if(!button||button.disabled)return;const ripple=document.createElement('i');ripple.className='arcade-fx-ripple';ripple.style.setProperty('--fx-left',`${event.clientX}px`);ripple.style.setProperty('--fx-top',`${event.clientY}px`);document.body.append(ripple);setTimeout(()=>ripple.remove(),500)},true);
