@@ -10,6 +10,43 @@
   let bag = [], called = [], timer = 0, phase = 'idle', audioContext = null;
   let availableVoices = [];
 
+  function fullscreenElement() {
+    return document.fullscreenElement || document.webkitFullscreenElement || null;
+  }
+
+  function updateFullscreenButton() {
+    const active = Boolean(fullscreenElement());
+    const label = language === 'fr'
+      ? (active ? 'Quitter le plein écran' : 'Plein écran')
+      : (active ? 'Exit fullscreen' : 'Fullscreen');
+    const button = $('#fullscreenButton');
+    button.textContent = active ? '⤢' : '⛶';
+    button.setAttribute('aria-label', label);
+    button.setAttribute('aria-pressed', String(active));
+    button.title = label;
+    document.body.classList.toggle('fullscreen-active', active);
+  }
+
+  async function toggleFullscreen() {
+    try {
+      if (fullscreenElement()) {
+        if (document.exitFullscreen) await document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      } else if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+      } else if (document.documentElement.webkitRequestFullscreen) {
+        document.documentElement.webkitRequestFullscreen();
+      } else {
+        throw new Error('Fullscreen API unavailable');
+      }
+    } catch (_) {
+      setCaller(
+        language === 'fr' ? 'Plein écran indisponible' : 'Fullscreen unavailable',
+        language === 'fr' ? 'Appuyez sur F11 dans votre navigateur.' : 'Press F11 in your browser.'
+      );
+    }
+  }
+
   function applyLanguage() {
     document.documentElement.lang = language;
     document.querySelectorAll('[data-fr][data-en]').forEach(node => {
@@ -18,6 +55,7 @@
     });
     $('#languageButton').textContent = language === 'fr' ? 'EN' : 'FR';
     $('#soundButton').textContent = soundOn ? (language === 'fr' ? '🔊 SON' : '🔊 SOUND') : (language === 'fr' ? '🔇 MUET' : '🔇 MUTED');
+    updateFullscreenButton();
     if (phase === 'idle') setCaller(language === 'fr' ? 'Bienvenue au bingo!' : 'Welcome to bingo!', language === 'fr' ? 'Imprimez les cartes, puis démarrez le boulier.' : 'Print the cards, then start the machine.');
     renderCards();
     populateVoices();
@@ -212,6 +250,7 @@
 
   $('#languageButton').onclick=()=>{language=language==='fr'?'en':'fr';localStorage.setItem('siteLang',language);applyLanguage()};
   $('#soundButton').onclick=()=>{soundOn=!soundOn;localStorage.setItem('danpcBingoSound',soundOn?'on':'off');if(!soundOn)window.speechSynthesis?.cancel();applyLanguage();if(soundOn)sound('draw')};
+  $('#fullscreenButton').onclick=toggleFullscreen;
   $('#voiceSelect').onchange=()=>{localStorage.setItem(`danpcBingoVoice:${language}`,$('#voiceSelect').value);speak(language==='fr'?'Bonsoir tout le monde. Bienvenue au bingo!':'Good evening, everyone. Welcome to bingo!')};
   $('#testVoiceButton').onclick=()=>speak(language==='fr'?'Bonsoir tout le monde. La prochaine boule arrive!':'Good evening, everyone. The next ball is coming!');
   $('#openCardsButton').onclick=()=>{renderCards();$('#cardsDialog').showModal()};
@@ -224,6 +263,8 @@
   $('#bingoButton').onclick=callBingo;
   $('#newGameButton').onclick=newGame;
   $('#speedSelect').onchange=schedule;
+  document.addEventListener('fullscreenchange',updateFullscreenButton);
+  document.addEventListener('webkitfullscreenchange',updateFullscreenButton);
   addEventListener('beforeunload',()=>{clearTimeout(timer);window.speechSynthesis?.cancel()});
 
   buildBoard(); makeCageBalls(); renderCards(); applyLanguage(); setPhase('idle');
