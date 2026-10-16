@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#040914">
+  <title>Xeno Cipher: Lost Words | DanPC Arcade</title>
+  <meta name="description" content="Retrouvez 64 mots cachés dans quatre archives extraterrestres, sur téléphone, tablette ou ordinateur.">
+  <link rel="icon" type="image/png" href="favicondanpc.png">
+  <link rel="stylesheet" href="xeno-wordsearch.css?v=1">
+</head>
+<body>
+  <div class="stars" aria-hidden="true"></div>
+  <div class="nebula" aria-hidden="true"></div>
+
+  <main class="shell">
+    <header class="topbar">
+      <a class="back" href="arcade.html">← DANPC ARCADE</a>
+      <div class="identity"><small data-fr="ARCHIVES LINGUISTIQUES XÉNO" data-en="XENO LINGUISTIC ARCHIVES">ARCHIVES LINGUISTIQUES XÉNO</small><strong>XENO CIPHER</strong></div>
+      <div class="top-actions">
+        <button id="languageButton" type="button" aria-label="English">EN</button>
+        <button id="soundButton" type="button" aria-pressed="true">◖)) SON</button>
+      </div>
+    </header>
+
+    <section class="command-bar" aria-label="Mission status">
+      <div><small data-fr="SECTEUR" data-en="SECTOR">SECTEUR</small><strong id="sectorReadout">01 · VAISSEAU</strong></div>
+      <div><small data-fr="MOTS TROUVÉS" data-en="WORDS FOUND">MOTS TROUVÉS</small><strong id="foundReadout">00 / 16</strong></div>
+      <div class="core" aria-hidden="true"><i></i><span>⌾</span></div>
+      <div><small data-fr="CHRONO" data-en="TIMER">CHRONO</small><strong id="timer">00:00</strong></div>
+      <div><small data-fr="SCORE" data-en="SCORE">SCORE</small><strong id="score">0000</strong></div>
+    </section>
+
+    <section class="game-layout">
+      <aside class="mission-panel panel">
+        <p class="eyebrow" data-fr="PROTOCOLE DE DÉCRYPTAGE" data-en="DECRYPTION PROTOCOL">PROTOCOLE DE DÉCRYPTAGE</p>
+        <h1 data-fr="Retrouve les 64 mots perdus." data-en="Recover all 64 lost words.">Retrouve les 64 mots perdus.</h1>
+        <p data-fr="Glisse sur les lettres en ligne droite. Les mots peuvent se cacher dans huit directions, même à l’envers." data-en="Drag across letters in a straight line. Words can hide in eight directions, even backwards.">Glisse sur les lettres en ligne droite. Les mots peuvent se cacher dans huit directions, même à l’envers.</p>
+
+        <div class="archive-progress">
+          <div><span data-fr="ARCHIVE COMPLÈTE" data-en="COMPLETE ARCHIVE">ARCHIVE COMPLÈTE</span><b id="archiveCount">0 / 64</b></div>
+          <div class="meter"><i id="archiveFill"></i></div>
+        </div>
+
+        <div id="sectorButtons" class="sector-buttons" aria-label="Sectors"></div>
+        <div class="mission-actions">
+          <button id="hintButton" class="action primary" type="button"><span>✦</span><b data-fr="INDICE (3)" data-en="HINT (3)">INDICE (3)</b></button>
+          <button id="newGridButton" class="action" type="button"><span>↻</span><b data-fr="NOUVELLE GRILLE" data-en="NEW GRID">NOUVELLE GRILLE</b></button>
+        </div>
+      </aside>
+
+      <section class="cipher-console" aria-label="Alien word search">
+        <div class="scanner-frame">
+          <div class="corner top-left"></div><div class="corner top-right"></div><div class="corner bottom-left"></div><div class="corner bottom-right"></div>
+          <div id="grid" class="letter-grid" role="grid" aria-label="Grille de mots cachés"></div>
+          <div class="scanline" aria-hidden="true"></div>
+        </div>
+        <p id="message" class="message" aria-live="polite">TOUCHE UNE LETTRE, PUIS GLISSE JUSQU’À LA DERNIÈRE</p>
+      </section>
+
+      <aside class="word-panel panel">
+        <div class="word-heading"><div><p class="eyebrow" data-fr="SIGNATURES À LOCALISER" data-en="SIGNATURES TO LOCATE">SIGNATURES À LOCALISER</p><h2 id="sectorTitle">VAISSEAU-MÈRE</h2></div><span id="sectorIcon" aria-hidden="true">🛸</span></div>
+        <div id="wordList" class="word-list"></div>
+        <div class="legend"><span><i class="found-swatch"></i><b data-fr="DÉCODÉ" data-en="DECODED">DÉCODÉ</b></span><span><i class="hint-swatch"></i><b data-fr="INDICE" data-en="HINT">INDICE</b></span></div>
+      </aside>
+    </section>
+  </main>
+
+  <section id="resultScreen" class="overlay" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+    <div class="result-card">
+      <div class="result-alien" aria-hidden="true">👽</div>
+      <p class="eyebrow" data-fr="TRANSMISSION RECONSTRUITE" data-en="TRANSMISSION RESTORED">TRANSMISSION RECONSTRUITE</p>
+      <h2 id="resultTitle" data-fr="SECTEUR DÉCODÉ" data-en="SECTOR DECODED">SECTEUR DÉCODÉ</h2>
+      <p id="resultStats"></p>
+      <div class="result-score"><small data-fr="SCORE DE MISSION" data-en="MISSION SCORE">SCORE DE MISSION</small><b id="resultScore">0000</b></div>
+      <div class="result-actions"><button id="nextSectorButton" class="action primary" type="button" data-fr="SECTEUR SUIVANT →" data-en="NEXT SECTOR →">SECTEUR SUIVANT →</button><button id="replayButton" class="action" type="button" data-fr="REJOUER" data-en="PLAY AGAIN">REJOUER</button></div>
+    </div>
+  </section>
+
+  <script src="arcade-fx.js?v=2"></script>
+  <script src="danpc-board.js?v=3"></script>
+  <script src="xeno-wordsearch.js?v=1"></script>
+</body>
+</html>
