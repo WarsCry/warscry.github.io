@@ -227,6 +227,14 @@
   function cellAt(row,col) { return grid.querySelector(`[data-row="${row}"][data-col="${col}"]`); }
   function coordinatesOf(element) { return {row:Number(element.dataset.row),col:Number(element.dataset.col)}; }
   function keyOf(row,col) { return `${row}:${col}`; }
+  function cellFromPoint(x,y) {
+    const rect=grid.getBoundingClientRect(),tolerance=36;
+    if (x<rect.left-tolerance || x>rect.right+tolerance || y<rect.top-tolerance || y>rect.bottom+tolerance) return null;
+    const safeX=Math.max(rect.left+1,Math.min(rect.right-1,x));
+    const safeY=Math.max(rect.top+1,Math.min(rect.bottom-1,y));
+    const cell=document.elementFromPoint(safeX,safeY)?.closest('.letter');
+    return cell && grid.contains(cell) ? cell : null;
+  }
 
   function pathBetween(start,end) {
     const rowDelta=end.row-start.row,colDelta=end.col-start.col;
@@ -317,12 +325,18 @@
   });
   grid.addEventListener('pointermove',event=>{
     if (event.pointerId!==pointerId || !selectionStart) return;
-    event.preventDefault(); const cell=document.elementFromPoint(event.clientX,event.clientY)?.closest('.letter'); if (!cell || !grid.contains(cell)) return;
+    event.preventDefault(); const cell=cellFromPoint(event.clientX,event.clientY); if (!cell) return;
     const path=pathBetween(selectionStart,coordinatesOf(cell)); if (path.length) drawSelection(path);
   });
   grid.addEventListener('pointerup',event=>{
     if (event.pointerId!==pointerId) return;
-    event.preventDefault(); const path=[...selectionPath]; pointerId=null;
+    event.preventDefault();
+    const releaseCell=selectionStart && cellFromPoint(event.clientX,event.clientY);
+    if (releaseCell) {
+      const releasePath=pathBetween(selectionStart,coordinatesOf(releaseCell));
+      if (releasePath.length) drawSelection(releasePath);
+    }
+    const path=[...selectionPath]; pointerId=null;
     if (path.length>1) { tapAnchor=null; finishSelection(path); return; }
     const current=path[0]; clearSelection();
     if (!tapAnchor) { tapAnchor={row:current[0],col:current[1]}; drawSelection([[current[0],current[1]]]); showMessage(copy[language].anchor); return; }
