@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#050713">
+  <title>Xeno Wordlock: Signal Five | DanPC Arcade</title>
+  <meta name="description" content="Décodez plus de 60 mots extraterrestres de cinq lettres en six essais, sur téléphone, tablette ou ordinateur.">
+  <link rel="icon" type="image/png" href="favicondanpc.png">
+  <link rel="stylesheet" href="xeno-wordlock.css?v=1">
+</head>
+<body>
+  <div class="starfield" aria-hidden="true"></div>
+  <div class="scanner-light" aria-hidden="true"></div>
+
+  <main class="shell">
+    <header class="topbar">
+      <a class="back" href="arcade.html">← DANPC ARCADE</a>
+      <div class="identity"><small data-fr="VERROU LINGUISTIQUE XÉNO" data-en="XENO LINGUISTIC LOCK">VERROU LINGUISTIQUE XÉNO</small><strong>XENO WORDLOCK</strong></div>
+      <div class="top-actions">
+        <button id="languageButton" type="button" aria-label="English">EN</button>
+        <button id="soundButton" type="button" aria-pressed="true">◖)) SON</button>
+      </div>
+    </header>
+
+    <section class="status-bar" aria-label="Mission status">
+      <div><small data-fr="TRANSMISSION" data-en="TRANSMISSION">TRANSMISSION</small><strong id="modeReadout">SIGNAL DU JOUR</strong></div>
+      <div><small data-fr="ARCHIVE" data-en="ARCHIVE">ARCHIVE</small><strong id="archiveReadout">00 / 64</strong></div>
+      <div class="signal-core" aria-hidden="true"><i></i><span>⌾</span></div>
+      <div><small data-fr="SÉRIE" data-en="STREAK">SÉRIE</small><strong id="streakReadout">0</strong></div>
+      <div><small data-fr="CHRONO" data-en="TIMER">CHRONO</small><strong id="timer">00:00</strong></div>
+    </section>
+
+    <section class="game-layout">
+      <aside class="mission-panel panel">
+        <p class="eyebrow" data-fr="PROTOCOLE SIGNAL FIVE" data-en="SIGNAL FIVE PROTOCOL">PROTOCOLE SIGNAL FIVE</p>
+        <h1 data-fr="Trouve le code de 5 lettres." data-en="Find the 5-letter code.">Trouve le code de 5 lettres.</h1>
+        <p data-fr="Tu as six essais. Vert : position exacte. Or : lettre présente ailleurs. Sombre : lettre absente." data-en="You have six tries. Green: exact position. Gold: letter elsewhere. Dark: letter absent.">Tu as six essais. Vert : position exacte. Or : lettre présente ailleurs. Sombre : lettre absente.</p>
+
+        <div class="legend" aria-label="Letter feedback legend">
+          <span><i class="correct"></i><b data-fr="EXACTE" data-en="EXACT">EXACTE</b></span>
+          <span><i class="present"></i><b data-fr="DÉPLACÉE" data-en="MISPLACED">DÉPLACÉE</b></span>
+          <span><i class="absent"></i><b data-fr="ABSENTE" data-en="ABSENT">ABSENTE</b></span>
+        </div>
+
+        <div class="mission-actions">
+          <button id="clueButton" class="action primary" type="button"><span>✦</span><b data-fr="INDICE XÉNO" data-en="XENO CLUE">INDICE XÉNO</b></button>
+          <button id="newWordButton" class="action" type="button"><span>↻</span><b data-fr="NOUVEAU SIGNAL" data-en="NEW SIGNAL">NOUVEAU SIGNAL</b></button>
+          <button id="dailyButton" class="action" type="button"><span>☼</span><b data-fr="SIGNAL DU JOUR" data-en="DAILY SIGNAL">SIGNAL DU JOUR</b></button>
+        </div>
+      </aside>
+
+      <section class="decoder" aria-label="Word decoder">
+        <div class="decoder-frame">
+          <div class="antenna" aria-hidden="true"><i></i><i></i><b></b></div>
+          <div id="board" class="word-board" role="grid" aria-label="Grille de décodage"></div>
+          <p id="message" class="message" aria-live="polite">ENTRE UN MOT DE CINQ LETTRES</p>
+          <div id="keyboard" class="keyboard" aria-label="Clavier virtuel"></div>
+        </div>
+      </section>
+
+      <aside class="archive-panel panel">
+        <p class="eyebrow" data-fr="DOSSIER DU DÉCODEUR" data-en="DECODER LOG">DOSSIER DU DÉCODEUR</p>
+        <div class="alien-orb" aria-hidden="true"><span>👽</span><i></i></div>
+        <div class="stat-grid">
+          <div><small data-fr="PARTIES" data-en="PLAYED">PARTIES</small><strong id="playedStat">0</strong></div>
+          <div><small data-fr="VICTOIRES" data-en="WINS">VICTOIRES</small><strong id="winsStat">0</strong></div>
+          <div><small data-fr="MEILLEURE SÉRIE" data-en="BEST STREAK">MEILLEURE SÉRIE</small><strong id="bestStat">0</strong></div>
+          <div><small data-fr="MOTS UNIQUES" data-en="UNIQUE WORDS">MOTS UNIQUES</small><strong id="uniqueStat">0</strong></div>
+        </div>
+        <div class="archive-meter"><div><span data-fr="ARCHIVE DÉCHIFFRÉE" data-en="ARCHIVE DECODED">ARCHIVE DÉCHIFFRÉE</span><b id="percentReadout">0%</b></div><div class="meter"><i id="archiveFill"></i></div></div>
+        <p id="clueText" class="clue-text" data-fr="Demande un indice pour révéler la famille du signal." data-en="Request a clue to reveal the signal family.">Demande un indice pour révéler la famille du signal.</p>
+      </aside>
+    </section>
+  </main>
+
+  <section id="resultScreen" class="overlay" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+    <div class="result-card">
+      <div id="resultAlien" class="result-alien" aria-hidden="true">👽</div>
+      <p class="eyebrow" data-fr="TRANSMISSION TERMINÉE" data-en="TRANSMISSION COMPLETE">TRANSMISSION TERMINÉE</p>
+      <h2 id="resultTitle">CODE DÉCHIFFRÉ</h2>
+      <p id="resultText"></p>
+      <div class="answer"><small data-fr="LE SIGNAL ÉTAIT" data-en="THE SIGNAL WAS">LE SIGNAL ÉTAIT</small><strong id="answerWord"></strong></div>
+      <div class="result-score"><small data-fr="SCORE DE MISSION" data-en="MISSION SCORE">SCORE DE MISSION</small><b id="resultScore">0000</b></div>
+      <div class="result-actions"><button id="nextButton" class="action primary" type="button" data-fr="SIGNAL SUIVANT →" data-en="NEXT SIGNAL →">SIGNAL SUIVANT →</button><button id="closeResultButton" class="action" type="button" data-fr="VOIR LA GRILLE" data-en="VIEW BOARD">VOIR LA GRILLE</button></div>
+    </div>
+  </section>
+
+  <script src="arcade-fx.js?v=2"></script>
+  <script src="danpc-board.js?v=3"></script>
+  <script src="xeno-wordlock.js?v=1"></script>
+</body>
+</html>
