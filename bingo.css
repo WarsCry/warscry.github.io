@@ -161,13 +161,13 @@ body.fullscreen-active .game-console{width:min(1500px,calc(100% - 44px))}
     print-color-adjust:exact;
   }
   .bingo-card:last-child:nth-child(odd){grid-column:1/-1;width:calc((100% - 8mm)/2)!important;justify-self:center}
-  .bingo-card-head{height:18mm!important;margin:0 0 3mm!important;align-items:center!important}
-  .bingo-card-head strong{font-size:12mm!important;line-height:1!important;letter-spacing:.18em!important;color:#8b6514!important;text-shadow:none!important}
-  .bingo-card-head small{font-size:2.5mm!important;line-height:1.25!important;color:#17130c!important}
+  .bingo-card-head{height:20mm!important;margin:0 0 3mm!important;align-items:center!important}
+  .bingo-card-head strong{font-size:14mm!important;line-height:1!important;letter-spacing:.18em!important;color:#8b6514!important;text-shadow:none!important}
+  .bingo-card-head small{font-size:3mm!important;line-height:1.25!important;color:#17130c!important}
   .card-grid{
     display:grid!important;
     grid-template-columns:repeat(5,minmax(0,1fr))!important;
-    grid-template-rows:repeat(6,19mm)!important;
+    grid-template-rows:repeat(6,25mm)!important;
     width:100%!important;
     border:.6mm solid #17130c!important;
     background:#fff!important;
@@ -175,7 +175,7 @@ body.fullscreen-active .game-console{width:min(1500px,calc(100% - 44px))}
   .card-grid>*{
     box-sizing:border-box!important;
     width:auto!important;
-    height:19mm!important;
+    height:25mm!important;
     min-width:0!important;
     min-height:0!important;
     aspect-ratio:auto!important;
@@ -183,7 +183,7 @@ body.fullscreen-active .game-console{width:min(1500px,calc(100% - 44px))}
     background:#fff!important;
     color:#17130c!important;
   }
-  .card-grid b{font-size:7mm!important;line-height:1!important;color:#17130c!important}
-  .card-grid span{font-size:6mm!important;line-height:1!important;color:#17130c!important}
-  .card-grid .free{font-size:2.5mm!important;line-height:1.05!important;background:#f2d782!important;color:#17130c!important}
+  .card-grid b{font-size:8.5mm!important;line-height:1!important;color:#17130c!important}
+  .card-grid span{font-size:7.5mm!important;line-height:1!important;color:#17130c!important}
+  .card-grid .free{font-size:3.2mm!important;line-height:1.05!important;background:#f2d782!important;color:#17130c!important}
 }
