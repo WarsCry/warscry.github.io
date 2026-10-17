@@ -97,3 +97,93 @@ body.fullscreen-active .game-console{width:min(1500px,calc(100% - 44px))}
   body.fullscreen-active .current-ball span{font-size:6.6rem}
   body.fullscreen-active .current-ball-wrap b{font-size:1.55rem}
 }
+
+/* Paper-safe bingo cards: two complete, aligned cards per Letter landscape page. */
+@media print{
+  @page{size:letter landscape;margin:8mm}
+  html,body{
+    width:auto!important;
+    min-width:0!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:visible!important;
+    background:#fff!important;
+    background-image:none!important;
+  }
+  body::before,body::after{display:none!important}
+  .topbar,main,.cards-toolbar,.card-options,.print-tip,.celebration,.arcade-fullscreen-button{display:none!important}
+  .cards-dialog{
+    position:static!important;
+    inset:auto!important;
+    display:block!important;
+    width:100%!important;
+    max-width:none!important;
+    max-height:none!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:visible!important;
+    border:0!important;
+    border-radius:0!important;
+    background:#fff!important;
+    background-image:none!important;
+    box-shadow:none!important;
+  }
+  .cards-dialog::backdrop{display:none!important;background:transparent!important}
+  .print-area{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    grid-auto-rows:auto!important;
+    gap:8mm!important;
+    width:100%!important;
+    margin:0!important;
+    padding:0!important;
+    background:#fff!important;
+    background-image:none!important;
+  }
+  .bingo-card{
+    box-sizing:border-box!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:5mm!important;
+    overflow:hidden!important;
+    break-inside:avoid!important;
+    page-break-inside:avoid!important;
+    border:1mm solid #17130c!important;
+    border-radius:3mm!important;
+    background:#fffdf4!important;
+    background-image:none!important;
+    box-shadow:none!important;
+    color:#17130c!important;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+  .bingo-card:last-child:nth-child(odd){grid-column:1/-1;width:calc((100% - 8mm)/2)!important;justify-self:center}
+  .bingo-card-head{height:18mm!important;margin:0 0 3mm!important;align-items:center!important}
+  .bingo-card-head strong{font-size:12mm!important;line-height:1!important;letter-spacing:.18em!important;color:#8b6514!important;text-shadow:none!important}
+  .bingo-card-head small{font-size:2.5mm!important;line-height:1.25!important;color:#17130c!important}
+  .card-grid{
+    display:grid!important;
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    grid-template-rows:repeat(6,19mm)!important;
+    width:100%!important;
+    border:.6mm solid #17130c!important;
+    background:#fff!important;
+  }
+  .card-grid>*{
+    box-sizing:border-box!important;
+    width:auto!important;
+    height:19mm!important;
+    min-width:0!important;
+    min-height:0!important;
+    aspect-ratio:auto!important;
+    border:.3mm solid #3b3529!important;
+    background:#fff!important;
+    color:#17130c!important;
+  }
+  .card-grid b{font-size:7mm!important;line-height:1!important;color:#17130c!important}
+  .card-grid span{font-size:6mm!important;line-height:1!important;color:#17130c!important}
+  .card-grid .free{font-size:2.5mm!important;line-height:1.05!important;background:#f2d782!important;color:#17130c!important}
+}
