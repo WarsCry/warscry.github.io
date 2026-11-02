@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#040912">
+  <title>Xeno Survivors: Hivefall | DanPC Arcade</title>
+  <meta name="description" content="Survis aux vagues du Dominion avec des pouvoirs aliens automatiques dans ce roguelite d’action gratuit pour PC, tablette et téléphone.">
+  <link rel="icon" type="image/png" href="favicondanpc.png">
+  <link rel="stylesheet" href="xeno-survivors.css?v=1">
+</head>
+<body>
+  <canvas id="game" aria-label="Xeno Survivors battlefield"></canvas>
+
+  <header class="hud top-hud">
+    <a class="back" href="arcade.html">← <span data-fr="ARCADE" data-en="ARCADE">ARCADE</span></a>
+    <div class="mission"><small data-fr="OPÉRATION HIVEFALL" data-en="OPERATION HIVEFALL">OPÉRATION HIVEFALL</small><strong id="sector">JARDIN BIO-LUMINEUX</strong></div>
+    <div class="timer-box"><small data-fr="EXTRACTION" data-en="EXTRACTION">EXTRACTION</small><strong id="timer">08:00</strong></div>
+    <div class="stat"><small data-fr="NIVEAU" data-en="LEVEL">NIVEAU</small><strong id="level">1</strong></div>
+    <div class="stat"><small data-fr="ÉLIMINÉS" data-en="ELIMINATED">ÉLIMINÉS</small><strong id="kills">0</strong></div>
+    <button id="sound" class="icon-button" type="button" aria-pressed="true" aria-label="Son">◖))</button>
+    <button id="pause" class="icon-button" type="button" aria-label="Pause">Ⅱ</button>
+  </header>
+
+  <aside id="bossPanel" class="boss-panel" hidden>
+    <div><small id="bossTitle">DOMINION WARDEN</small><span id="bossPercent">100%</span></div>
+    <i><b id="bossHealth"></b></i>
+  </aside>
+
+  <footer class="hud bottom-hud">
+    <div class="health-block"><span class="portrait" aria-hidden="true">👽</span><div><small id="healthLabel">BIO-VIE 100 / 100</small><i><b id="healthBar"></b></i></div></div>
+    <div class="xp-block"><small><span data-fr="SYNCHRONISATION" data-en="SYNCHRONIZATION">SYNCHRONISATION</span> · <span id="xpLabel">0 / 10</span></small><i><b id="xpBar"></b></i></div>
+    <div id="weaponStrip" class="weapon-strip" aria-label="Active powers"></div>
+  </footer>
+
+  <div id="joystick" class="joystick" aria-hidden="true"><i></i></div>
+  <p id="announcement" class="announcement" aria-live="polite"></p>
+
+  <section id="launch" class="overlay show" role="dialog" aria-modal="true" aria-labelledby="launchTitle">
+    <div class="launch-card">
+      <div class="hero-alien" aria-hidden="true"><i class="antenna"></i><i class="head"><b></b><b></b></i><i class="body"></i></div>
+      <p class="eyebrow" data-fr="DERNIÈRE SENTINELLE VEYRANE" data-en="LAST VEYRAN SENTINEL">DERNIÈRE SENTINELLE VEYRANE</p>
+      <h1 id="launchTitle">XENO SURVIVORS<br><span>HIVEFALL</span></h1>
+      <p data-fr="Le Dominion envahit le jardin vivant. Déplace ton alien, laisse ses pouvoirs tirer automatiquement, récolte l’énergie et construis une combinaison capable de survivre huit minutes." data-en="The Dominion is invading the living garden. Move your alien, let its powers fire automatically, collect energy, and build a combination strong enough to survive eight minutes.">Le Dominion envahit le jardin vivant. Déplace ton alien, laisse ses pouvoirs tirer automatiquement et survis huit minutes.</p>
+      <div class="difficulty" id="difficulty"></div>
+      <div class="controls"><span><b>PC</b> WASD / flèches</span><span><b data-fr="TACTILE" data-en="TOUCH">TACTILE</b> Joystick libre</span><span><b data-fr="ATTAQUE" data-en="ATTACK">ATTAQUE</b> Automatique</span></div>
+      <button id="start" class="primary" type="button" data-fr="DÉCLENCHER HIVEFALL" data-en="BEGIN HIVEFALL">DÉCLENCHER HIVEFALL</button>
+    </div>
+  </section>
+
+  <section id="upgrade" class="overlay" role="dialog" aria-modal="true" aria-labelledby="upgradeTitle">
+    <div class="upgrade-panel">
+      <p class="eyebrow" data-fr="MUTATION DISPONIBLE" data-en="MUTATION AVAILABLE">MUTATION DISPONIBLE</p>
+      <h2 id="upgradeTitle" data-fr="Choisis une évolution" data-en="Choose an evolution">Choisis une évolution</h2>
+      <p data-fr="Le combat est suspendu pendant ton choix." data-en="Combat is paused while you choose.">Le combat est suspendu pendant ton choix.</p>
+      <div id="upgradeChoices" class="upgrade-choices"></div>
+    </div>
+  </section>
+
+  <section id="pauseScreen" class="overlay" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
+    <div class="small-card">
+      <p class="eyebrow" data-fr="SIGNAL SUSPENDU" data-en="SIGNAL SUSPENDED">SIGNAL SUSPENDU</p>
+      <h2 id="pauseTitle" data-fr="Mission en pause" data-en="Mission paused">Mission en pause</h2>
+      <button id="resume" class="primary" type="button" data-fr="REPRENDRE" data-en="RESUME">REPRENDRE</button>
+      <a href="arcade.html" class="secondary" data-fr="QUITTER VERS L’ARCADE" data-en="EXIT TO ARCADE">QUITTER VERS L’ARCADE</a>
+    </div>
+  </section>
+
+  <section id="result" class="overlay" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+    <div class="result-card">
+      <p id="resultKicker" class="eyebrow">EXTRACTION RÉUSSIE</p>
+      <h2 id="resultTitle">LA RUCHE<br><span>SURVIT</span></h2>
+      <div id="resultStats" class="result-stats"></div>
+      <div class="result-actions"><button id="again" class="primary" type="button" data-fr="REJOUER" data-en="PLAY AGAIN">REJOUER</button><a href="arcade.html" class="secondary" data-fr="RETOUR À L’ARCADE" data-en="BACK TO ARCADE">RETOUR À L’ARCADE</a></div>
+    </div>
+  </section>
+
+  <script src="arcade-fx.js?v=2"></script>
+  <script src="danpc-board.js?v=3"></script>
+  <script src="xeno-survivors.js?v=1"></script>
+</body>
+</html>
