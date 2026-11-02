@@ -1,6 +1,6 @@
 (()=>{
 const canvas=document.querySelector('#game'),menu=document.querySelector('#menu'),msg=document.querySelector('#msg');
-const healthText=document.querySelector('#health'),healthBar=document.querySelector('#healthBar'),ammoText=document.querySelector('#ammo'),leftText=document.querySelector('#left'),deckText=document.querySelector('#deckName');
+const healthText=document.querySelector('#health'),healthBar=document.querySelector('#healthBar'),ammoText=document.querySelector('#ammo'),leftText=document.querySelector('#left'),deckText=document.querySelector('#deckName'),secretText=document.querySelector('#secretStatus');
 const hitMarker=document.querySelector('#hitMarker'),damage=document.querySelector('#damage'),muzzle=document.querySelector('#muzzle'),weapon=document.querySelector('#weapon');
 if(!window.BABYLON){menu.querySelector('p').textContent='The 3D engine could not load. Check your connection and reload the mission.';return}
 
@@ -14,12 +14,22 @@ const DIFFICULTIES={beginner:{label:'BEGINNER',description:'More plasma, lighter
 let selectedDifficulty=DIFFICULTIES[new URLSearchParams(location.search).get('difficulty')]?new URLSearchParams(location.search).get('difficulty'):'novice';
 const deckNodes={1:[],2:[],3:[],4:[],5:[]};
 const LEVELS={
-  1:{deck:'07',name:'DECK 07 · BIO-CORE ATRIUM',brief:'Secure the outer atrium and learn the ship’s defence systems.',ammo:42,spawn:[0,2,29],rotation:Math.PI,positions:[[-26,-18],[-14,-28],[0,-30],[14,-27],[26,-17],[-27,-5]],hp:74,eliteHp:96,eliteFrom:99,speed:.66,speedRange:.14,fireRange:16,fireMin:1.05,fireRangeDelay:.85,boltMin:4,boltRange:4,boltDuration:650,coreDamage:7,coreCooldown:1.4,grace:4.5,fog:'#050e12',fogDensity:.008,clear:[.006,.012,.025],light:[.42,.58,.66],ground:[.08,.12,.16],core:[.3,1,.78]},
-  2:{deck:'08',name:'DECK 08 · REACTOR LABYRINTH',brief:'A measured Dominion squad is entering the expanded reactor maze. No attacker begins behind your deployment point.',ammo:50,spawn:[0,2,29],rotation:Math.PI,positions:[[-27,-18],[-15,-28],[0,-30],[15,-27],[27,-17],[-27,-3],[22,7]],hp:88,eliteHp:112,eliteFrom:99,speed:.74,speedRange:.15,fireRange:17,fireMin:1.05,fireRangeDelay:.8,boltMin:4,boltRange:4,boltDuration:620,coreDamage:7,coreCooldown:1.25,grace:5,fog:'#170817',fogDensity:.009,clear:[.03,.006,.025],light:[.65,.34,.5],ground:[.16,.035,.08],core:[.75,.28,.58]},
-  3:{deck:'09',name:'DECK 09 · HYDROPONICS RING',brief:'Fight through the living greenhouse deck, using growth tanks and bio-columns as cover.',ammo:62,spawn:[0,2,29],rotation:Math.PI,positions:[[-28,-19],[-18,-29],[-4,-31],[11,-30],[26,-21],[29,-5],[-28,2],[-20,16],[20,13]],hp:98,eliteHp:126,eliteFrom:8,speed:.8,speedRange:.17,fireRange:19,fireMin:.9,fireRangeDelay:.72,boltMin:5,boltRange:4,boltDuration:570,coreDamage:8,coreCooldown:1.1,grace:4.5,fog:'#041a18',fogDensity:.0085,clear:[.004,.025,.022],light:[.34,.68,.55],ground:[.035,.16,.11],core:[.35,1,.55]},
-  4:{deck:'10',name:'DECK 10 · NAVIGATION VAULT',brief:'The Dominion vanguard has reached the star-map vault. Use the consoles, pylons and curved partitions to break their fire lines.',ammo:74,spawn:[0,2,29],rotation:Math.PI,positions:[[-29,-18],[-19,-29],[-6,-31],[8,-31],[22,-27],[30,-12],[28,7],[-29,3],[-24,18],[23,18]],hp:110,eliteHp:142,eliteFrom:7,speed:.88,speedRange:.2,fireRange:22,fireMin:.78,fireRangeDelay:.64,boltMin:6,boltRange:4,boltDuration:520,coreDamage:9,coreCooldown:1,grace:4,fog:'#070d22',fogDensity:.0095,clear:[.006,.01,.035],light:[.34,.48,.78],ground:[.06,.08,.19],core:[.36,.55,1]},
-  5:{deck:'11',name:'DECK 11 · COMMAND NEXUS',brief:'Final mission: enter the command nexus and defeat the Dominion Overseer. The arena has multiple cover positions—hide, move and choose your shots.',ammo:72,spawn:[0,2,30],rotation:Math.PI,positions:[[0,-19]],boss:true,bossHp:900,hp:900,eliteHp:900,eliteFrom:0,speed:1.02,speedRange:0,fireRange:48,fireMin:1.12,fireRangeDelay:.55,boltMin:6,boltRange:4,boltDuration:700,coreDamage:0,coreCooldown:2,grace:5.5,fog:'#13070a',fogDensity:.007,clear:[.025,.004,.006],light:[.68,.28,.24],ground:[.18,.035,.025],core:[1,.35,.22]}
+  1:{deck:'07',name:'DECK 07 · BIO-CORE ATRIUM',brief:'Secure the outer atrium, recover its hidden heart key and clear the sealed bio-archive.',ammo:42,spawn:[0,2,29],rotation:Math.PI,positions:[[-26,-18],[-14,-28],[0,-30],[14,-27],[26,-17],[-27,-5]],hp:74,eliteHp:96,eliteFrom:99,speed:.66,speedRange:.14,fireRange:16,fireMin:1.05,fireRangeDelay:.85,boltMin:4,boltRange:4,boltDuration:650,coreDamage:7,coreCooldown:1.4,grace:10,fog:'#050e12',fogDensity:.008,clear:[.006,.012,.025],light:[.42,.58,.66],ground:[.08,.12,.16],core:[.3,1,.78]},
+  2:{deck:'08',name:'DECK 08 · REACTOR LABYRINTH',brief:'Break the Dominion formation, locate the reactor seal and purge the calibration vault.',ammo:50,spawn:[0,2,29],rotation:Math.PI,positions:[[-27,-18],[-15,-28],[0,-30],[15,-27],[27,-17],[-27,-3],[22,7]],hp:88,eliteHp:112,eliteFrom:99,speed:.74,speedRange:.15,fireRange:17,fireMin:1.05,fireRangeDelay:.8,boltMin:4,boltRange:4,boltDuration:620,coreDamage:7,coreCooldown:1.25,grace:11,fog:'#170817',fogDensity:.009,clear:[.03,.006,.025],light:[.65,.34,.5],ground:[.16,.035,.08],core:[.75,.28,.58]},
+  3:{deck:'09',name:'DECK 09 · HYDROPONICS RING',brief:'Fight through the living greenhouse, recover the dormant bio-seed and cleanse its hidden nursery.',ammo:62,spawn:[0,2,29],rotation:Math.PI,positions:[[-28,-19],[-18,-29],[-4,-31],[11,-30],[26,-21],[29,-5],[-28,2],[-20,16],[20,13]],hp:98,eliteHp:126,eliteFrom:8,speed:.8,speedRange:.17,fireRange:19,fireMin:.9,fireRangeDelay:.72,boltMin:5,boltRange:4,boltDuration:570,coreDamage:8,coreCooldown:1.1,grace:10,fog:'#041a18',fogDensity:.0085,clear:[.004,.025,.022],light:[.34,.68,.55],ground:[.035,.16,.11],core:[.35,1,.55]},
+  4:{deck:'10',name:'DECK 10 · NAVIGATION VAULT',brief:'Hold the star-map vault, find the astral cipher and secure the forbidden observatory.',ammo:74,spawn:[0,2,29],rotation:Math.PI,positions:[[-29,-18],[-19,-29],[-6,-31],[8,-31],[22,-27],[30,-12],[28,7],[-29,3],[-24,18],[23,18]],hp:110,eliteHp:142,eliteFrom:7,speed:.88,speedRange:.2,fireRange:22,fireMin:.78,fireRangeDelay:.64,boltMin:6,boltRange:4,boltDuration:520,coreDamage:9,coreCooldown:1,grace:9,fog:'#070d22',fogDensity:.0095,clear:[.006,.01,.035],light:[.34,.48,.78],ground:[.06,.08,.19],core:[.36,.55,1]},
+  5:{deck:'11',name:'DECK 11 · COMMAND NEXUS',brief:'Recover the command sigil, open the Overseer’s throne vault and defeat the Dominion’s final commander.',ammo:84,spawn:[0,2,30],rotation:Math.PI,positions:[[0,-19]],boss:true,bossHp:900,hp:900,eliteHp:900,eliteFrom:0,speed:1.02,speedRange:0,fireRange:48,fireMin:1.12,fireRangeDelay:.55,boltMin:6,boltRange:4,boltDuration:700,coreDamage:0,coreCooldown:2,grace:12,fog:'#13070a',fogDensity:.007,clear:[.025,.004,.006],light:[.68,.28,.24],ground:[.18,.035,.025],core:[1,.35,.22]}
 };
+
+const SECRET_BLUEPRINTS={
+  1:{name:'BIO-ARCHIVE',artifact:'VEYRAN HEART KEY',artifactPos:[24,7],accent:'#6fffe3',accent2:'#a864ff',texture:'assets/textures/starfall-bulkhead-v2.webp',guardians:2},
+  2:{name:'CALIBRATION VAULT',artifact:'REACTOR SEAL',artifactPos:[-25,8],accent:'#ff5b55',accent2:'#ffb13b',texture:'assets/textures/starfall-deck-v2.webp',guardians:2},
+  3:{name:'SPORE NURSERY',artifact:'DORMANT BIO-SEED',artifactPos:[25,-8],accent:'#63ffb2',accent2:'#caff72',texture:'assets/textures/starfall-living-machinery-v2.webp',guardians:3},
+  4:{name:'FORBIDDEN OBSERVATORY',artifact:'ASTRAL CIPHER',artifactPos:[-25,-8],accent:'#5dc8ff',accent2:'#9a74ff',texture:'assets/textures/starfall-ceiling-v2.webp',guardians:3},
+  5:{name:'OVERSEER THRONE VAULT',artifact:'COMMAND SIGIL',artifactPos:[25,8],accent:'#ff3659',accent2:'#ffb13b',texture:'assets/textures/starfall-living-machinery-v2.webp',guardians:1}
+};
+const secretRooms={};
+const secretState={artifactCollected:false,portalActive:false,inSecretRoom:false,guardiansSpawned:false,roomCleared:false,nearNotice:0};
 
 function material(name,diffuse,emissive=null,alpha=1){const m=new BABYLON.StandardMaterial(name,scene);m.diffuseColor=C.FromHexString(diffuse);m.specularColor=new C(.65,.75,.82);m.specularPower=96;m.alpha=alpha;if(emissive)m.emissiveColor=C.FromHexString(emissive);return m}
 function pbr(name,color,metallic=.65,roughness=.42,emissive=null){const m=new BABYLON.PBRMaterial(name,scene);m.albedoColor=C.FromHexString(color);m.metallic=metallic;m.roughness=roughness;m.environmentIntensity=.7;if(emissive)m.emissiveColor=C.FromHexString(emissive);return m}
@@ -103,6 +113,50 @@ async function loadCombatArtwork(){
   if(weaponResult.status==='fulfilled'){weaponModelContainer=weaponResult.value;attachPlayerWeapon()}else console.warn('The imported sentinel rifle could not load.',weaponResult.reason);
 }
 function updatePlayerWeapon(dt,t){if(!playerWeaponRoot)return;weaponRecoil=Math.max(0,weaponRecoil-dt*8);const aim=aiming?1:0,compact=innerWidth<=600,tablet=!compact&&innerWidth<=900,baseX=compact?.34:tablet?.4:.5,baseY=compact?-.6:tablet?-.72:-.72,baseScale=compact?.78:tablet?.95:1.32,bob=started&&!aiming?Math.sin(t*5.2)*.014:0;playerWeaponRoot.position.x=aim?.035:baseX+Math.sin(t*2.6)*.014;playerWeaponRoot.position.y=baseY+aim*.18+bob+(sprinting?Math.abs(Math.sin(t*8))*.04:0);playerWeaponRoot.position.z=1+aim*.2-weaponRecoil*.15;playerWeaponRoot.rotation.x=-.4+aim*.17+weaponRecoil*.075+(sprinting?.08:0);playerWeaponRoot.rotation.y=Math.PI-.25+aim*.23;playerWeaponRoot.rotation.z=-.12+(sprinting?Math.sin(t*8)*.025:0);playerWeaponRoot.scaling.setAll(aim?baseScale*.78:baseScale)}
+
+function buildSecretRooms(){
+  const roomCenter=new V(90,0,0);
+  for(const level of [1,2,3,4,5]){
+    const plan=SECRET_BLUEPRINTS[level],root=onDeck(level,new BABYLON.TransformNode(`deck ${level} secret ${plan.name}`,scene));root.position.copyFrom(roomCenter);
+    const alloy=texturedMaterial(`secret ${level} themed alloy`,plan.texture,1.4,1.1),dark=pbr(`secret ${level} dark frame`,'#10171c',.86,.28),glow=material(`secret ${level} primary energy`,plan.accent,plan.accent),glow2=material(`secret ${level} secondary energy`,plan.accent2,plan.accent2),glass=material(`secret ${level} observation glass`,'#132938',plan.accent,.3);alloy.diffuseColor=C.FromHexString(level===2?'#71505c':level===3?'#537360':level===4?'#4f6285':level===5?'#70454e':'#607477');glass.backFaceCulling=false;
+    function part(mesh,mat=alloy,collision=false){mesh.parent=root;mesh.material=mat;mesh.checkCollisions=collision;mesh.receiveShadows=true;return mesh}
+    part(box(`secret ${level} floor`,{width:16.4,height:.35,depth:16.4},new V(0,-.18,0),alloy,true),alloy,true);
+    part(box(`secret ${level} ceiling`,{width:16.4,height:.3,depth:16.4},new V(0,6.35,0),alloy),alloy);
+    for(const [x,z,w,d] of [[-8.15,0,.42,16.4],[8.15,0,.42,16.4],[0,-8.15,16.4,.42],[0,8.15,16.4,.42]])part(box(`secret ${level} sealed wall`,{width:w,height:6.4,depth:d},new V(x,3.05,z),alloy,true),alloy,true);
+    for(const x of [-7.72,7.72])for(const z of [-7.72,7.72]){const pylon=part(BABYLON.MeshBuilder.CreateCylinder(`secret ${level} corner pylon`,{height:6.1,diameter:.68,tessellation:16},scene),dark,true);pylon.position=new V(x,3.05,z);const lamp=part(BABYLON.MeshBuilder.CreateSphere(`secret ${level} pylon beacon`,{diameter:.28,segments:8},scene),glow);lamp.position=new V(x,5.75,z)}
+    for(const z of [-6.8,6.8]){const rail=part(box(`secret ${level} floor rail`,{width:12.8,height:.08,depth:.13},new V(0,.08,z),level%2?glow:glow2));rail.isPickable=false}
+    const ceilingRing=part(BABYLON.MeshBuilder.CreateTorus(`secret ${level} ceiling energy ring`,{diameter:7.5,thickness:.13,tessellation:48},scene),glow);ceilingRing.position.y=6.05;ceilingRing.isPickable=false;
+    const roomLight=new BABYLON.PointLight(`secret ${level} chamber light`,new V(0,4,0),scene);roomLight.parent=root;roomLight.diffuse=C.FromHexString(plan.accent);roomLight.intensity=1.25;roomLight.range=22;
+    const roomLight2=new BABYLON.PointLight(`secret ${level} chamber fill`,new V(0,2,-6),scene);roomLight2.parent=root;roomLight2.diffuse=C.FromHexString(plan.accent2);roomLight2.intensity=.72;roomLight2.range=16;
+
+    if(level===1){for(const x of [-5.4,5.4]){const pod=part(BABYLON.MeshBuilder.CreateCylinder('bio archive memory pod',{height:3.8,diameter:2.1,tessellation:22},scene),glass,true);pod.position=new V(x,1.9,-4.6);for(const y of [.35,3.45]){const band=part(BABYLON.MeshBuilder.CreateTorus('bio archive pod seal',{diameter:2.2,thickness:.13,tessellation:24},scene),glow2);band.position=new V(x,y,-4.6)}}}
+    if(level===2){for(const x of [-5,0,5]){const coil=part(BABYLON.MeshBuilder.CreateCylinder('calibration capacitor',{height:3.4,diameter:1.55,tessellation:20},scene),dark,true);coil.position=new V(x,1.7,-4.9);for(const y of [.5,1.7,2.9]){const band=part(BABYLON.MeshBuilder.CreateTorus('capacitor live coil',{diameter:1.72,thickness:.12,tessellation:24},scene),x?glow:glow2);band.position=new V(x,y,-4.9)}}}
+    if(level===3){for(const [x,z] of [[-4.8,-4.8],[4.8,-4.8],[-4.8,1.2],[4.8,1.2]]){const planter=part(box('nursery living planter',{width:3.2,height:1.2,depth:1.8},new V(x,.6,z),alloy,true),alloy,true);for(const ox of [-.8,0,.8]){const bloom=part(BABYLON.MeshBuilder.CreateSphere('nursery luminous spore',{diameter:.62,segments:10},scene),ox?glow:glow2);bloom.position=new V(x+ox,1.55,z)}}}
+    if(level===4){for(const [x,z] of [[-4.8,-4.5],[4.8,-4.5],[0,1.6]]){const base=part(BABYLON.MeshBuilder.CreateCylinder('observatory projector',{height:1.25,diameter:2.25,tessellation:18},scene),dark,true);base.position=new V(x,.62,z);const globe=part(BABYLON.MeshBuilder.CreateSphere('observatory star globe',{diameter:1.35,segments:14},scene),glass);globe.position=new V(x,2.15,z);const orbit=part(BABYLON.MeshBuilder.CreateTorus('observatory orbital map',{diameter:1.9,thickness:.055,tessellation:28},scene),glow);orbit.position.copyFrom(globe.position);orbit.rotation.x=.9}}
+    if(level===5){const throne=part(box('overseer command throne',{width:5.5,height:3.8,depth:1.5},new V(0,1.9,-5.8),alloy,true),alloy,true);for(const x of [-3.8,3.8]){const pillar=part(BABYLON.MeshBuilder.CreateCylinder('overseer throne pylon',{height:5.2,diameter:1,tessellation:18},scene),dark,true);pillar.position=new V(x,2.6,-5.3);for(const y of [1.1,2.6,4.1]){const halo=part(BABYLON.MeshBuilder.CreateTorus('overseer throne halo',{diameter:1.18,thickness:.11,tessellation:22},scene),x<0?glow:glow2);halo.position=new V(x,y,-5.3)}}}
+
+    const motes=[];for(let i=0;i<10;i++){const mote=part(BABYLON.MeshBuilder.CreateSphere(`secret ${level} atmosphere mote`,{diameter:.035+(i%3)*.025,segments:4},scene),i%2?glow:glow2);mote.position=new V(-6+(i*2.37)%12,.8+(i*1.17)%4.8,-6+(i*3.11)%12);mote.visibility=.38;mote.isPickable=false;motes.push({mesh:mote,base:mote.position.clone(),phase:i*.72})}
+
+    const artifact=onDeck(level,new BABYLON.TransformNode(`hidden ${plan.artifact}`,scene));artifact.position=new V(plan.artifactPos[0],1.25,plan.artifactPos[1]);
+    const crystal=BABYLON.MeshBuilder.CreatePolyhedron(`collectible ${plan.artifact}`,{type:(level+1)%5,size:.56},scene);crystal.parent=artifact;crystal.material=glow2;crystal.isPickable=false;
+    const artifactRing=BABYLON.MeshBuilder.CreateTorus(`collectible ${level} signal ring`,{diameter:1.45,thickness:.07,tessellation:28},scene);artifactRing.parent=artifact;artifactRing.rotation.x=Math.PI/2;artifactRing.material=glow;artifactRing.isPickable=false;
+    const artifactLight=new BABYLON.PointLight(`collectible ${level} signal`,new V(0,.2,0),scene);artifactLight.parent=artifact;artifactLight.diffuse=C.FromHexString(plan.accent);artifactLight.intensity=1;artifactLight.range=7;
+
+    const portal=onDeck(level,new BABYLON.TransformNode(`deck ${level} secret rift`,scene));portal.position=new V(0,2.2,6.7);
+    for(const [diameter,thickness,portalMaterial] of [[3.6,.18,glow],[2.8,.09,glow2]]){const ring=BABYLON.MeshBuilder.CreateTorus(`secret ${level} portal ring`,{diameter,thickness,tessellation:44},scene);ring.parent=portal;ring.rotation.x=Math.PI/2;ring.material=portalMaterial;ring.isPickable=false}
+    const portalCore=BABYLON.MeshBuilder.CreateDisc(`secret ${level} portal surface`,{radius:1.3,tessellation:40,sideOrientation:BABYLON.Mesh.DOUBLESIDE},scene);portalCore.parent=portal;portalCore.material=glass;portalCore.isPickable=false;
+    const portalLight=new BABYLON.PointLight(`secret ${level} portal light`,new V(0,0,.25),scene);portalLight.parent=portal;portalLight.diffuse=C.FromHexString(plan.accent);portalLight.intensity=1.45;portalLight.range=10;
+    portal.setEnabled(false);
+    secretRooms[level]={root,center:roomCenter.clone(),artifact,portal,motes,ceilingRing,portalCore,plan};
+  }
+}
+
+function updateSecretVisuals(t){
+  const room=secretRooms[currentLevel];if(!room)return;
+  if(room.artifact.isEnabled()){room.artifact.rotation.y=t*1.25;room.artifact.rotation.z=Math.sin(t*.9)*.18;room.artifact.position.y=1.25+Math.sin(t*2.1)*.16}
+  if(room.portal.isEnabled()){room.portal.rotation.z=t*.42;room.portalCore.scaling.setAll(.88+Math.sin(t*2.4)*.09);room.portalCore.visibility=.35+Math.sin(t*2.1)*.08}
+  room.ceilingRing.rotation.y=t*.18;for(const mote of room.motes){mote.mesh.position.y=mote.base.y+Math.sin(t*.65+mote.phase)*.45;mote.mesh.position.x=mote.base.x+Math.sin(t*.38+mote.phase)*.22}
+}
 
 function buildScene(){
   scene=new BABYLON.Scene(engine);scene.clearColor=new BABYLON.Color4(.006,.012,.025,1);scene.collisionsEnabled=true;
@@ -248,6 +302,8 @@ function buildScene(){
   for(const radius of [8,17,27]){const ring=onDeck(5,BABYLON.MeshBuilder.CreateTorus('nexus arena circuit',{diameter:radius*2,thickness:.09,tessellation:84},scene));ring.position.y=.17;ring.material=radius===17?bossGold:bossTrim;ring.isPickable=false}
   for(const [x,z] of [[0,26],[26,0],[0,-26],[-26,0]]){const light=onDeck(5,new BABYLON.PointLight('nexus combat lamp',new V(x,4,z),scene));light.diffuse=new C(1,.16,.22);light.intensity=.85;light.range=18}
 
+  buildSecretRooms();
+
   const dais=BABYLON.MeshBuilder.CreateCylinder('core dais',{height:.7,diameter:7,tessellation:32},scene);dais.position.y=.35;dais.material=purple;dais.checkCollisions=true;
   const coreRing=BABYLON.MeshBuilder.CreateTorus('core containment',{diameter:4.8,thickness:.32,tessellation:32},scene);coreRing.position.y=2.25;coreRing.material=trim;
   core=BABYLON.MeshBuilder.CreateSphere('living bio core',{diameter:3,segments:32},scene);core.position.y=2.4;core.material=material('living core','#4fffd9','#21c6a6');core.isPickable=false;
@@ -255,7 +311,7 @@ function buildScene(){
 
   registerInteractiveEnvironment();
   for(const level of [2,3,4,5])deckNodes[level].forEach(node=>node.setEnabled(false));
-  scene.onBeforeRenderObservable.add(()=>{const t=performance.now()*.001,dt=scene.getEngine().getDeltaTime()/1000;if(core){core.scaling.setAll(1+Math.sin(t*2.4)*.045);core.rotation.y=t*.25;coreHalo.rotation.z=t*.3}for(const specimen of specimens){specimen.root.position.y=specimen.baseY+Math.sin(t*1.25+specimen.phase)*.075;specimen.root.rotation.y=specimen.baseRotation+Math.sin(t*.7+specimen.phase)*.12;specimen.root.rotation.z=Math.sin(t*.9+specimen.phase)*.035;specimen.bubbles.forEach((bubble,index)=>bubble.position.y=-1.28+((t*.24+specimen.phase*.15+index*.42)%2.4))}updatePlayerWeapon(dt,t);if(started)update(dt,t)});
+  scene.onBeforeRenderObservable.add(()=>{const t=performance.now()*.001,dt=scene.getEngine().getDeltaTime()/1000;if(core){core.scaling.setAll(1+Math.sin(t*2.4)*.045);core.rotation.y=t*.25;coreHalo.rotation.z=t*.3}for(const specimen of specimens){specimen.root.position.y=specimen.baseY+Math.sin(t*1.25+specimen.phase)*.075;specimen.root.rotation.y=specimen.baseRotation+Math.sin(t*.7+specimen.phase)*.12;specimen.root.rotation.z=Math.sin(t*.9+specimen.phase)*.035;specimen.bubbles.forEach((bubble,index)=>bubble.position.y=-1.28+((t*.24+specimen.phase*.15+index*.42)%2.4))}updateSecretVisuals(t);updatePlayerWeapon(dt,t);if(started)update(dt,t)});
   return scene;
 }
 
@@ -324,10 +380,62 @@ function enemyPath(x,z,index){
   if(currentLevel===4){const sx=Math.sign(x)||1,sz=Math.sign(z)||-1;return[new V(sx*22,0,sz*13),new V(sx*13,0,sz*7),new V(sx*6,0,0),new V(0,0,0)]}
   const orbit=[new V(-9,0,-9),new V(9,0,-9),new V(9,0,9),new V(-9,0,9)],rootPos=new V(x,0,z);let nearest=0;for(let i=1;i<orbit.length;i++)if(V.DistanceSquared(rootPos,orbit[i])<V.DistanceSquared(rootPos,orbit[nearest]))nearest=i;return[...orbit.slice(nearest),...orbit.slice(0,nearest)]
 }
-function resetEnemies(){enemies.forEach(e=>e.dispose(false,true));enemies=[];LEVELS[currentLevel].positions.forEach((p,i)=>enemies.push(createEnemy(p[0],p[1],i,enemyPath(p[0],p[1],i))))}
+function resetEnemies(){enemies.forEach(e=>e.dispose(false,true));enemies=[];if(currentLevel===5)return;LEVELS[currentLevel].positions.forEach((p,i)=>enemies.push(createEnemy(p[0],p[1],i,enemyPath(p[0],p[1],i))))}
 
-function show(text){msg.textContent=text;msg.classList.add('show');clearTimeout(show.timer);show.timer=setTimeout(()=>msg.classList.remove('show'),900)}
-function updateHostileHUD(){const config=LEVELS[currentLevel];if(config.boss){const boss=enemies[0],ratio=boss?.metadata?.alive?Math.max(0,boss.metadata.hp/boss.metadata.maxHp):0;leftText.textContent=ratio?`OVERSEER: ${Math.ceil(ratio*100)}%`:'OVERSEER: DEFEATED'}else leftText.textContent=`HOSTILES: ${enemies.length-kills}`}
+function mainEnemiesCleared(){return !enemies.some(enemy=>enemy.metadata?.alive&&!enemy.metadata.secretGuardian)}
+function updateSecretHUD(){
+  if(!secretText)return;const plan=SECRET_BLUEPRINTS[currentLevel];
+  secretText.classList.toggle('ready',secretState.portalActive||secretState.inSecretRoom);
+  if(secretState.inSecretRoom)secretText.textContent=`SECRET CHAMBER · ${plan.name}`;
+  else if(secretState.portalActive)secretText.textContent=`RIFT OPEN · ENTER NEAR THE CORE`;
+  else if(secretState.artifactCollected)secretText.textContent=`${plan.artifact} RECOVERED · CLEAR HOSTILES`;
+  else secretText.textContent=`HIDDEN OBJECT · ${plan.artifact}`;
+}
+function resetSecretStage(){
+  Object.assign(secretState,{artifactCollected:false,portalActive:false,inSecretRoom:false,guardiansSpawned:false,roomCleared:false,nearNotice:0});
+  const room=secretRooms[currentLevel];if(room){room.artifact.setEnabled(true);room.portal.setEnabled(false)}updateSecretHUD();
+}
+function styleSecretGuardian(enemy,index){
+  const plan=SECRET_BLUEPRINTS[currentLevel];enemy.metadata.secretGuardian=true;enemy.metadata.guardianIndex=index;
+  if(!enemy.metadata.boss){enemy.metadata.maxHp=Math.round(enemy.metadata.maxHp*1.24);enemy.metadata.hp=enemy.metadata.maxHp;enemy.metadata.speed*=1.06;enemy.scaling.scaleInPlace(1.08)}
+  const haloMat=material(`secret guardian ${currentLevel} ${index}`,plan.accent2,plan.accent2),halo=BABYLON.MeshBuilder.CreateTorus('secret guardian signal halo',{diameter:1.7,thickness:.075,tessellation:28},scene);halo.parent=enemy;halo.position.y=3.45;halo.rotation.x=Math.PI/2;halo.material=haloMat;halo.isPickable=false;
+  const beacon=BABYLON.MeshBuilder.CreatePolyhedron('secret guardian rank crystal',{type:(currentLevel+index)%5,size:.18},scene);beacon.parent=enemy;beacon.position=new V(0,3.72,0);beacon.material=haloMat;beacon.isPickable=false;
+  for(const mesh of enemy.getChildMeshes())if(mesh.metadata?.enemy){mesh.renderOutline=true;mesh.outlineColor=C.FromHexString(plan.accent);mesh.outlineWidth=.018}
+}
+function spawnSecretGuardians(){
+  if(secretState.guardiansSpawned)return;secretState.guardiansSpawned=true;const room=secretRooms[currentLevel],plan=room.plan,count=plan.guardians;
+  const offsets=count===1?[0]:count===2?[-2.7,2.7]:[-3.8,0,3.8];
+  offsets.forEach((offset,index)=>{const x=room.center.x+offset,z=-3.7,path=currentLevel===5?[new V(room.center.x-4,0,-2.3),new V(room.center.x+4,0,-2.3),new V(room.center.x+4,0,2.8),new V(room.center.x-4,0,2.8)]:[new V(room.center.x+offset*.45,0,-.2),new V(room.center.x+offset*.18,0,2.7)],enemy=createEnemy(x,z,enemies.length+index,path);styleSecretGuardian(enemy,index);enemies.push(enemy)});
+  levelStartedAt=performance.now();updateHostileHUD();if(currentLevel===5)enemyVoice(enemies.find(enemy=>enemy.metadata.boss),'start',true);
+}
+function activateSecretPortal(){
+  if(secretState.portalActive||secretState.inSecretRoom)return;secretState.portalActive=true;secretRooms[currentLevel].portal.setEnabled(true);updateSecretHUD();show(`${SECRET_BLUEPRINTS[currentLevel].name} UNLOCKED · ENTER THE RIFT`);
+}
+function collectSecretArtifact(){
+  if(secretState.artifactCollected)return;secretState.artifactCollected=true;secretRooms[currentLevel].artifact.setEnabled(false);ammo+=currentLevel===5?24:14;ammoText.textContent=ammo;health=Math.min(100,health+8);healthText.textContent=health;healthBar.style.width=`${health}%`;show(`${SECRET_BLUEPRINTS[currentLevel].artifact} RECOVERED · PLASMA RESTORED`);updateSecretHUD();if(mainEnemiesCleared())setTimeout(activateSecretPortal,650);
+}
+function enterSecretRoom(){
+  if(!secretState.portalActive||secretState.inSecretRoom)return;const room=secretRooms[currentLevel];secretState.portalActive=false;secretState.inSecretRoom=true;room.portal.setEnabled(false);camera.position.copyFromFloats(room.center.x,2,5.8);camera.rotation.copyFromFloats(0,Math.PI,0);camera.cameraDirection.copyFromFloats(0,0,0);camera.cameraRotation.copyFromFloats(0,0);spawnSecretGuardians();updateSecretHUD();show(`ENTERING ${room.plan.name} · GUARDIAN WAVE DETECTED`);
+}
+function handleCombatCleared(){
+  if(secretState.inSecretRoom){secretState.roomCleared=true;started=false;stopCombatAudio();show(`${SECRET_BLUEPRINTS[currentLevel].name} SECURED`);setTimeout(completeLevel,1200);return}
+  if(secretState.artifactCollected)activateSecretPortal();else{show('DECK HOSTILES CLEARED · LOCATE THE HIDDEN OBJECT');updateHostileHUD()}
+}
+function updateSecretMission(t){
+  const room=secretRooms[currentLevel];if(!room)return;
+  if(secretState.inSecretRoom){camera.position.x=Math.max(room.center.x-7.15,Math.min(room.center.x+7.15,camera.position.x));camera.position.z=Math.max(-7.15,Math.min(7.15,camera.position.z));return}
+  if(!secretState.artifactCollected){const distance=V.Distance(camera.position,room.artifact.position);if(distance<1.75)collectSecretArtifact();else if(distance<6&&performance.now()-secretState.nearNotice>3000){secretState.nearNotice=performance.now();show(`${room.plan.artifact} SIGNAL NEARBY`)}}
+  if(secretState.portalActive&&V.Distance(camera.position,room.portal.position)<1.8)enterSecretRoom();
+}
+
+function show(text){msg.textContent=text;msg.classList.add('show');clearTimeout(show.timer);show.timer=setTimeout(()=>msg.classList.remove('show'),1600)}
+function updateHostileHUD(){
+  const config=LEVELS[currentLevel],alive=enemies.filter(enemy=>enemy.metadata?.alive),guardians=alive.filter(enemy=>enemy.metadata.secretGuardian);
+  if(config.boss&&secretState.inSecretRoom){const boss=alive.find(enemy=>enemy.metadata.boss),ratio=boss?Math.max(0,boss.metadata.hp/boss.metadata.maxHp):0;leftText.textContent=ratio?`OVERSEER: ${Math.ceil(ratio*100)}%`:'OVERSEER: DEFEATED'}
+  else if(secretState.inSecretRoom)leftText.textContent=`VAULT GUARDIANS: ${guardians.length}`;
+  else leftText.textContent=`HOSTILES: ${alive.filter(enemy=>!enemy.metadata.secretGuardian).length}`;
+  updateSecretHUD();
+}
 function animateClass(el,name){el.classList.remove(name);void el.offsetWidth;el.classList.add(name)}
 function ensureAudio(){
   try{
@@ -390,7 +498,7 @@ function shoot(){
   const pick=scene.pickWithRay(camera.getForwardRay(100));
   if(pick?.hit&&pick.pickedMesh.metadata?.enemy?.metadata?.alive){const enemy=pick.pickedMesh.metadata.enemy;enemy.metadata.hp-=aiming?58:42;enemy.metadata.hitReact=1;const ratio=Math.max(0,enemy.metadata.hp/enemy.metadata.maxHp);enemy.metadata.parts.healthFill.scaling.x=ratio;enemy.metadata.parts.healthFill.position.x=-(1-ratio)*.55;impact(pick.pickedPoint);animateClass(hitMarker,'show');plasmaSound(true);if(performance.now()-enemy.metadata.lastPain>420){enemy.metadata.lastPain=performance.now();enemySound('pain',enemy);if(Math.random()<.16)enemyVoice(enemy,'hurt')}updateHostileHUD();show(enemy.metadata.hp>0?(enemy.metadata.boss?'✕ OVERSEER ARMOUR DAMAGED':'✕ ARMOUR HIT'):'✕ CRITICAL PLASMA IMPACT');if(enemy.metadata.hp<=0)killEnemy(enemy)}else if(pick?.hit&&handleEnvironmentShot(pick.pickedMesh,pick.pickedPoint)){}else{if(pick?.hit)impact(pick.pickedPoint,'#65ffe0');show('SHOT MISSED')}
 }
-function killEnemy(enemy){enemy.metadata.alive=false;enemySound('death',enemy);if(enemy.metadata.boss)enemyVoice(enemy,'death',true);else if(Math.random()<.28){const witness=enemies.find(other=>other!==enemy&&other.metadata.alive);if(witness)enemyVoice(witness,'allyDown')}kills++;updateHostileHUD();show(enemy.metadata.boss?'DOMINION OVERSEER DEFEATED':'DOMINION TROOPER NEUTRALIZED');enemy.getChildMeshes().forEach(m=>m.isPickable=false);BABYLON.Animation.CreateAndStartAnimation('trooper fall',enemy,'rotation.z',60,34,0,Math.PI*.48,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);BABYLON.Animation.CreateAndStartAnimation('trooper drop',enemy,'position.y',60,34,enemy.position.y,enemy.position.y-.5,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,null,()=>setTimeout(()=>enemy.setEnabled(false),450));if(kills===enemies.length){started=false;stopCombatAudio();setTimeout(completeLevel,1000)}}
+function killEnemy(enemy){enemy.metadata.alive=false;enemySound('death',enemy);if(enemy.metadata.boss)enemyVoice(enemy,'death',true);else if(Math.random()<.28){const witness=enemies.find(other=>other!==enemy&&other.metadata.alive);if(witness)enemyVoice(witness,'allyDown')}kills++;updateHostileHUD();show(enemy.metadata.boss?'DOMINION OVERSEER DEFEATED':enemy.metadata.secretGuardian?'SECRET GUARDIAN NEUTRALIZED':'DOMINION TROOPER NEUTRALIZED');enemy.getChildMeshes().forEach(m=>m.isPickable=false);BABYLON.Animation.CreateAndStartAnimation('trooper fall',enemy,'rotation.z',60,34,0,Math.PI*.48,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);BABYLON.Animation.CreateAndStartAnimation('trooper drop',enemy,'position.y',60,34,enemy.position.y,enemy.position.y-.5,BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,null,()=>setTimeout(()=>enemy.setEnabled(false),450));if(!enemies.some(other=>other.metadata?.alive))setTimeout(handleCombatCleared,700)}
 function enemyHasSight(enemy){const muzzlePoint=enemy.metadata.parts.muzzle;muzzlePoint.computeWorldMatrix(true);const origin=muzzlePoint.getAbsolutePosition(),direction=camera.position.subtract(origin),distance=direction.length(),ray=new BABYLON.Ray(origin,direction.normalize(),distance-.5),block=scene.pickWithRay(ray,mesh=>mesh.isEnabled()&&mesh.isPickable&&mesh.checkCollisions&&!mesh.metadata?.enemy);return !block?.hit}
 function enemyBolt(enemy){
   const config=LEVELS[currentLevel],difficulty=DIFFICULTIES[selectedDifficulty],muzzlePoint=enemy.metadata.parts.muzzle;muzzlePoint.computeWorldMatrix(true);const origin=muzzlePoint.getAbsolutePosition().clone(),target=camera.position.clone(),bolt=BABYLON.MeshBuilder.CreateSphere('solar bolt',{diameter:enemy.metadata.boss?.42:.22,segments:8},scene);enemy.metadata.recoil=1;enemySound('attack',enemy);if(Math.random()<(enemy.metadata.boss?.34:.22))enemyVoice(enemy,'attack');bolt.position.copyFrom(origin);bolt.material=material(`bolt${Math.random()}`,enemy.metadata.boss?'#ff5b38':'#ffb02e',enemy.metadata.boss?'#ff173e':'#ff6a00');bolt.isPickable=false;const start=performance.now(),duration=config.boltDuration*difficulty.projectileTime;
@@ -399,9 +507,9 @@ function enemyBolt(enemy){
 function takeDamage(amount){if(!started)return;amount=Math.max(1,Math.round(amount*DIFFICULTIES[selectedDifficulty].damage));health=Math.max(0,health-amount);healthText.textContent=health;healthBar.style.width=`${health}%`;animateClass(damage,'show');show('SOLAR BOLT IMPACT');if(!health)end(false)}
 function update(dt,t){
   const config=LEVELS[currentLevel],graceActive=performance.now()-levelStartedAt<config.grace*1000;
-  const radius=Math.hypot(camera.position.x,camera.position.z);if(radius>HULL_LIMIT){const scale=HULL_LIMIT/radius;camera.position.x*=scale;camera.position.z*=scale;camera.cameraDirection.x=0;camera.cameraDirection.z=0;if(performance.now()-(update.boundaryNotice||0)>1800){update.boundaryNotice=performance.now();show('OUTER HULL SEALED · EXPANSION ZONE RESERVED')}}camera.position.y=Math.max(1.72,Math.min(2.18,camera.position.y));
+  const radius=Math.hypot(camera.position.x,camera.position.z);if(!secretState.inSecretRoom&&radius>HULL_LIMIT){const scale=HULL_LIMIT/radius;camera.position.x*=scale;camera.position.z*=scale;camera.cameraDirection.x=0;camera.cameraDirection.z=0;if(performance.now()-(update.boundaryNotice||0)>1800){update.boundaryNotice=performance.now();show('OUTER HULL SEALED · EXPANSION ZONE RESERVED')}}camera.position.y=Math.max(1.72,Math.min(2.18,camera.position.y));
   if(turnDirection)camera.rotation.y+=turnDirection*dt*1.7;
-  if(moveVector.x||moveVector.y){const forward=new V(Math.sin(camera.rotation.y),0,Math.cos(camera.rotation.y)),right=new V(forward.z,0,-forward.x),movement=forward.scale(moveVector.y*dt*5).add(right.scale(moveVector.x*dt*5));camera.cameraDirection.addInPlace(movement)}
+  if(moveVector.x||moveVector.y){const forward=new V(Math.sin(camera.rotation.y),0,Math.cos(camera.rotation.y)),right=new V(forward.z,0,-forward.x),movement=forward.scale(moveVector.y*dt*5).add(right.scale(moveVector.x*dt*5));camera.cameraDirection.addInPlace(movement)}updateSecretMission(t);
   for(const enemy of enemies){if(!enemy.metadata.alive||!enemy.isEnabled())continue;const toCore=core.position.subtract(enemy.position),distance=Math.hypot(toCore.x,toCore.z),toPlayer=camera.position.subtract(enemy.position),playerDistance=Math.hypot(toPlayer.x,toPlayer.z);enemy.rotation.y=Math.atan2(toPlayer.x,toPlayer.z)+Math.PI;enemy.metadata.cool-=dt;
     const pathTarget=enemy.metadata.path[Math.min(enemy.metadata.pathIndex,enemy.metadata.path.length-1)],toTarget=pathTarget.subtract(enemy.position),pathDistance=Math.hypot(toTarget.x,toTarget.z),walking=enemy.metadata.boss||enemy.metadata.pathIndex<enemy.metadata.path.length-1||distance>4.1;
     if(!enemy.metadata.boss&&pathDistance<1.25&&enemy.metadata.pathIndex<enemy.metadata.path.length-1)enemy.metadata.pathIndex++;
@@ -427,7 +535,7 @@ function completeLevel(){
   if(currentLevel<5){const cleared=LEVELS[currentLevel],next=LEVELS[currentLevel+1];pendingLevel=currentLevel+1;menu.querySelector('h1').innerHTML=`DECK ${cleared.deck} SECURED<br><span>CAMPAIGN ${pendingLevel}/5</span>`;menu.querySelectorAll('p')[0].textContent=next.brief;document.querySelector('#start').textContent=`ENTER DECK ${next.deck}`;menu.classList.remove('hidden')}else end(true)
 }
 function end(win){started=false;stopCombatAudio();document.exitPointerLock?.();menu.classList.remove('hidden');if(win){window.DanArcadeScores?.record('starfall.html',500000+health*1000+ammo*100+kills*500,`CAMPAIGN CLEAR · ${health}% hull`,selectedDifficulty);pendingLevel=1;menu.querySelector('h1').innerHTML='SHIP LIBERATED<br><span>OVERSEER DEFEATED</span>';menu.querySelectorAll('p')[0].textContent='All five decks are secure. You used the nexus cover, defeated the Dominion Overseer and saved the living ship.';document.querySelector('#start').textContent='REPLAY 5-LEVEL CAMPAIGN'}else{const config=LEVELS[currentLevel],victor=enemies.find(enemy=>enemy.metadata.alive);if(victor)enemyVoice(victor,'victory',true);pendingLevel=currentLevel;menu.querySelector('h1').innerHTML='BIO-CORE LOST<br><span>DEFEAT</span>';menu.querySelectorAll('p')[0].textContent=`The Dominion broke through on ${config.name}. Reinitialize this deck and fight again.`;document.querySelector('#start').textContent=`RETRY DECK ${config.deck}`}}
-function reset(level=currentLevel){setDeck(level);const config=LEVELS[level];projectiles.forEach(projectile=>projectile.dispose());projectiles=[];health=100;ammo=Math.round(config.ammo*DIFFICULTIES[selectedDifficulty].ammo);kills=0;lastShot=0;levelStartedAt=performance.now();camera.position.copyFromFloats(...config.spawn);camera.rotation.copyFromFloats(0,config.rotation,0);camera.cameraDirection.copyFromFloats(0,0,0);camera.cameraRotation.copyFromFloats(0,0);resetEnemies();healthText.textContent=health;ammoText.textContent=ammo;updateHostileHUD();healthBar.style.width='100%';setAim(false);setSprint(false)}
+function reset(level=currentLevel){setDeck(level);const config=LEVELS[level];projectiles.forEach(projectile=>projectile.dispose());projectiles=[];health=100;ammo=Math.round(config.ammo*DIFFICULTIES[selectedDifficulty].ammo);kills=0;lastShot=0;levelStartedAt=performance.now();camera.position.copyFromFloats(...config.spawn);camera.rotation.copyFromFloats(0,config.rotation,0);camera.cameraDirection.copyFromFloats(0,0,0);camera.cameraRotation.copyFromFloats(0,0);resetEnemies();resetSecretStage();healthText.textContent=health;ammoText.textContent=ammo;updateHostileHUD();healthBar.style.width='100%';setAim(false);setSprint(false)}
 
 buildScene();loadDeckThreeSpecimens();reset(1);loadCombatArtwork();engine.runRenderLoop(()=>scene.render());addEventListener('resize',()=>engine.resize());
 const difficultyText=document.querySelector('#difficultyText');document.querySelectorAll('[data-difficulty]').forEach(button=>button.onclick=()=>{selectedDifficulty=button.dataset.difficulty;document.querySelectorAll('[data-difficulty]').forEach(option=>{const selected=option===button;option.classList.toggle('selected',selected);option.setAttribute('aria-pressed',selected)});difficultyText.textContent=DIFFICULTIES[selectedDifficulty].description});
