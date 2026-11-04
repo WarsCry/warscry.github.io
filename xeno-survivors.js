@@ -33,6 +33,7 @@
     projectiles:1,pierce:0,magnet:110,armour:0,regen:0,invulnerable:0,fireClock:0,
     sporeLevel:0,sporeClock:3.5,orbitLevel:0,novaLevel:0,novaClock:6
   };
+  window.XenoSurvivorsView={getState:()=>({player,enemies,elapsed,width,height,playing,orbits:orbitPositions()})};
   const decor = [];
   const weapons = [
     {key:'plasma',icon:'✦'}, {key:'spore',icon:'☄'}, {key:'orbit',icon:'◉'}, {key:'nova',icon:'✺'}
@@ -316,7 +317,7 @@
     ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);
     let sx=0,sy=0;if(shake>0){sx=(Math.random()-.5)*shake;sy=(Math.random()-.5)*shake;shake*=.88;if(shake<.3)shake=0}
     ctx.save();ctx.translate(width/2-player.x+sx,height/2-player.y+sy);
-    drawGround();drawDecor();drawDrops();drawRings();drawShots();drawEnemies();drawPlayer();drawParticles();ctx.restore();
+    drawGround();drawDecor();drawDrops();drawRings();drawShots();if(!window.Xeno3DReady){drawEnemies();drawPlayer()}drawParticles();ctx.restore();
     drawEdgeBossMarker();
     if(player.invulnerable>0){ctx.fillStyle=`rgba(255,72,120,${Math.min(.16,player.invulnerable*.3)})`;ctx.fillRect(0,0,width,height)}
   }
