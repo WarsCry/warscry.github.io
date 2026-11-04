@@ -153,7 +153,7 @@
         spawnClock=config.spawn*Math.max(.3,1-elapsed/RUN_TIME*.58);
       }
     }
-    updateWeapons(dt); updateEnemies(dt); updateShots(dt); updateDrops(dt); updateParticles(dt);
+    updateWeapons(dt); updateEnemies(dt); updateShots(dt); cleanupEnemies(); updateDrops(dt); updateParticles(dt);
     if(elapsed>=RUN_TIME&&finalBossDefeated&&!ended)finish(true);
     if(!ended&&player.hp<=0)finish(false);
     hudClock-=dt;if(hudClock<=0){updateHud();hudClock=.12}
@@ -232,6 +232,9 @@
       }
       orbits.forEach((orb,index)=>{if(distance(enemy,orb)<enemy.r+orb.r&&enemy.lastOrbit!==Math.floor(elapsed*4)*10+index){enemy.lastOrbit=Math.floor(elapsed*4)*10+index;hitEnemy(enemy,10+player.orbitLevel*8)}});
     });
+  }
+
+  function cleanupEnemies(){
     enemies=enemies.filter(enemy=>!enemy.dead&&distance(enemy,player)<Math.max(width,height)*1.7+600);
   }
 
@@ -276,7 +279,10 @@
 
   function killEnemy(enemy){
     enemy.dead=true;kills++;score+=enemy.boss?2500*(enemy.stage+1):100;
-    drops.push({x:enemy.x,y:enemy.y,r:7,type:'xp',value:enemy.xp,phase:Math.random()*6.28,dead:false});
+    const screenX=enemy.x-player.x+width/2,screenY=enemy.y-player.y+height/2;
+    const outsideScreen=screenX<-enemy.r||screenX>width+enemy.r||screenY<70-enemy.r||screenY>height-70+enemy.r;
+    if(outsideScreen)gainXp(enemy.xp);
+    else drops.push({x:enemy.x,y:enemy.y,r:7,type:'xp',value:enemy.xp,phase:Math.random()*6.28,dead:false});
     if(Math.random()<.035)drops.push({x:enemy.x+8,y:enemy.y-6,r:8,type:'heal',value:0,phase:0,dead:false});
     spawnParticles(enemy.x,enemy.y,enemy.color,enemy.boss?36:11);shake=Math.max(shake,enemy.boss?12:2);
     if(enemy.boss){
